@@ -1,0 +1,7 @@
+services:
+  bot:
+    build: .
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - MONGODB_URI=${MONGODB_URI}
+    restart: unless-stopped

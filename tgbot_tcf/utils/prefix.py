@@ -1,3 +1,6 @@
+# © Copyright 2024 - 2026 Transsion Core
+# © Copyright 2024 - 2026 Dizzy
+# © Copyright 2026 Aveum Apps
 """Multi-prefix command dispatcher.
 
 Telegram's CommandHandler only matches the `/` prefix. The TCF spec requires

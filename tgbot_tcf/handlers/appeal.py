@@ -22,6 +22,7 @@ from ..database import bans
 from ..utils.auth import is_authorized
 from ..utils.format import fmt_dt, fmt_now, safe_first_name, topic_link, user_link, utcnow
 from ..utils.logger import log_to_channel
+from .helper import enforce_unban_across_groups
 
 logger = logging.getLogger(__name__)
 
@@ -271,6 +272,10 @@ async def on_appeal_review(
         await bans.update_one(
             {"ban_id": ban_id}, {"$set": {"is_active": False}}
         )
+        # PROMPT Feature 8: enforce unban across every active federated group.
+        enforce_success, enforce_failure = await enforce_unban_across_groups(
+            context, user_id_appellant
+        )
         try:
             await cq.edit_message_text(
                 f"Appeal approved by {user_link(reviewer.id, safe_first_name(reviewer))}. "
@@ -287,7 +292,9 @@ async def on_appeal_review(
             f"User: {user_link(user_id_appellant, appellant_name)} (ID: {user_id_appellant})\n"
             f"Ban ID: {ban_id}\n"
             f"Approved by: {user_link(reviewer.id, safe_first_name(reviewer))}\n"
-            f"Date: {fmt_now()}",
+            f"Date: {fmt_now()}\n\n"
+            f"Unbanned in {enforce_success} group(s); "
+            f"failed in {enforce_failure} group(s).",
         )
         try:
             await context.bot.send_message(

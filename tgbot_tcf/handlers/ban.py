@@ -37,6 +37,7 @@ from ..utils.format import (
 )
 from ..utils.logger import log_to_channel
 from ..utils.targets import get_reason, resolve_target
+from .helper import enforce_ban_across_groups, enforce_unban_across_groups
 
 logger = logging.getLogger(__name__)
 
@@ -387,6 +388,15 @@ async def _do_finalize(context: ContextTypes.DEFAULT_TYPE, sess: Dict[str, Any])
             ]
         )
 
+    # PROMPT Feature 5: enforce automatically across every active federated group.
+    enforce_success, enforce_failure = await enforce_ban_across_groups(
+        context, target_id
+    )
+    log_text += (
+        f"\n\nEnforced in {enforce_success} group(s); "
+        f"failed in {enforce_failure} group(s)."
+    )
+
     log_message_id = await log_to_channel(context, log_text, reply_markup=keyboard)
 
     if is_update:
@@ -539,6 +549,11 @@ async def cmd_cunban(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         except TelegramError:
             pass
 
+    # PROMPT Feature 6: automatically unban across every active federated group.
+    enforce_success, enforce_failure = await enforce_unban_across_groups(
+        context, target.id
+    )
+
     reason_line = f"\nUnban Reason: {unban_reason}" if unban_reason else ""
     await log_to_channel(
         context,
@@ -547,7 +562,9 @@ async def cmd_cunban(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         f"Admin: {user_link(user.id, safe_first_name(user))}\n"
         f"User: {user_link(target.id, target.first_name)}\n"
         f"User ID: {target.id}{reason_line}\n"
-        f"Date: {fmt_now()}",
+        f"Date: {fmt_now()}\n\n"
+        f"Unbanned in {enforce_success} group(s); "
+        f"failed in {enforce_failure} group(s).",
     )
     await msg.reply_text(
         f"User {target.id} has been unbanned from the Transsion Core."

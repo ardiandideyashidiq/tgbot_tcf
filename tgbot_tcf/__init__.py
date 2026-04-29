@@ -35,7 +35,7 @@ ABOUT_TEXT: str = (
     "<b>What is TCF?</b>\n"
     "Transsion Core Federation (TCF) is a community-driven federation for "
     "Infinix, Tecno, and Itel groups. Our main focus is maintaining group "
-    "security and a conducive environment so members can discuss comfortably.\n"
+    "security and a conducive environment so members can discuss comfortably.\n\n"
     "<i>TCF is not an official part of Transsion Holdings. This is strictly an "
     "independent community.</i>\n\n"
     "<b>History</b>\n"

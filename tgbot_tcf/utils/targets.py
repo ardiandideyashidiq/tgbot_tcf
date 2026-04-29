@@ -1,3 +1,7 @@
+# © Copyright 2024 - 2026 Transsion Core
+# © Copyright 2024 - 2026 Dizzy
+# © Copyright 2026 Aveum Apps
+"""Resolve a command target from reply, @username, or numeric user id."""
 from telegram import Update
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes

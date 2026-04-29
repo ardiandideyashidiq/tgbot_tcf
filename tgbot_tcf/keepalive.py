@@ -1,3 +1,6 @@
+# © Copyright 2024 - 2026 Transsion Core
+# © Copyright 2024 - 2026 Dizzy
+# © Copyright 2026 Aveum Apps
 """Tiny Flask keep-alive server. Required to prevent the bot from sleeping
 on hosting platforms that idle long-running processes."""
 import logging

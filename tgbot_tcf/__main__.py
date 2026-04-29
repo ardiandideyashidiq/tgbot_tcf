@@ -35,8 +35,8 @@ from .handlers import (
     links,
     lists,
     maintenance,
+    membercache,
     menu,
-    sync,
     welcome,
 )
 from .keepalive import start_keepalive
@@ -112,9 +112,8 @@ def build_app() -> AppT:
     _add(app, ["tcban", "ban", "tcfban"], ban.cmd_cban)
     _add(app, ["tcunban", "unban", "tcfunban"], ban.cmd_cunban)
 
-    # ----- Broadcast / sync -----
+    # ----- Broadcast (cross-group ban/unban enforcement is fully automatic) -----
     _add(app, ["tcbroadcast", "broadcast", "tcannounce"], broadcast.cmd_broadcast)
-    _add(app, ["tcsync", "syncban", "tcfbanall"], sync.cmd_syncban)
 
     # ----- Maintenance -----
     _add(app, ["leaveall", "exitall", "tcleave"], maintenance.cmd_leaveall)
@@ -143,6 +142,20 @@ def build_app() -> AppT:
         ChatMemberHandler(
             affiliate.on_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER
         )
+    )
+
+    # ----- Member cache: chat_member updates + per-message author tracking -----
+    app.add_handler(
+        ChatMemberHandler(
+            membercache.on_chat_member_update, ChatMemberHandler.CHAT_MEMBER
+        )
+    )
+    app.add_handler(
+        MessageHandler(
+            (filters.ChatType.GROUPS) & ~filters.StatusUpdate.ALL,
+            membercache.on_message_in_group,
+        ),
+        group=2,
     )
 
     # ----- Welcome / Goodbye in MAIN_GROUP and EXEC_GROUP -----

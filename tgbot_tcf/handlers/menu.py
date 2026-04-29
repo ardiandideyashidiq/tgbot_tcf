@@ -98,13 +98,6 @@ HELP_DETAILS: dict[str, str] = {
         "Who can use: Transsion Core Owner and Admins.\n"
         "Sends the message to all affiliated groups."
     ),
-    "help_syncban": (
-        "<b>Sync Ban Module</b>\n"
-        "Commands: /tcsync, /syncban, /tcfbanall\n"
-        "Usage: /tcsync &lt;target&gt;\n"
-        "Who can use: Transsion Core Owner and Admins.\n"
-        "Enforces an existing active ban across all affiliated groups."
-    ),
     "help_affiliation": (
         "<b>Group Affiliation Module</b>\n"
         "Commands: /jointc, /requestjoin, /applytc (explicit join)\n"
@@ -162,10 +155,10 @@ HELP_MODULE_ROWS: list[list[tuple[str, str]]] = [
     [("Ban", "help_ban"), ("Unban", "help_unban")],
     [("Check Ban", "help_check"), ("Ban Info", "help_baninfo")],
     [("Promote/Demote", "help_admin"), ("Transfer Owner", "help_transfer")],
-    [("Broadcast", "help_broadcast"), ("Sync Ban", "help_syncban")],
-    [("Group Affiliation", "help_affiliation"), ("Disaffiliate", "help_defed")],
-    [("Appeal", "help_appeal"), ("Join/Leave", "help_join")],
-    [("Statistics", "help_stats"), ("Cleanup", "help_cleanup")],
+    [("Broadcast", "help_broadcast"), ("Group Affiliation", "help_affiliation")],
+    [("Disaffiliate", "help_defed"), ("Appeal", "help_appeal")],
+    [("Join/Leave", "help_join"), ("Statistics", "help_stats")],
+    [("Cleanup", "help_cleanup")],
 ]
 
 

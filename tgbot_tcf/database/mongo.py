@@ -31,4 +31,6 @@ async def init_db() -> None:
     await promotion_requests.create_index("request_id", unique=True)
     await promotion_requests.create_index([("target_id", 1), ("status", 1)])
     await pending_joins.create_index("chat_id", unique=True)
-    await member_cache.create_index("user_id", unique=True)
+    await member_cache.create_index(
+        [("chat_id", 1), ("user_id", 1)], unique=True
+    )

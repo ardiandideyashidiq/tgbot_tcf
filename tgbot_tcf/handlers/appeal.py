@@ -18,7 +18,7 @@ from .. import APPEAL_INSTRUCTION_TEMPLATE
 from ..modules import appeals, bans, keyboards, log_templates
 from ..modules.messages import M
 from ..utils.format import safe_first_name, user_link
-from ..utils.logger import log_to_channel
+from ..utils.logger import edit_log_message, log_to_channel
 from .helper import auth, enforce_unban_across_groups, messaging
 
 logger = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ async def on_appeal_message(
     )
     sessions.pop(user.id, None)
 
-    await log_to_channel(
+    appeal_log_msg_id = await log_to_channel(
         context,
         log_templates.appeal_submitted(
             user_id=user.id,
@@ -146,6 +146,11 @@ async def on_appeal_message(
             submitted_at=submitted_at,
         ),
     )
+    if appeal_log_msg_id is not None:
+        await appeals.remember_appeal_log_message(
+            ban_id=ban_id,
+            appeal_log_message_id=appeal_log_msg_id,
+        )
     # appeal_msg_id is currently informational; reference to silence linters
     _ = appeal_msg_id
 
@@ -199,6 +204,8 @@ async def on_appeal_review(
     appellant_name = await messaging.fetch_display_name(context, appellant_id)
     reviewer_link = user_link(reviewer.id, safe_first_name(reviewer))
 
+    appeal_log_msg_id = record.get("appeal_log_message_id")
+
     if decision == "approve":
         await appeals.mark_resolved_inactive(ban_id)
         enforce_success, enforce_failure = await enforce_unban_across_groups(
@@ -207,17 +214,36 @@ async def on_appeal_review(
         await messaging.safe_edit_callback(
             cq, M.APPEAL_DECISION_APPROVED.format(reviewer_link=reviewer_link)
         )
-        log_text = log_templates.appeal_approved(
+
+        approved_log_text = log_templates.appeal_approved(
             user_id=appellant_id,
             user_name=appellant_name,
             ban_id=ban_id,
             reviewer_id=reviewer.id,
             reviewer_name=safe_first_name(reviewer),
         )
-        log_text += log_templates.enforcement_summary(
-            success=enforce_success, failure=enforce_failure, action="Unbanned"
+        edited = False
+        if appeal_log_msg_id:
+            edited = await edit_log_message(
+                context, appeal_log_msg_id, approved_log_text
+            )
+        if not edited:
+            await log_to_channel(context, approved_log_text)
+
+        unban_log_text = log_templates.unban(
+            admin_id=reviewer.id,
+            admin_name=safe_first_name(reviewer),
+            target_id=appellant_id,
+            target_name=appellant_name,
+            reason="Appeal Approved",
         )
-        await log_to_channel(context, log_text)
+        unban_log_text += log_templates.enforcement_summary(
+            success=enforce_success,
+            failure=enforce_failure,
+            action="Unbanned",
+        )
+        await log_to_channel(context, unban_log_text)
+
         await messaging.safe_send_dm(
             context, user_id=appellant_id, text=M.APPEAL_NOTIFY_USER_APPROVED
         )
@@ -225,16 +251,22 @@ async def on_appeal_review(
         await messaging.safe_edit_callback(
             cq, M.APPEAL_DECISION_REJECTED.format(reviewer_link=reviewer_link)
         )
-        await log_to_channel(
-            context,
-            log_templates.appeal_rejected(
-                user_id=appellant_id,
-                user_name=appellant_name,
-                ban_id=ban_id,
-                reviewer_id=reviewer.id,
-                reviewer_name=safe_first_name(reviewer),
-            ),
+
+        rejected_log_text = log_templates.appeal_rejected(
+            user_id=appellant_id,
+            user_name=appellant_name,
+            ban_id=ban_id,
+            reviewer_id=reviewer.id,
+            reviewer_name=safe_first_name(reviewer),
         )
+        edited = False
+        if appeal_log_msg_id:
+            edited = await edit_log_message(
+                context, appeal_log_msg_id, rejected_log_text
+            )
+        if not edited:
+            await log_to_channel(context, rejected_log_text)
+
         await messaging.safe_send_dm(
             context, user_id=appellant_id, text=M.APPEAL_NOTIFY_USER_REJECTED
         )

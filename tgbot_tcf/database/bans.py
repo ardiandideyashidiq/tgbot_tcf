@@ -105,6 +105,20 @@ async def attach_review(
     )
 
 
+async def attach_appeal_log_message(
+    *, ban_id: str, appeal_log_message_id: int
+) -> None:
+    """Remember the channel message id of the 'New Appeal Submitted' log post.
+
+    The id is reused on approve/reject to edit the existing log message in
+    place rather than spamming the channel with a new one.
+    """
+    await bans.update_one(
+        {"ban_id": ban_id},
+        {"$set": {"appeal_log_message_id": appeal_log_message_id}},
+    )
+
+
 async def count_active() -> int:
     """Number of currently active bans."""
     return await bans.count_documents({"is_active": True})

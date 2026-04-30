@@ -127,5 +127,15 @@ async def mark_resolved_inactive(ban_id: str) -> None:
     await bans_repo.deactivate(ban_id)
 
 
+async def remember_appeal_log_message(
+    *, ban_id: str, appeal_log_message_id: int
+) -> None:
+    """Persist the appeal log message id for later in-place editing."""
+    await bans_repo.attach_appeal_log_message(
+        ban_id=ban_id,
+        appeal_log_message_id=appeal_log_message_id,
+    )
+
+
 def now() -> datetime:
     return utcnow()

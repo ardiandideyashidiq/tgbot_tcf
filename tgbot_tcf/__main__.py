@@ -93,7 +93,7 @@ def build_app() -> AppT:
     _add(app, ["checkme", "myban", "amibanned"], checks.cmd_checkme)
     _add(app, ["baninfo", "checkban", "banstatus"], checks.cmd_baninfo)
 
-    # ----- Group affiliation -----
+    # ----- Group connected -----
     _add(app, ["jointc", "requestjoin", "applytc"], affiliate.cmd_joinfed)
     _add(app, ["detc", "leavetc", "untc"], affiliate.cmd_defed)
     _add(app, ["rmtc", "removetc", "deletetc"], affiliate.cmd_rmfed)
@@ -127,7 +127,7 @@ def build_app() -> AppT:
         )
     )
 
-    # ----- Group affiliation: bot-add prompt + my_chat_member tracking -----
+    # ----- Group connected: bot-add prompt + my_chat_member tracking -----
     app.add_handler(
         MessageHandler(
             filters.StatusUpdate.NEW_CHAT_MEMBERS, affiliate.on_new_chat_members

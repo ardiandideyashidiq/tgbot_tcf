@@ -234,9 +234,10 @@ def admin_demoted(
     return (
         "<b>Transsion Core Admin Demoted</b>\n"
         f"{M.BRANDING_LINE}\n\n"
-        f"Admin: {user_link(target_id, target_name)} (ID: {target_id})\n"
+        f"Admin: {user_link(target_id, target_name)} (ID: {target_id})\n\n"
         f"Demoted by Owner: "
-        f"{user_link(demoted_by_id, demoted_by_name)} (ID: {demoted_by_id})\n"
+        f"{user_link(demoted_by_id, demoted_by_name)}\n"
+        f"ID: {demoted_by_id}\n\n"
         f"Date: {fmt_now()}"
     )
 
@@ -250,10 +251,10 @@ def ownership_transferred(
 ) -> str:
     return (
         "<b>Transsion Core Ownership Transferred</b>\n"
-        f"{M.BRANDING_LINE}\n"
+        f"{M.BRANDING_LINE}\n\n"
         f"New Owner: {user_link(new_owner_id, new_owner_name)} (ID: {new_owner_id})\n"
         f"Previous Owner: "
-        f"{user_link(old_owner_id, old_owner_name)} (ID: {old_owner_id})\n"
+        f"{user_link(old_owner_id, old_owner_name)} (ID: {old_owner_id})\n\n"
         f"Date: {fmt_now()}"
     )
 
@@ -267,10 +268,11 @@ def promotion_request_sent(
 ) -> str:
     return (
         "<b>Promotion Request Sent</b>\n"
-        f"{M.BRANDING_LINE}\n"
-        f"Requested by: {user_link(requested_by_id, requested_by_name)} "
-        f"(ID: {requested_by_id})\n"
-        f"Target: {user_link(target_id, target_name)} (ID: {target_id})\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Requested by: {user_link(requested_by_id, requested_by_name)}\n"
+        f"ID: {requested_by_id}\n\n"
+        f"Target: {user_link(target_id, target_name)}\n"
+        f"ID: {target_id}\n\n"
         f"Date: {fmt_now()}"
     )
 
@@ -285,11 +287,12 @@ def promotion_request_notification(
 ) -> str:
     return (
         "<b>New Promotion Request</b>\n"
-        f"{M.BRANDING_LINE}\n"
-        f"Requested by: {user_link(requested_by_id, requested_by_name)} "
-        f"(ID: {requested_by_id})\n"
-        f"Target: {user_link(target_id, target_name)} (ID: {target_id})\n"
-        f"Request ID: {request_id}\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Requested by: {user_link(requested_by_id, requested_by_name)}\n"
+        f"ID: {requested_by_id}\n\n"
+        f"Target: {user_link(target_id, target_name)}\n"
+        f"ID: {target_id}\n"
+        f"Request ID: {request_id}\n\n"
         f"Date: {fmt_now()}"
     )
 
@@ -299,10 +302,10 @@ def promotion_request_rejected_log(
 ) -> str:
     return (
         "<b>Promotion Request Rejected</b>\n"
-        f"{M.BRANDING_LINE}\n"
-        f"Rejected by Owner: {user_link(reviewer_id, reviewer_name)} "
-        f"(ID: {reviewer_id})\n"
-        f"Request ID: {request_id}\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Rejected by Owner: {user_link(reviewer_id, reviewer_name)}\n"
+        f"ID: {reviewer_id}\n"
+        f"Request ID: {request_id}\n\n"
         f"Date: {fmt_now()}"
     )
 
@@ -319,11 +322,11 @@ def broadcast_log(
 ) -> str:
     return (
         "<b>Broadcast Sent</b>\n"
-        f"{M.BRANDING_LINE}\n"
+        f"{M.BRANDING_LINE}\n\n"
         f"Admin: {user_link(admin_id, admin_name)}\n"
-        f"Message: {text[:100]}\n"
+        f"Message: {text[:100]}\n\n"
         f"Groups reached: {success}\n"
-        f"Failed groups: {failure}\n"
+        f"Failed groups: {failure}\n\n"
         f"Date: {fmt_now()}"
     )
 
@@ -339,11 +342,11 @@ def appeal_review_message(
     submitted_at: datetime,
 ) -> str:
     return (
-        "<b>New Appeal Request</b>\n"
+        "<b>New Appeal Request</b>\n\n"
         f"User: {user_link(user_id, user_name)} (ID: {user_id})\n"
         f"Ban ID: {ban_id}\n"
-        f'Appeal: <a href="{appeal_link}">{appeal_link}</a>\n'
-        f"Submitted: {fmt_dt(submitted_at)}\n\n"
+        f'Appeal: <a href="{appeal_link}">{appeal_link}</a>\n\n'
+        f"Submitted: {fmt_dt(submitted_at)}\n"
         f"{M.APPEAL_PENDING_REVIEW}"
     )
 
@@ -358,7 +361,7 @@ def proof_caption_new(
     timestamp: datetime,
 ) -> str:
     return (
-        f"ID: {target_id}\n"
+        f"ID: {target_id}\n\n"
         f"Admin: {user_link(admin_id, admin_name)}\n"
         f"Admin ID: {admin_id}\n\n"
         f"Commit at: {fmt_dt(timestamp)}"
@@ -375,9 +378,9 @@ def proof_caption_update(
     update_timestamp: datetime,
 ) -> str:
     return (
-        f"ID: {target_id}\n"
+        f"ID: {target_id}\n\n"
         f"Admin: {user_link(admin_id, admin_name)}\n"
-        f"Admin ID: {admin_id}\n"
+        f"Admin ID: {admin_id}\n\n"
         f'Previous: <a href="{previous_proof_link}">Click Here</a>\n\n'
         f"Commit at: {fmt_dt(original_timestamp)}\n"
         f"Update at: {fmt_dt(update_timestamp)}"

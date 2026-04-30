@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # Environment variables (real credentials)
-.env
+*.env
 
 # Virtual environment
 venv/

@@ -70,14 +70,6 @@ async def record_pending(
     )
 
 
-async def pop_pending(chat_id: int) -> dict[str, Any] | None:
-    """Return-and-clear a pending request for ``chat_id`` (or ``None``)."""
-    pending = await joins_repo.get(chat_id)
-    if pending:
-        await joins_repo.delete(chat_id)
-    return pending
-
-
 async def finalize_affiliation(
     context: ContextTypes.DEFAULT_TYPE,
     *,

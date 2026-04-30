@@ -12,6 +12,7 @@ import asyncio
 import logging
 
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from ..database import admins_repo, bans_repo, groups_repo
@@ -28,7 +29,7 @@ async def cmd_fedgroups(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if msg is None:
         return
     text = await build_fedgroups_text()
-    await msg.reply_text(text, parse_mode="HTML", disable_web_page_preview=True)
+    await msg.reply_text(text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
 async def cmd_fedstats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -37,7 +38,7 @@ async def cmd_fedstats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if msg is None:
         return
     text = await build_fedstats_text(context)
-    await msg.reply_text(text, parse_mode="HTML", disable_web_page_preview=True)
+    await msg.reply_text(text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 
 
 async def build_fedgroups_text(page: int = 0, page_size: int = 10) -> str:

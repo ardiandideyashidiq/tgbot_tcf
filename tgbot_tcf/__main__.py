@@ -20,9 +20,6 @@ from telegram.ext import (
     filters,
 )
 
-# Application is a heavily-parametrized generic; use a convenient alias for typing
-AppT = Application[Any, Any, Any, Any, Any, Any]
-
 from . import BOT_TOKEN, INITIAL_OWNER_ID
 from .database import init_db, tc_owners
 from .handlers import (
@@ -42,6 +39,9 @@ from .handlers import (
 )
 from .keepalive import start_keepalive
 from .utils.prefix import dispatch_alt_prefix, register_command
+
+# Application is a heavily-parametrized generic; use a convenient alias for typing
+AppT = Application[Any, Any, Any, Any, Any, Any]
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

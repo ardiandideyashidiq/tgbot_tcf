@@ -16,19 +16,40 @@ tgbot_tcf/
 ├── __init__.py          # Env loading, branding, hardcoded chat/topic IDs, exact-text constants
 ├── __main__.py          # Entry point: builds the Application and registers handlers
 ├── keepalive.py         # Tiny Flask app on port 8080
-├── modules/             # Reserved for feature-specific extra logic
+├── modules/             # Domain layer: business logic for every feature
+│   ├── messages.py      # Centralised user-facing copy (M.*)
+│   ├── log_templates.py # Builders for log-channel messages
+│   ├── keyboards.py     # Reusable inline-keyboard factories
+│   ├── help_text.py     # Help module catalogue and detail copy
+│   ├── bans.py          # Ban / unban lifecycle and proof-caption builders
+│   ├── affiliations.py  # Group affiliation lifecycle and permission checks
+│   ├── admins_mod.py    # Owner / admin role lifecycle and promotion requests
+│   ├── appeals.py       # Appeal parsing, 12-hour rule, review templates
+│   ├── broadcast_mod.py # Broadcast loop over active federated groups
+│   ├── maintenance_mod.py # Leave-all and cleanup loops
+│   └── cache_repo.py    # Member-cache write paths and admin-list seeding
 ├── database/
 │   ├── mongo.py         # Motor client + collections + index init
-│   └── __init__.py      # Re-exports collections + init_db
+│   ├── admins.py        # tc_owners / tc_admins repository
+│   ├── bans.py          # bans repository
+│   ├── groups.py        # federated_groups repository
+│   ├── joins.py         # pending_joins repository
+│   ├── members.py       # member_cache repository
+│   ├── requests.py      # promotion_requests repository
+│   └── __init__.py      # Re-exports raw collections + repos + init_db
 ├── utils/
 │   ├── auth.py          # is_tc_owner / is_tc_admin / is_authorized
 │   ├── format.py        # UTC time formatting, HTML link builders, topic links
-│   ├── logger.py        # log_to_channel helper (HTML, optional inline keyboard)
+│   ├── logger.py        # log_to_channel and edit_log_message helpers
 │   ├── prefix.py        # Multi-prefix dispatcher for `.cmd` and `!cmd`
-│   └── targets.py       # Reply / @username / numeric-id target resolver
+│   ├── targets.py       # Reply / @username / numeric-id target resolver
+│   └── users.py         # Identity resolver with member_cache fallback
 └── handlers/
     ├── helper/
-    │   └── enforce.py   # Automatic cross-group ban / unban enforcement (Features 5, 6, 8)
+    │   ├── auth.py      # Owner-only / authorized-only deny helpers
+    │   ├── enforce.py   # Automatic cross-group ban / unban enforcement (Features 5, 6, 8)
+    │   ├── messaging.py # safe_edit_text and reply utilities
+    │   └── targets.py   # Resolve-target-or-reply-with-error helpers
     ├── affiliate.py     # Group affiliation + pending_joins fallback + auto-completion on bot promotion
     ├── admins.py        # /tcpromote, /tcdemote, /tctransfer, /tcpromoterequests + promotion request flow
     ├── ban.py           # /tcban (proof-collection state machine) and /tcunban (with auto cross-group enforcement)

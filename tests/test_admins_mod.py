@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from tgbot_tcf.modules import admins_mod
+from tcbot.modules import admins_mod
 
 
 @pytest.fixture

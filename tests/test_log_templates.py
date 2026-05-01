@@ -12,8 +12,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from tgbot_tcf.modules import log_templates
-from tgbot_tcf.modules.messages import M
+from tcbot.modules import log_templates
+from tcbot.modules.messages import M
 
 
 def _assert_branding_present(text: str) -> None:

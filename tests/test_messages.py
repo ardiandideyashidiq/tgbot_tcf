@@ -8,7 +8,7 @@ Tests below guard against accidental edits to those exact phrasings.
 """
 from __future__ import annotations
 
-from tgbot_tcf.modules.messages import M
+from tcbot.modules.messages import M
 
 
 def test_branding_line_matches_italicized_unicode() -> None:

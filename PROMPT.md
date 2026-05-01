@@ -1,4 +1,15 @@
-Build a production-ready Telegram bot for the Transsion Core Federation (TCF) according to the following exhaustive specification. The bot manages Transsion Core membership, fully automatic ban/unban with proof uploads and immediate cross‑group enforcement, admin hierarchy with promotion requests, appeal system with automatic unban on approval, broadcast, real‑time member tracking, extensive logging, a start menu with privacy information, a help system, deep‑link About, and welcome/goodbye messages in main/exec groups. All code must be written in Python 3.11+ using the python-telegram-bot library version 22.5 (asynchronous, Application.builder()). Use MongoDB as the database with the motor async driver. The bot must be runnable via python -m tgbot_tcf and include a Flask keep-alive server on port 8080. No emoji is allowed in any message, caption, or button. All formatted text must use HTML parse mode.
+Build a production-ready Telegram bot for the Transsion Core Federation (TCF) according to the following exhaustive specification.
+
+- The bot manages Transsion Core membership
+- Fully automatic ban/unban with proof uploads and immediate cross‑group enforcement.
+
+All code must be written in:
+- Python 3.11+ 
+- python-telegram-bot library version 22.5
+- MongoDB as the database with the motor async driver.
+
+The bot must be runnable via "python -m tcbot" and include a Flask keep-alive server on port 8080. No emoji is allowed in any message, caption, or button.
+All formatted messages must use HTML parse mode.
 
 CREDENTIALS (provided as environment variables; values given here for reference):
 - BOT_TOKEN = 8704305954:AAGN9Dd1fTpzQnjvDPMGZa86p0jkXCSykjc

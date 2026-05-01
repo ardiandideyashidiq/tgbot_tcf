@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock
 import pytest
 from telegram.error import TelegramError
 
-from tgbot_tcf.utils import users
-from tgbot_tcf.utils.users import UserIdentity, resolve_identity
+from tcbot.utils import users
+from tcbot.utils.users import UserIdentity, resolve_identity
 
 
 def _ctx(get_chat: AsyncMock) -> SimpleNamespace:

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from telegram import InlineKeyboardMarkup
 
-from tgbot_tcf.modules import keyboards
+from tcbot.modules import keyboards
 
 
 def _rows(markup: InlineKeyboardMarkup) -> list[list[dict[str, str | None]]]:

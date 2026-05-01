@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from tgbot_tcf.utils.format import (
+from tcbot.utils.format import (
     chat_id_to_link_id,
     fmt_dt,
     fmt_now,

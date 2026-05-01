@@ -21,18 +21,24 @@ from . import admins as admins_repo
 from . import bans as bans_repo
 from . import groups as groups_repo
 from . import joins as joins_repo
+from . import kicks as kicks_repo
 from . import members as members_repo
+from . import muted as muted_repo
 from . import requests as requests_repo
+from . import warns as warns_repo
 from .mongo import (
     bans,
     db,
     federated_groups,
     init_db,
+    kicks,
     member_cache,
+    muted,
     pending_joins,
     promotion_requests,
     tc_admins,
     tc_owners,
+    warns,
 )
 
 __all__ = [
@@ -46,11 +52,17 @@ __all__ = [
     "promotion_requests",
     "pending_joins",
     "member_cache",
+    "kicks",
+    "muted",
+    "warns",
     # Repositories
     "admins_repo",
     "bans_repo",
     "groups_repo",
     "joins_repo",
+    "kicks_repo",
     "members_repo",
+    "muted_repo",
     "requests_repo",
+    "warns_repo",
 ]

@@ -21,11 +21,14 @@ from . import (
     checks,
     helper,
     help as help_h,
+    kicking,
     links,
     lists,
     maintenance,
     membercache,
     menu,
+    mutes,
+    warns,
     welcome,
 )
 
@@ -38,10 +41,13 @@ __all__ = [
     "checks",
     "helper",
     "help_h",
+    "kicking",
     "links",
     "lists",
     "maintenance",
     "membercache",
     "menu",
+    "mutes",
+    "warns",
     "welcome",
 ]

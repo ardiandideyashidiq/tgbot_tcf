@@ -30,11 +30,14 @@ from .handlers import (
     broadcast,
     checks,
     help as help_h,
+    kicking,
     links,
     lists,
     maintenance,
     membercache,
     menu,
+    mutes,
+    warns,
     welcome,
 )
 from .keepalive import start_keepalive
@@ -113,6 +116,18 @@ def build_app() -> AppT:
     # ----- Bans -----
     _add(app, ["tcban", "ban", "tcfban"], ban.cmd_cban)
     _add(app, ["tcunban", "unban", "tcfunban"], ban.cmd_cunban)
+
+    # ----- Kick -----
+    _add(app, ["kick", "tckkick", "kickout"], kicking.cmd_kick)
+
+    # ----- Mute / unmute -----
+    _add(app, ["mute", "tmute"], mutes.cmd_mute)
+    _add(app, ["unmute", "tunmute"], mutes.cmd_unmute)
+
+    # ----- Warn / unwarn / warns -----
+    _add(app, ["warn", "twarn"], warns.cmd_warn)
+    _add(app, ["unwarn", "tunwarn"], warns.cmd_unwarn)
+    _add(app, ["warns", "twarnlist"], warns.cmd_warns)
 
     # ----- Broadcast (cross-group ban/unban enforcement is fully automatic) -----
     _add(app, ["tcbroadcast", "broadcast", "tcannounce"], broadcast.cmd_broadcast)

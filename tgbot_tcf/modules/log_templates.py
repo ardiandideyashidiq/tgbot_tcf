@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from ..utils.format import fmt_dt, fmt_now, user_link
+from ..utils.format import fmt_dt, fmt_now, group_display, user_link
 from .messages import M
 
 
@@ -397,4 +397,147 @@ def proof_caption_update(
         f'Previous: <a href="{previous_proof_link}">Click Here</a>\n\n'
         f"Commit at: {fmt_dt(original_timestamp)}\n"
         f"Update at: {fmt_dt(update_timestamp)}"
+    )
+
+
+# ----------------------------------------------------------------------- kick
+
+def member_kicked(
+    *,
+    admin_id: int,
+    admin_name: str,
+    target_id: int,
+    target_name: str,
+    chat_id: int,
+    group_title: str,
+    group_username: str | None,
+    reason: str | None,
+    timestamp: datetime,
+) -> str:
+    """PRD Feature 39 — Member Kicked log template."""
+    group = group_display(group_title, group_username)
+    reason_line = f"\nReason: {reason}" if reason else ""
+    return (
+        f"<b>Member Kicked</b>\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Admin: {user_link(admin_id, admin_name)}\n\n"
+        f"User: {user_link(target_id, target_name)}\n"
+        f"User ID: {target_id}\n\n"
+        f"Group: {group}\n"
+        f"Group ID: {chat_id}"
+        f"{reason_line}\n\n"
+        f"Date: {fmt_dt(timestamp)}"
+    )
+
+
+# ----------------------------------------------------------------------- mute
+
+def member_muted(
+    *,
+    admin_id: int,
+    admin_name: str,
+    target_id: int,
+    target_name: str,
+    chat_id: int,
+    group_title: str,
+    group_username: str | None,
+    duration_text: str,
+    reason: str | None,
+    timestamp: datetime,
+) -> str:
+    """PRD Feature 34 — Member Muted log template."""
+    group = group_display(group_title, group_username)
+    reason_line = f"\nReason: {reason}" if reason else ""
+    return (
+        f"<b>Member Muted</b>\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Admin: {user_link(admin_id, admin_name)}\n\n"
+        f"User: {user_link(target_id, target_name)}\n"
+        f"User ID: {target_id}\n\n"
+        f"Group: {group}\n"
+        f"Group ID: {chat_id}\n\n"
+        f"Duration: {duration_text}"
+        f"{reason_line}\n\n"
+        f"Date: {fmt_dt(timestamp)}"
+    )
+
+
+def member_unmuted(
+    *,
+    admin_id: int,
+    admin_name: str,
+    target_id: int,
+    target_name: str,
+    chat_id: int,
+    group_title: str,
+    group_username: str | None,
+    timestamp: datetime,
+) -> str:
+    """PRD Feature 35 — Member Unmuted log template."""
+    group = group_display(group_title, group_username)
+    return (
+        f"<b>Member Unmuted</b>\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Admin: {user_link(admin_id, admin_name)}\n\n"
+        f"User: {user_link(target_id, target_name)}\n"
+        f"User ID: {target_id}\n\n"
+        f"Group: {group}\n"
+        f"Group ID: {chat_id}\n\n"
+        f"Date: {fmt_dt(timestamp)}"
+    )
+
+
+# ---------------------------------------------------------------------- warn
+
+def member_warned(
+    *,
+    admin_id: int,
+    admin_name: str,
+    target_id: int,
+    target_name: str,
+    chat_id: int,
+    group_title: str,
+    group_username: str | None,
+    reason: str,
+    warn_count: int,
+    timestamp: datetime,
+) -> str:
+    """PRD Feature 36 — Member Warned log template."""
+    group = group_display(group_title, group_username)
+    return (
+        f"<b>Member Warned</b>\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Admin: {user_link(admin_id, admin_name)}\n\n"
+        f"User: {user_link(target_id, target_name)}\n"
+        f"User ID: {target_id}\n\n"
+        f"Group: {group}\n"
+        f"Group ID: {chat_id}\n\n"
+        f"Warn #{warn_count}\n"
+        f"Reason: {reason}\n\n"
+        f"Date: {fmt_dt(timestamp)}"
+    )
+
+
+def warning_removed(
+    *,
+    admin_id: int,
+    admin_name: str,
+    target_id: int,
+    target_name: str,
+    chat_id: int,
+    group_title: str,
+    group_username: str | None,
+    timestamp: datetime,
+) -> str:
+    """PRD Feature 37 — Warning Removed (unwarn) log template."""
+    group = group_display(group_title, group_username)
+    return (
+        f"<b>Warning Removed</b>\n"
+        f"{M.BRANDING_LINE}\n\n"
+        f"Admin: {user_link(admin_id, admin_name)}\n\n"
+        f"User: {user_link(target_id, target_name)}\n"
+        f"User ID: {target_id}\n\n"
+        f"Group: {group}\n"
+        f"Group ID: {chat_id}\n\n"
+        f"Date: {fmt_dt(timestamp)}"
     )

@@ -36,9 +36,12 @@ from . import (
     cache_repo,
     help_text,
     keyboards,
+    kicking,
     log_templates,
     maintenance_mod,
     messages,
+    muting,
+    warnings,
 )
 
 __all__ = [
@@ -50,7 +53,10 @@ __all__ = [
     "cache_repo",
     "help_text",
     "keyboards",
+    "kicking",
     "log_templates",
     "maintenance_mod",
     "messages",
+    "muting",
+    "warnings",
 ]

@@ -25,7 +25,8 @@ HELP_MODULE_ROWS: Final[list[list[tuple[str, str]]]] = [
     [("Broadcast", "help_broadcast"), ("Group Connected", "help_connected")],
     [("Disaffiliate", "help_defed"), ("Appeal", "help_appeal")],
     [("Join/Leave", "help_join"), ("Statistics", "help_stats")],
-    [("Cleanup", "help_cleanup")],
+    [("Kick", "help_kick"), ("Mute", "help_mute")],
+    [("Warn", "help_warn"), ("Cleanup", "help_cleanup")],
 ]
 
 
@@ -153,5 +154,38 @@ HELP_DETAILS: Final[dict[str, str]] = {
         "Where? Exec group or PM.\n\n"
         "<b>NOTE</b>:\n"
         " - This scans the database and removes groups where the bot is no longer an administrator or has been kicked."
+    ),
+    "help_kick": (
+        "<b>Kick Module</b>\n\n"
+        "Commands: /kick, /tckkick, /kickout\n"
+        "Usage: /kick &lt;target&gt; [reason]\n\n"
+        "Who can use? Transsion Core Owner and Admins.\n"
+        "Where? Connected groups only.\n\n"
+        "<b>NOTE</b>:\n"
+        " - Kick removes a user from the current group only. The user can rejoin at any time.\n"
+        " - This is not a federation-wide action. For a permanent federation-wide removal, use /tcban instead.\n"
+        " - &lt;target&gt; can be reply, user ID, or @username."
+    ),
+    "help_mute": (
+        "<b>Mute Module</b>\n\n"
+        "Commands: /mute, /tmute | /unmute, /tunmute\n"
+        "Usage: /mute &lt;target&gt; [duration] [reason]\n\n"
+        "Who can use? Transsion Core Owner and Admins.\n"
+        "Where? Connected groups only.\n\n"
+        "<b>NOTE</b>:\n"
+        " - Duration format: 30m (minutes), 1h (hours), 2d (days). Omit for a permanent mute.\n"
+        " - Mute restricts all messaging permissions in the group.\n"
+        " - /unmute restores default group permissions."
+    ),
+    "help_warn": (
+        "<b>Warn Module</b>\n\n"
+        "Commands: /warn, /twarn | /unwarn, /tunwarn | /warns, /twarnlist\n"
+        "Usage: /warn &lt;target&gt; &lt;reason&gt;\n\n"
+        "Who can use? Transsion Core Owner and Admins.\n"
+        "Where? Connected groups only.\n\n"
+        "<b>NOTE</b>:\n"
+        " - Warnings are scoped to the group where the command is issued.\n"
+        " - /unwarn removes the most recent active warning.\n"
+        " - /warns lists all active warnings for the target in this group."
     ),
 }

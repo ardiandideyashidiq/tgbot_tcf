@@ -1,6 +1,6 @@
 # Transsion Core Federation (TCF) Telegram Bot
 
-Production Telegram bot for the Transsion Core Federation. Manages group affiliation, centralized banning with proof uploads (with **automatic** cross-group enforcement), admin hierarchy with promotion requests, appeal flow, broadcast, interactive help/start menu, welcome/goodbye messages, member tracking, and detailed channel logging.
+Production Telegram bot for the Transsion Core Federation. Manages group affiliation, centralised banning with proof uploads (**automatic** cross-group enforcement), admin hierarchy with promotion requests, appeal flow, broadcast, interactive help/start menu, welcome/goodbye, member tracking, group-scoped kick/mute/warn moderation, and detailed channel logging.
 
 ## Stack
 
@@ -22,6 +22,9 @@ tgbot_tcf/
 │   ├── keyboards.py     # Reusable inline-keyboard factories
 │   ├── help_text.py     # Help module catalogue and detail copy
 │   ├── bans.py          # Ban / unban lifecycle and proof-caption builders
+│   ├── kicking.py       # Kick lifecycle (ban+unban, audit record)
+│   ├── muting.py        # Mute / unmute lifecycle, duration parsing
+│   ├── warnings.py      # Warn / unwarn / warn-list lifecycle
 │   ├── affiliations.py  # Group affiliation lifecycle and permission checks
 │   ├── admins_mod.py    # Owner / admin role lifecycle and promotion requests
 │   ├── appeals.py       # Appeal parsing, 12-hour rule, review templates
@@ -34,12 +37,15 @@ tgbot_tcf/
 │   ├── bans.py          # bans repository
 │   ├── groups.py        # federated_groups repository
 │   ├── joins.py         # pending_joins repository
+│   ├── kicks.py         # kicks audit-log repository (no is_active)
 │   ├── members.py       # member_cache repository
+│   ├── muted.py         # muted repository (per-group, is_active)
 │   ├── requests.py      # promotion_requests repository
+│   ├── warns.py         # warns repository (per-group, is_active)
 │   └── __init__.py      # Re-exports raw collections + repos + init_db
 ├── utils/
 │   ├── auth.py          # is_tc_owner / is_tc_admin / is_authorized
-│   ├── format.py        # UTC time formatting, HTML link builders, topic links
+│   ├── format.py        # UTC time formatting, HTML link builders, group_display, topic links
 │   ├── logger.py        # log_to_channel and edit_log_message helpers
 │   ├── prefix.py        # Multi-prefix dispatcher for `.cmd` and `!cmd`
 │   ├── targets.py       # Reply / @username / numeric-id target resolver
@@ -54,6 +60,9 @@ tgbot_tcf/
     ├── admins.py        # /tcpromote, /tcdemote, /tctransfer, /tcpromoterequests + promotion request flow
     ├── ban.py           # /tcban (proof-collection state machine) and /tcunban (with auto cross-group enforcement)
     ├── appeal.py        # Deep-link appeal flow + admin Approve/Reject (12h rule, auto cross-group unban)
+    ├── kicking.py       # /kick, /tckkick, /kickout (single-group kick, PRD Feature 39)
+    ├── mutes.py         # /mute, /tmute, /unmute, /tunmute (PRD Features 34–35)
+    ├── warns.py         # /warn, /twarn, /unwarn, /tunwarn, /warns, /twarnlist (PRD Features 36–38)
     ├── broadcast.py     # /tcbroadcast
     ├── checks.py        # /checkme, /baninfo
     ├── lists.py         # /tcfgroups, /tcstats (also build_admins_text for info sub-menu)
@@ -74,6 +83,9 @@ tgbot_tcf/
 - `promotion_requests` — pending promote/demote requests
 - `pending_joins` — affiliations waiting for the bot to be granted admin rights
 - `member_cache` — per-(chat_id, user_id) cache of seen members and their statuses
+- `kicks` — immutable audit log of kick events (no is_active; one-group, non-propagating)
+- `muted` — per-(user_id, chat_id) mute records with is_active and optional until_date
+- `warns` — per-(user_id, chat_id) warning records with is_active
 
 ## Required Secrets
 
@@ -103,6 +115,12 @@ tgbot_tcf/
 | Links                | `/tclinks`, `/links`, `/tcconfig`        |
 | Leave all groups     | `/leaveall`, `/exitall`, `/tcleave`      |
 | Cleanup dead groups  | `/cleanup`, `/purge`, `/tcclean`         |
+| Kick (single group)  | `/kick`, `/tckkick`, `/kickout`          |
+| Mute (group-scoped)  | `/mute`, `/tmute`                        |
+| Unmute               | `/unmute`, `/tunmute`                    |
+| Warn (group-scoped)  | `/warn`, `/twarn`                        |
+| Unwarn               | `/unwarn`, `/tunwarn`                    |
+| List warnings        | `/warns`, `/twarnlist`                   |
 
 > Per PROMPT Feature 5/6, **no manual sync command exists**. Cross-group ban and unban enforcement is automatic on every `/tcban`, `/tcunban`, and approved appeal.
 

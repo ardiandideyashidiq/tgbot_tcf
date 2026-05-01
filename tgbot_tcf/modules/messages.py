@@ -323,6 +323,83 @@ class Messages:
     # Information sub-menu header (matches PROMPT Feature 24 sub-menu)
     INFORMATION_HEADER: Final[str] = "<b>Transsion Core Information</b>"
 
+    # ------------------------------------------------------------------ kick
+    KICK_TC_ROLE_BLOCKED: Final[str] = (
+        "Cannot kick a Transsion Core Admin or Owner."
+    )
+    KICK_SELF_BLOCKED: Final[str] = "You cannot kick yourself."
+    KICK_CONNECTED_ONLY: Final[str] = (
+        "This command can only be used in a connected group."
+    )
+    KICK_NO_PERMISSION: Final[str] = (
+        "I do not have permission to kick members in this group."
+    )
+    KICK_SUCCESS: Final[str] = (
+        "User {target_name} (ID: {target_id}) has been kicked from this group."
+    )
+    KICK_FAILED: Final[str] = (
+        "Failed to kick the user. Please try again."
+    )
+
+    # ------------------------------------------------------------------ mute
+    MUTE_TC_ROLE_BLOCKED: Final[str] = (
+        "Cannot mute a Transsion Core Admin or Owner."
+    )
+    MUTE_SELF_BLOCKED: Final[str] = "You cannot mute yourself."
+    MUTE_CONNECTED_ONLY: Final[str] = (
+        "This command can only be used in a connected group."
+    )
+    MUTE_NO_PERMISSION: Final[str] = (
+        "I do not have permission to restrict members in this group."
+    )
+    MUTE_SUCCESS: Final[str] = (
+        "User {target_name} (ID: {target_id}) has been muted."
+    )
+    MUTE_SUCCESS_TIMED: Final[str] = (
+        "User {target_name} (ID: {target_id}) has been muted for {duration}."
+    )
+    MUTE_FAILED: Final[str] = (
+        "Failed to mute the user. Please try again."
+    )
+    UNMUTE_SUCCESS: Final[str] = (
+        "User {target_name} (ID: {target_id}) has been unmuted."
+    )
+    UNMUTE_NOT_MUTED: Final[str] = (
+        "This user does not have an active mute record in this group."
+    )
+    UNMUTE_NO_PERMISSION: Final[str] = (
+        "I do not have permission to unrestrict members in this group."
+    )
+    UNMUTE_FAILED: Final[str] = (
+        "Failed to unmute the user. Please try again."
+    )
+
+    # ------------------------------------------------------------------ warn
+    WARN_TC_ROLE_BLOCKED: Final[str] = (
+        "Cannot warn a Transsion Core Admin or Owner."
+    )
+    WARN_SELF_BLOCKED: Final[str] = "You cannot warn yourself."
+    WARN_CONNECTED_ONLY: Final[str] = (
+        "This command can only be used in a connected group."
+    )
+    WARN_NEEDS_REASON: Final[str] = "Please provide a reason for the warning."
+    WARN_SUCCESS: Final[str] = (
+        "User {target_name} (ID: {target_id}) has been warned. "
+        "This is their warning #{count} in this group."
+    )
+    UNWARN_SUCCESS: Final[str] = (
+        "Warning cleared for {target_name} (ID: {target_id})."
+    )
+    UNWARN_NONE_FOUND: Final[str] = (
+        "No active warnings found for this user in this group."
+    )
+    WARNS_EMPTY: Final[str] = (
+        "This user has no active warnings in this group."
+    )
+    WARNS_HEADER: Final[str] = (
+        "<b>Warnings for {target_name} (ID: {target_id}) in this group:</b>"
+    )
+
 
 M: Final[Messages] = Messages()
 """Convenience module-level alias used across the codebase."""

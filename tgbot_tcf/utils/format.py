@@ -37,6 +37,18 @@ def topic_link(chat_id: int, message_id: int, thread_id: int) -> str:
     return f"https://t.me/c/{chat_id_to_link_id(chat_id)}/{message_id}?thread={thread_id}"
 
 
+def group_display(title: str, username: str | None) -> str:
+    """Build a clickable group link when a public username is available.
+
+    Public groups have a ``@username``; private groups do not. The PRD
+    requires the log entry to be clickable only when the group is public.
+    """
+    safe = escape(title or "Unknown Group")
+    if username:
+        return f'<a href="https://t.me/{username}">{safe}</a>'
+    return safe
+
+
 def safe_first_name(obj: Any) -> str:
     """Best-effort display name for a Telegram ``User`` / ``Chat``-like object.
 

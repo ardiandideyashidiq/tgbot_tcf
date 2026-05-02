@@ -7,8 +7,9 @@ from __future__ import annotations
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
-from tcbot import database as db
+from tcbot import cfg, database as db
 from tcbot.modules.helper.formatter import code, esc, mention
+from tcbot.modules.helper.parse_link import message_link
 
 _PAGE_SIZE = 6
 _SEARCH_KEY = "stats_bans_search"
@@ -42,10 +43,12 @@ def _bans_list_kb(page: int, total: int, n_items: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(rows)
 
 
-def _detail_kb(page: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Back", callback_data=f"stats_bans:{page}")],
-    ])
+def _detail_kb(page: int, proof_link: str | None = None) -> InlineKeyboardMarkup:
+    rows = []
+    if proof_link:
+        rows.append([InlineKeyboardButton("View Proof", url=proof_link)])
+    rows.append([InlineKeyboardButton("Back", callback_data=f"stats_bans:{page}")])
+    return InlineKeyboardMarkup(rows)
 
 
 def _search_result_kb() -> InlineKeyboardMarkup:
@@ -95,9 +98,16 @@ async def on_stats_ban_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
 
     uid = ban["banned_user_id"]
     aid = ban["admin_user_id"]
-    fname  = await db.users_db.get_first_name(uid, str(uid))
-    aname  = await db.users_db.get_first_name(aid, str(aid))
+    fname = await db.users_db.get_first_name(uid, str(uid))
+    aname = await db.users_db.get_first_name(aid, str(aid))
     ts = ban["timestamp"].strftime("%Y-%m-%d %H:%M UTC") if ban.get("timestamp") else "Unknown"
+
+    proof_chat, proof_thread = cfg.proofs
+    proof_link = (
+        message_link(proof_chat, ban["proof_message_id"], proof_thread)
+        if ban.get("proof_message_id")
+        else None
+    )
 
     text = (
         f"<b>Ban Details</b>\n\n"
@@ -107,7 +117,7 @@ async def on_stats_ban_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
         f"Banned by: {mention(aid, aname)}\n"
         f"Date: {ts}"
     )
-    await q.edit_message_text(text, parse_mode="HTML", reply_markup=_detail_kb(page))
+    await q.edit_message_text(text, parse_mode="HTML", reply_markup=_detail_kb(page, proof_link))
 
 
 async def on_stats_bans_search(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:

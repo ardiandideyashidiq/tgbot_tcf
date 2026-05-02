@@ -1,4 +1,4 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Deprecated – join tracking is now in groups_db.py."""
+"""Deprecated – join tracking moved to groups_db.py. This file is unused."""

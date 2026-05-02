@@ -2,55 +2,34 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 
+from __future__ import annotations
+
 import ast
 import os
-import socket
 import sys
-
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 from dotenv import load_dotenv, find_dotenv
 
 
-## Load environment
 load_dotenv(find_dotenv("config.env"))
 
 
-## Helper parsing functions
-
-def parse_list(raw: str) -> List[str]:
-    """
-    Convert a string like '["/", "!"]' or '/, !' into a list of strings.
-    Returns an empty list for empty input.
-    """
+def parse_list(raw: str) -> list[str]:
+    """Convert a string like '["/", "!"]' or '/, !' into a list of strings."""
     if not raw.strip():
         return []
-
     try:
         parsed = ast.literal_eval(raw)
         if isinstance(parsed, list):
             return [str(item).strip() for item in parsed]
     except (ValueError, SyntaxError):
         pass
-
     items = raw.strip("[]").split(",")
     return [item.strip().strip("'\"") for item in items if item.strip()]
 
 
-def _find_free_port() -> int:
-    """Bind to port 0 so the OS assigns a free port."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("", 0))
-        return s.getsockname()[1]
-
-
 def parse_port(port_str: str) -> int:
-    """
-    Resolve a port string to an integer.
-    - 'auto' or empty -> default to 5000.
-    - numeric string -> convert to int.
-    - invalid -> fall back to 5000 with a warning.
-    """
+    """Resolve port string to int. Falls back to 5000 on invalid input."""
     if not port_str or port_str.lower() == "auto":
         return 5000
     try:
@@ -60,11 +39,8 @@ def parse_port(port_str: str) -> int:
         return 5000
 
 
-def parse_chat_id(raw: str) -> Tuple[int, Optional[int]]:
-    """
-    Extract chat_id and optional thread_id.
-    Accepts "-1001234567890" or "-1001234567890/12".
-    """
+def parse_chat_id(raw: str) -> tuple[int, int | None]:
+    """Extract (chat_id, thread_id) from a string like '-1001234/12' or '-1001234'."""
     if not raw:
         return 0, None
     if "/" in raw:
@@ -74,7 +50,6 @@ def parse_chat_id(raw: str) -> Tuple[int, Optional[int]]:
 
 
 def _int_from_env(key: str, default: int) -> int:
-    """Get int from env, fallback to default with a warning."""
     try:
         return int(os.getenv(key, str(default)))
     except ValueError:
@@ -82,15 +57,12 @@ def _int_from_env(key: str, default: int) -> int:
         return default
 
 
-def _env_list(key: str) -> List[str]:
-    """Parse a comma-separated env variable into a list of strings."""
+def _env_list(key: str) -> list[str]:
     raw = os.getenv(key, "").strip()
     if not raw:
         return []
     return [name.strip() for name in raw.split(",") if name.strip()]
 
-
-## Configuration dataclass (immutable)
 
 @dataclass(frozen=True)
 class Configs:
@@ -101,7 +73,7 @@ class Configs:
     mongodb_uri: str
     db_name: str
     community_name: str
-    prefixes: List[str]
+    prefixes: list[str]
     port: str
     main_group: str
     main_channel: str
@@ -113,14 +85,11 @@ class Configs:
     appeal_timeout_seconds: int
     extend_group: str
     album_debounce_seconds: int
-    modules_load: List[str]
-    modules_no_load: List[str]
-
-    ## Computed properties
+    modules_load: list[str]
+    modules_no_load: list[str]
 
     @property
     def port_int(self) -> int:
-        """Resolved integer port for web server and keep-alive."""
         return parse_port(self.port)
 
     @property
@@ -136,50 +105,36 @@ class Configs:
         return int(self.extend_group) if self.extend_group else 0
 
     @property
-    def logs_id(self) -> int:
-        return int(self.logs) if self.logs else 0
-
-    @property
-    def logs_tuple(self) -> Tuple[int, Optional[int]]:
+    def logs_tuple(self) -> tuple[int, int | None]:
         return parse_chat_id(self.logs)
 
     @property
-    def proofs_id(self) -> Tuple[int, Optional[int]]:
+    def proofs_id(self) -> tuple[int, int | None]:
         return parse_chat_id(self.proofs)
 
     @property
-    def logs_errors_id(self) -> Tuple[int, Optional[int]]:
+    def logs_errors_id(self) -> tuple[int, int | None]:
         return parse_chat_id(self.logs_errors)
 
     @property
-    def appeals_id(self) -> Tuple[int, Optional[int]]:
+    def appeals_id(self) -> tuple[int, int | None]:
         return parse_chat_id(self.appeals)
-
-    ## Factory method
 
     @staticmethod
     def load(env_file: str = "config.env") -> "Configs":
-        """
-        Load .env and return an immutable Configs instance.
-        Raises RuntimeError if BOT_TOKEN is missing.
-        """
         load_dotenv(find_dotenv(env_file))
 
         token = os.getenv("BOT_TOKEN", "").strip()
         if not token:
             raise RuntimeError("BOT_TOKEN is required but not set.")
 
-        owner_str = os.getenv("OWNER_ID", "0").strip()
         try:
-            owner_id = int(owner_str)
+            owner_id = int(os.getenv("OWNER_ID", "0").strip())
         except ValueError:
-            print(f"OWNER_ID '{owner_str}' invalid, using 0.", file=sys.stderr)
             owner_id = 0
 
         raw_prefixes = os.getenv("PREFIXES", '["/", "!", "."]')
-        prefixes = parse_list(raw_prefixes)
-        if not prefixes:
-            prefixes = ["/"]
+        prefixes = parse_list(raw_prefixes) or ["/"]
 
         return Configs(
             bot_token=token,
@@ -204,13 +159,8 @@ class Configs:
         )
 
 
-## Singleton instance
 configs = Configs.load()
 
-
-## cfg – canonical config accessor used by all modules.
-## Exposes the same names used throughout tcbot.modules and tcbot.utils,
-## mapping to the underlying Configs fields/properties.
 
 class _CfgAdapter:
     """Thin adapter so modules can write `cfg.logs`, `cfg.main_group`, etc."""
@@ -218,7 +168,6 @@ class _CfgAdapter:
     def __init__(self, c: Configs) -> None:
         self._c = c
 
-    ## Credentials / identity
     @property
     def bot_token(self) -> str:
         return self._c.bot_token
@@ -240,15 +189,13 @@ class _CfgAdapter:
         return self._c.db_name
 
     @property
-    def prefixes(self) -> List[str]:
+    def prefixes(self) -> list[str]:
         return self._c.prefixes
 
-    ## Network
     @property
     def port(self) -> int:
         return self._c.port_int
 
-    ## Chat IDs (resolved integers)
     @property
     def main_group(self) -> int:
         return self._c.main_group_id
@@ -261,24 +208,22 @@ class _CfgAdapter:
     def exec_group(self) -> int:
         return self._c.extend_group_id
 
-    ## Chat ID tuples (chat_id, thread_id | None)
     @property
-    def logs(self) -> Tuple[int, Optional[int]]:
+    def logs(self) -> tuple[int, int | None]:
         return self._c.logs_tuple
 
     @property
-    def logs_errors(self) -> Tuple[int, Optional[int]]:
+    def logs_errors(self) -> tuple[int, int | None]:
         return self._c.logs_errors_id
 
     @property
-    def proofs(self) -> Tuple[int, Optional[int]]:
+    def proofs(self) -> tuple[int, int | None]:
         return self._c.proofs_id
 
     @property
-    def appeals(self) -> Tuple[int, Optional[int]]:
+    def appeals(self) -> tuple[int, int | None]:
         return self._c.appeals_id
 
-    ## Timeouts / debounce
     @property
     def proof_timeout(self) -> int:
         return self._c.proof_timeout_seconds
@@ -291,13 +236,12 @@ class _CfgAdapter:
     def album_debounce(self) -> int:
         return self._c.album_debounce_seconds
 
-    ## Module filtering
     @property
-    def modules_load(self) -> List[str]:
+    def modules_load(self) -> list[str]:
         return self._c.modules_load
 
     @property
-    def modules_no_load(self) -> List[str]:
+    def modules_no_load(self) -> list[str]:
         return self._c.modules_no_load
 
 

@@ -14,10 +14,10 @@ from tcbot import database as db
 from tcbot import cfg
 from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import esc
+from tcbot.modules.helper.keyboards import join_group_kb
 
 log = logging.getLogger(__name__)
 
-## Required bot permissions for federation enforcement
 _REQUIRED_PERMS = ("can_delete_messages", "can_restrict_members", "can_invite_users")
 
 
@@ -27,7 +27,6 @@ def _check_bot_perms(member) -> bool:
 
 async def _complete_join(chat_id: int, chat_title: str, owner_id: int, owner_fname: str, bot) -> None:
     """Affiliate the group, apply all active bans, and notify LOG_CHANNEL."""
-    ## Try to get chat username
     chat_username: str | None = None
     try:
         chat_info = await bot.get_chat(chat_id)
@@ -38,7 +37,6 @@ async def _complete_join(chat_id: int, chat_title: str, owner_id: int, owner_fna
     await db.groups_db.add_group(chat_id, chat_title, owner_id)
     await db.groups_db.remove_pending(chat_id)
 
-    ## Apply all existing federation bans
     bans = await db.bans_db.active_bans()
     applied = 0
     for ban in bans:
@@ -48,7 +46,6 @@ async def _complete_join(chat_id: int, chat_title: str, owner_id: int, owner_fna
         except Exception:
             pass
 
-    ## Log to LOG_CHANNEL
     lc, lt = cfg.logs
     log_text = parse_logmsg.group_connected_log(
         chat_id, chat_title, owner_id, owner_fname, chat_username,
@@ -76,10 +73,9 @@ async def on_bot_added(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     new_status = cmc.new_chat_member.status
-    by_user = cmc.from_user
-    lc, lt = cfg.logs
+    by_user    = cmc.from_user
+    lc, lt     = cfg.logs
 
-    ## Bot was removed or kicked
     if new_status in (ChatMemberStatus.LEFT, ChatMemberStatus.BANNED):
         was_affiliated = await db.groups_db.is_affiliated(chat.id)
         await db.groups_db.deactivate_group(chat.id)
@@ -97,19 +93,15 @@ async def on_bot_added(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         log.info("Bot removed from %d – group deactivated", chat.id)
         return
 
-    ## Bot was added or promoted
     if new_status in (ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR):
-        ## Check if there's a pending join for this chat
         pending = await db.groups_db.get_pending(chat.id)
 
         if pending and new_status == ChatMemberStatus.ADMINISTRATOR:
-            ## Was waiting for admin rights – check perms and complete if sufficient
             if _check_bot_perms(cmc.new_chat_member):
                 owner_fname = await db.users_db.get_first_name(pending["owner_id"], "Owner")
                 await _complete_join(
                     chat.id, chat.title or "", pending["owner_id"], owner_fname, ctx.bot,
                 )
-                ## Edit stored prompt message to success
                 try:
                     await ctx.bot.edit_message_text(
                         "This community is now affiliated with TCF. "
@@ -122,15 +114,12 @@ async def on_bot_added(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                     pass
             return
 
-        ## Already affiliated – nothing to do
         if await db.groups_db.is_affiliated(chat.id):
             return
 
         if pending:
-            return  ## Already have a pending entry; waiting for permissions
+            return
 
-        ## Fresh add – send join prompt in the group
-        from tcbot.modules.helper.keyboards import join_group_kb
         try:
             prompt = await ctx.bot.send_message(
                 chat.id,
@@ -149,12 +138,11 @@ async def on_bot_added(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 ## ---------------------------------------------------------------------------
 
 async def on_join_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q = update.callback_query
+    q    = update.callback_query
     chat = update.effective_chat
     user = update.effective_user
     lc, lt = cfg.logs
 
-    ## Only the group creator (owner) may decide
     try:
         member = await ctx.bot.get_chat_member(chat.id, user.id)
     except Exception:
@@ -166,10 +154,9 @@ async def on_join_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     await q.answer()
-    action = q.data  ## "tc_join" or "tc_cancel"
+    action = q.data
 
     if action == "tc_join":
-        ## Check bot permissions
         try:
             bot_member = await ctx.bot.get_chat_member(chat.id, ctx.bot.id)
         except Exception:
@@ -180,7 +167,6 @@ async def on_join_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
             return
 
         if not _check_bot_perms(bot_member):
-            ## Store pending and ask user to promote bot
             await db.groups_db.add_pending(
                 chat.id, chat.title or "", user.id, q.message.message_id,
             )
@@ -191,14 +177,11 @@ async def on_join_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
             )
             return
 
-        ## Permissions OK – affiliate
         if await db.groups_db.is_affiliated(chat.id):
             await q.edit_message_text("Already affiliated.", reply_markup=None)
             return
 
         await _complete_join(chat.id, chat.title or "", user.id, user.first_name, ctx.bot)
-
-        bans = await db.bans_db.active_bans()
         await q.edit_message_text(
             "This community is now affiliated with TCF. "
             "Federation commands can now be used here by authorized Transsion Core admins.",
@@ -206,11 +189,9 @@ async def on_join_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
         )
 
     elif action == "tc_cancel":
-        pending = await db.groups_db.get_pending(chat.id)
         await db.groups_db.remove_pending(chat.id)
         await q.edit_message_text("Affiliation cancelled. Leaving the group.", reply_markup=None)
 
-        ## Log rejection
         try:
             await ctx.bot.send_message(
                 lc,

@@ -2,9 +2,8 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 
-
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class BotLogFormatter(logging.Formatter):
@@ -15,10 +14,10 @@ class BotLogFormatter(logging.Formatter):
     """
 
     LEVEL_MAP = {
-        logging.DEBUG: "D",
-        logging.INFO: "I",
-        logging.WARNING: "W",
-        logging.ERROR: "E",
+        logging.DEBUG:    "D",
+        logging.INFO:     "I",
+        logging.WARNING:  "W",
+        logging.ERROR:    "E",
         logging.CRITICAL: "C",
     }
 
@@ -27,20 +26,21 @@ class BotLogFormatter(logging.Formatter):
         self.project_name = project_name
 
     def format(self, record: logging.LogRecord) -> str:
-        now = datetime.utcnow()
+        now      = datetime.now(timezone.utc)
         time_str = now.strftime("%H:%M")
         date_str = now.strftime("%d-%m-%Y")
-        level = self.LEVEL_MAP.get(record.levelno, "?")
-        module = record.name
-        lineno = record.lineno
-        message = record.getMessage()
-        return f"[{time_str}] [{date_str}] | {self.project_name} | {level} - {module}:{lineno} - {message}"
+        level    = self.LEVEL_MAP.get(record.levelno, "?")
+        message  = record.getMessage()
+        return (
+            f"[{time_str}] [{date_str}] | {self.project_name} | "
+            f"{level} - {record.name}:{record.lineno} - {message}"
+        )
 
 
 def setup(level: int = logging.INFO) -> None:
     from tcbot import cfg
     formatter = BotLogFormatter(cfg.community_name)
-    handler = logging.StreamHandler()
+    handler   = logging.StreamHandler()
     handler.setFormatter(formatter)
     root = logging.getLogger()
     root.setLevel(level)

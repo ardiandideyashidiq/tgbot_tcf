@@ -7,6 +7,7 @@ from __future__ import annotations
 from tcbot import cfg, database as db
 from tcbot.modules.helper.formatter import code, esc, mention
 from tcbot.modules.helper.parse_link import message_link
+from tcbot.utils.timedate_format import fmt_dt
 
 
 async def build_ban_detail(ban: dict, target_fname: str | None = None) -> tuple[str, str | None]:
@@ -24,15 +25,17 @@ async def build_ban_detail(ban: dict, target_fname: str | None = None) -> tuple[
         if ban.get("proof_message_id") else None
     )
 
+    ts = ban.get("timestamp")
+    date_str = fmt_dt(ts) if ts else "Unknown"
+
     text = (
-        "<b>Users Ban Informations</b>\n\n"
-        "<b>User Information:</b>\n"
-        f"- User: {mention(uid, target_fname)}\n"
-        f"- User ID: {code(str(uid))}\n\n"
-        "<b>Banned by:</b>\n"
-        f"- ID: {code(str(aid))}\n"
-        f"- Admin/Staff: {mention(aid, admin_fname)}\n\n"
-        f"- Ban ID: {code(ban['ban_id'])}\n\n"
-        f"<i>You can check ban using ban ID or target</i>"
+        "<b>Ban Information</b>\n\n"
+        f"User: {mention(uid, target_fname)}\n"
+        f"User ID: {code(str(uid))}\n\n"
+        f"Banned by: {mention(aid, admin_fname)}\n"
+        f"Admin ID: {code(str(aid))}\n\n"
+        f"Reason: {esc(ban.get('reason', 'No reason provided'))}\n"
+        f"Ban ID: {code(ban['ban_id'])}\n"
+        f"Date: {date_str}"
     )
     return text, proof_link

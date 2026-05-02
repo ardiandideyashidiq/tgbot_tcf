@@ -43,15 +43,14 @@ __help_text__ = (
 
 
 async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    uid  = update.effective_user.id
-    msg  = update.effective_message
-    user = update.effective_user
-    fname = user.first_name or str(uid)
+    user  = update.effective_user
+    msg   = update.effective_message
+    fname = user.first_name or str(user.id)
 
     owner_id = await db.admins_db.get_owner_id()
-    if uid == owner_id:
+    if user.id == owner_id:
         await msg.reply_text(
-            f"Bro, {mention(uid, fname)}... seriously? 😭\n\n"
+            f"Bro, {mention(user.id, fname)}... seriously? 😭\n\n"
             "You're the Founder. You literally built this place from scratch. "
             "There is no ban for you — you ARE the federation.\n"
             "Go touch grass, you're perfectly fine. 😊",
@@ -59,31 +58,28 @@ async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    if await db.admins_db.is_admin(uid):
+    if await db.admins_db.is_admin(user.id):
         await msg.reply_text(
-            f"Hey {mention(uid, fname)}, checking yourself? 😄\n\n"
+            f"Hey {mention(user.id, fname)}, checking yourself? 😄\n\n"
             "You're part of the staff team — the ones who handle bans, not receive them. "
             "No active ban on your end. You're good, now go back to work! 😊",
             parse_mode="HTML",
         )
         return
 
-    ban = await db.bans_db.get_active_ban(uid)
+    ban = await db.bans_db.get_active_ban(user.id)
 
     if not ban:
-        await msg.reply_text(
-            "You are not banned in the Transsion Core."
-        )
+        await msg.reply_text("You are not banned in the Transsion Core.")
         return
 
     proof_chat, proof_thread = cfg.proofs
     proof_link = (
         message_link(proof_chat, ban["proof_message_id"], proof_thread)
-        if ban.get("proof_message_id")
-        else None
+        if ban.get("proof_message_id") else None
     )
-    bot_info = await ctx.bot.get_me()
-    ban_id = ban["ban_id"]
+    bot_info   = await ctx.bot.get_me()
+    ban_id     = ban["ban_id"]
     admin_fname = await db.users_db.get_first_name(ban.get("admin_user_id", 0), "Admin")
 
     lines = [
@@ -91,7 +87,7 @@ async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         f"Reason: {esc(ban['reason'])}",
         f"Banned by: {admin_fname}",
     ]
-    await update.effective_message.reply_text(
+    await msg.reply_text(
         "\n".join(lines),
         parse_mode="HTML",
         reply_markup=keyboards.checkme_appeal_kb(bot_info.username, ban_id),
@@ -105,7 +101,7 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await update.effective_message.reply_text("Cannot resolve user.")
         return
 
-    msg = update.effective_message
+    msg   = update.effective_message
     fname = target_fname or str(target_id)
 
     owner_id = await db.admins_db.get_owner_id()

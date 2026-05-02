@@ -19,8 +19,6 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Admins"
 __help_text__ = (
-    "<b>Help — Admin Hierarchy</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcpromote</code> — alias: <code>/tcp</code>\n"
     "<code>/tcdemote</code> — alias: <code>/tcd</code>\n"

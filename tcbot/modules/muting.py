@@ -13,8 +13,6 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
 __module_name__ = "Mute"
 __help_text__ = (
-    "<b>Help — Mute</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcmute</code> — alias: <code>/tcm</code>\n"
     "<code>/tcunmute</code> — alias: <code>/tcunm</code>\n\n"

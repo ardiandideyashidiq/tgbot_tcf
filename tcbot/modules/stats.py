@@ -13,8 +13,6 @@ from tcbot.utils.prefixes import build_prefixed_filters
 
 __module_name__ = "Stats"
 __help_text__ = (
-    "<b>Help — Statistics</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcstats</code>\n\n"
 

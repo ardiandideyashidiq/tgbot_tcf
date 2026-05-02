@@ -20,8 +20,6 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Cleanup"
 __help_text__ = (
-    "<b>Help — Maintenance</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/leaveall</code> — aliases: <code>/exitall</code>, <code>/tcleave</code>\n"
     "<code>/cleanup</code> — aliases: <code>/tcclean</code>, <code>/tcc</code>\n\n"

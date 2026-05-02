@@ -24,8 +24,6 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Connect"
 __help_text__ = (
-    "<b>Help — Group Connect</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcconnect</code> — alias: <code>/tccon</code>\n\n"
 

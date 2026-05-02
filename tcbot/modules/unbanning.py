@@ -13,8 +13,6 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
 __module_name__ = "Unban"
 __help_text__ = (
-    "<b>Help — Unban</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcunban</code> — alias: <code>/tcunb</code>\n\n"
 

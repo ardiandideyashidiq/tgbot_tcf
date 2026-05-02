@@ -13,8 +13,6 @@ from tcbot.utils.prefixes import build_prefixed_filters
 
 __module_name__ = "Groups"
 __help_text__ = (
-    "<b>Help — Groups List</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcfgroups</code> — alias: <code>/tcg</code>\n\n"
 

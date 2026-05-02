@@ -19,8 +19,6 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
 __module_name__ = "Warnings"
 __help_text__ = (
-    "<b>Help — Warnings</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     f"<code>/tcwarn</code> — alias: <code>/tcw</code>\n"
     f"<code>/tcunwarn</code> — alias: <code>/tcunw</code>\n"

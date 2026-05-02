@@ -19,8 +19,6 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Disconnect"
 __help_text__ = (
-    "<b>Help — Group Disconnect</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcdisconnect</code> — alias: <code>/tcdiscon</code>\n"
     "<code>/rmtc</code> — staff-only force removal\n\n"

@@ -87,7 +87,7 @@ async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
     name, text = HELP_CONTENT[topic]
     await q.edit_message_text(
-        f"<b>{name}</b>\n\n{text}",
+        f"Here help for <b>{name}</b>\n\n{text}",
         parse_mode="HTML",
         reply_markup=keyboards.back_to_help_kb(),
     )

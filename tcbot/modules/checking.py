@@ -18,7 +18,6 @@ from tcbot.utils.timedate_format import fmt_dt
 
 __module_name__ = "Checking"
 __help_text__ = (
-    "<b>Help — Check Ban</b>\n\n"
     "<b>Commands & Aliases</b>\n"
     "<code>/checkme</code> — alias: <code>/cme</code>\n"
     "<code>/checkban</code> — alias: <code>/cban</code>\n\n"

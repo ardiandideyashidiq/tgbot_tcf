@@ -13,8 +13,6 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
 __module_name__ = "Kick"
 __help_text__ = (
-    "<b>Help — Kick</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tckick</code> — alias: <code>/tck</code>\n\n"
 

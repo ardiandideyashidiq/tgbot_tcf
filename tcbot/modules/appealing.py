@@ -10,8 +10,6 @@ from tcbot.modules.helper.workflows.appeal_flow import build_handler, on_appeal_
 
 __module_name__ = "Appeal"
 __help_text__ = (
-    "<b>Help — Ban Appeal</b>\n\n"
-
     "<b>How to start an appeal</b>\n"
     "Tap the <b>Submit Appeal</b> button on your ban log message, or open the bot in PM "
     "and use the deep link from your ban notification.\n\n"

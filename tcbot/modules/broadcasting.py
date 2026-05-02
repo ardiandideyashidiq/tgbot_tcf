@@ -20,8 +20,6 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Broadcast"
 __help_text__ = (
-    "<b>Help — Broadcast</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcbroadcast</code> — alias: <code>/bc</code>\n\n"
 

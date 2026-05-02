@@ -8,8 +8,6 @@ from tcbot.modules.helper.workflows.ban_flow import build_handler
 
 __module_name__ = "Ban"
 __help_text__ = (
-    "<b>Help — Ban</b>\n\n"
-
     "<b>Commands & Aliases</b>\n"
     "<code>/tcban</code> — alias: <code>/tcb</code>\n\n"
 

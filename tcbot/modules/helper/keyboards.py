@@ -126,15 +126,32 @@ def join_group_kb() -> InlineKeyboardMarkup:
 ## ---------------------------------------------------------------------------
 
 
-def checkme_appeal_kb(bot_username: str, ban_id: str) -> InlineKeyboardMarkup:
-    url = f"https://t.me/{bot_username}?start=appeal{ban_id}"
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("Submit Appeal", url=url),
-            ]
-        ]
-    )
+def checkme_ban_kb(
+    bot_username: str,
+    ban_id: str,
+    proof_link: str | None = None,
+) -> InlineKeyboardMarkup:
+    """Summary view keyboard — Details | Proof (row 1), Appeal (row 2)."""
+    appeal_url = f"https://t.me/{bot_username}?start=appeal{ban_id}"
+    row1 = [InlineKeyboardButton("Details", callback_data=f"checkme_detail:{ban_id}")]
+    if proof_link:
+        row1.append(InlineKeyboardButton("Proof", url=proof_link))
+    return InlineKeyboardMarkup([
+        row1,
+        [InlineKeyboardButton("Appeal", url=appeal_url)],
+    ])
+
+
+def checkme_detail_back_kb(
+    ban_id: str,
+    proof_link: str | None = None,
+) -> InlineKeyboardMarkup:
+    """Detail view keyboard — optional Proof (row 1), Back (row 2)."""
+    rows = []
+    if proof_link:
+        rows.append([InlineKeyboardButton("Proof", url=proof_link)])
+    rows.append([InlineKeyboardButton("Back", callback_data=f"checkme_back:{ban_id}")])
+    return InlineKeyboardMarkup(rows)
 
 
 def baninfo_proof_kb(proof_lnk: str) -> InlineKeyboardMarkup:

@@ -6,15 +6,15 @@
 from __future__ import annotations
 
 from telegram import Update
-from telegram.ext import ContextTypes, MessageHandler
+from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
-from tcbot import database as db
-from tcbot import cfg
+from tcbot import cfg, database as db
 from tcbot.modules.helper import extraction, keyboards
 from tcbot.modules.helper.ban_info import build_ban_detail
-from tcbot.modules.helper.formatter import esc, mention
+from tcbot.modules.helper.formatter import code, esc, mention
 from tcbot.modules.helper.parse_link import message_link
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
+from tcbot.utils.timedate_format import fmt_dt
 
 __module_name__ = "Checking"
 __help_text__ = (
@@ -42,6 +42,40 @@ __help_text__ = (
 )
 
 
+## ---------------------------------------------------------------------------
+## Helpers
+## ---------------------------------------------------------------------------
+
+async def _ban_summary(ban: dict, user_id: int, user_fname: str) -> tuple[str, str | None]:
+    """Build the /checkme summary text and proof link."""
+    aid         = ban.get("admin_user_id", 0)
+    admin_fname = await db.users_db.get_first_name(aid, "Admin")
+
+    proof_chat, proof_thread = cfg.proofs
+    proof_link = (
+        message_link(proof_chat, ban["proof_message_id"], proof_thread)
+        if ban.get("proof_message_id") else None
+    )
+
+    ts       = ban.get("timestamp")
+    date_str = fmt_dt(ts) if ts else "Unknown"
+
+    text = (
+        "You are currently banned from Transsion Core Federation.\n\n"
+        f"User: {mention(user_id, user_fname)}\n"
+        f"User ID: {code(str(user_id))}\n"
+        f"Reason: {esc(ban.get('reason', 'No reason provided'))}\n\n"
+        f"Banned by: {mention(aid, admin_fname)}\n\n"
+        f"Commit Date: {date_str}\n"
+        "Tap a button below for more details."
+    )
+    return text, proof_link
+
+
+## ---------------------------------------------------------------------------
+## /checkme
+## ---------------------------------------------------------------------------
+
 async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     user  = update.effective_user
     msg   = update.effective_message
@@ -68,31 +102,68 @@ async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     ban = await db.bans_db.get_active_ban(user.id)
-
     if not ban:
         await msg.reply_text("You are not banned in the Transsion Core.")
         return
 
-    proof_chat, proof_thread = cfg.proofs
-    proof_link = (
-        message_link(proof_chat, ban["proof_message_id"], proof_thread)
-        if ban.get("proof_message_id") else None
-    )
-    bot_info   = await ctx.bot.get_me()
-    ban_id     = ban["ban_id"]
-    admin_fname = await db.users_db.get_first_name(ban.get("admin_user_id", 0), "Admin")
+    bot_info       = await ctx.bot.get_me()
+    ban_id         = ban["ban_id"]
+    text, proof_link = await _ban_summary(ban, user.id, fname)
 
-    lines = [
-        "You are currently banned from Transsion Core.",
-        f"Reason: {esc(ban['reason'])}",
-        f"Banned by: {admin_fname}",
-    ]
     await msg.reply_text(
-        "\n".join(lines),
+        text,
         parse_mode="HTML",
-        reply_markup=keyboards.checkme_appeal_kb(bot_info.username, ban_id),
+        reply_markup=keyboards.checkme_ban_kb(bot_info.username, ban_id, proof_link),
     )
 
+
+## ---------------------------------------------------------------------------
+## /checkme inline callbacks
+## ---------------------------------------------------------------------------
+
+async def on_checkme_detail(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    q      = update.callback_query
+    ban_id = q.data.split(":")[1]
+
+    ban = await db.bans_db.get_ban(ban_id)
+    if not ban or not ban.get("is_active"):
+        await q.answer("This ban is no longer active.", show_alert=True)
+        return
+
+    await q.answer()
+    text, proof_link = await build_ban_detail(ban)
+    await q.edit_message_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboards.checkme_detail_back_kb(ban_id, proof_link),
+    )
+
+
+async def on_checkme_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    q      = update.callback_query
+    ban_id = q.data.split(":")[1]
+
+    ban = await db.bans_db.get_ban(ban_id)
+    if not ban:
+        await q.answer("Ban record not found.", show_alert=True)
+        return
+
+    await q.answer()
+    uid   = ban["banned_user_id"]
+    fname = await db.users_db.get_first_name(uid, str(uid))
+    bot_info = await ctx.bot.get_me()
+    text, proof_link = await _ban_summary(ban, uid, fname)
+
+    await q.edit_message_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboards.checkme_ban_kb(bot_info.username, ban_id, proof_link),
+    )
+
+
+## ---------------------------------------------------------------------------
+## /checkban
+## ---------------------------------------------------------------------------
 
 async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     args = parse_cmd_args(update.effective_message.text)
@@ -139,10 +210,16 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await msg.reply_text(text, parse_mode="HTML", reply_markup=kb)
 
 
+## ---------------------------------------------------------------------------
+## Handler registration
+## ---------------------------------------------------------------------------
+
 _CHECKME_FILTER = build_prefixed_filters("checkme") | build_prefixed_filters("cme")
 _BANINFO_FILTER = build_prefixed_filters("checkban") | build_prefixed_filters("cban")
 
 __handlers__ = [
     MessageHandler(_CHECKME_FILTER, cmd_checkme),
     MessageHandler(_BANINFO_FILTER, cmd_baninfo),
+    CallbackQueryHandler(on_checkme_detail, pattern=r"^checkme_detail:"),
+    CallbackQueryHandler(on_checkme_back,   pattern=r"^checkme_back:"),
 ]

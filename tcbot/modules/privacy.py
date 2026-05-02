@@ -12,24 +12,45 @@ from tcbot.modules.helper import keyboards
 __module_name__ = None
 
 __privacy_msg__ = (
-    "<b>Privacy Information</b>\n\n"
-    "The TCF Bot collects and stores the following data:\n"
-    "- Your Telegram user ID and first name (cached when you interact with the bot)\n"
-    "- Ban records if you are federation-banned\n"
-    "- Appeal submissions\n\n"
-    "Data is stored securely and is only accessible to TCF staff.\n"
-    "No data is shared with third parties."
+    "<b>Privacy & Data</b>\n\n"
+    "We keep things simple. Here's what TCF Bot stores about you:\n\n"
+    "- <b>User ID & first name</b> — cached when you interact with the bot or a connected group.\n"
+    "- <b>Ban records</b> — if you receive a federation ban, the reason and proof are stored alongside it.\n"
+    "- <b>Warn & mute records</b> — logged per group for moderation tracking.\n"
+    "- <b>Kick logs</b> — recorded for staff reference.\n"
+    "- <b>Appeal submissions</b> — your messages and any attachments you send through the appeal system.\n\n"
+    "All data is stored securely and is only accessible to TCF staff. "
+    "We don't share anything with third parties — ever.\n\n"
+    "Tap <b>Privacy Policy</b> below for the full policy."
 )
 
 __privacy_policy_msg__ = (
     "<b>TCF Privacy Policy</b>\n\n"
-    "1. <b>Data collection:</b> We collect Telegram user IDs, first names, and usernames "
-    "only when you interact with a TCF-connected group or this bot.\n\n"
-    "2. <b>Data use:</b> Collected data is used solely for federation moderation purposes.\n\n"
-    "3. <b>Data retention:</b> Ban records are retained indefinitely. "
-    "Member cache data may be pruned periodically.\n\n"
-    "4. <b>Your rights:</b> Contact a TCF admin to request data deletion.\n\n"
-    "5. <b>Contact:</b> Reach staff via the TCF main group."
+
+    "<b>1. What we collect</b>\n"
+    "Your Telegram user ID, first name, and username are cached when you interact with TCF Bot "
+    "or any connected group. We also store ban records, appeal submissions, warn records, "
+    "mute records, and kick logs.\n\n"
+
+    "<b>2. Why we collect it</b>\n"
+    "Everything we store is used solely for federation moderation — keeping TCF groups safe "
+    "and well-managed. Nothing more.\n\n"
+
+    "<b>3. Who can access it</b>\n"
+    "Only TCF staff (admins and the owner) have access to stored data. "
+    "No data is shared with third parties under any circumstances.\n\n"
+
+    "<b>4. How long we keep it</b>\n"
+    "Ban records are kept indefinitely as part of the federation log. "
+    "Cached user data (names, IDs) may be pruned periodically. "
+    "Appeal records are kept for reference.\n\n"
+
+    "<b>5. Your rights</b>\n"
+    "You can request a review or deletion of your data by reaching out to a TCF admin directly. "
+    "We'll handle it as soon as we can.\n\n"
+
+    "<b>6. Contact</b>\n"
+    "Reach TCF staff through the main TCF group or via this bot's appeal system."
 )
 
 

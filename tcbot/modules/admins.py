@@ -66,7 +66,7 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     is_staff = await db.admins_db.is_staff(admin.id)
 
     if not is_staff:
-        await update.effective_message.reply_text("You are not authorized.")
+        await update.effective_message.reply_text("Not authorized.")
         return
 
     args = parse_cmd_args(update.effective_message.text)
@@ -74,7 +74,7 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     if not target_id:
         await update.effective_message.reply_text(
-            "Reply to a user, provide a user ID, or provide a username to promote."
+            "Specify a target — reply to a message, or provide a user ID or @username."
         )
         return
 
@@ -83,7 +83,7 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     if await db.admins_db.is_admin(target_id):
-        await update.effective_message.reply_text("Already a Transsion Core Admin.")
+        await update.effective_message.reply_text("That user is already a Transsion Core Admin.")
         return
 
     lc, lt = cfg.logs
@@ -97,13 +97,14 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         except Exception as exc:
             log.error("Promote log failed: %s", exc)
         await update.effective_message.reply_text(
-            f"User {code(str(target_id))} is now a Transsion Core Admin.", parse_mode="HTML",
+            f"Done. {mention(target_id, target_fname)} is now a Transsion Core Admin.",
+            parse_mode="HTML",
         )
     else:
         existing = await db.queues_db.get_request(target_id)
         if existing:
             await update.effective_message.reply_text(
-                f"Promotion request for {code(str(target_id))} is already pending.",
+                f"There is already a pending promotion request for {mention(target_id, target_fname)}.",
                 parse_mode="HTML",
             )
             return
@@ -133,8 +134,7 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             except Exception as exc:
                 log.error("Promo request notify failed: %s", exc)
         await update.effective_message.reply_text(
-            f"Promotion request for {code(str(target_id))} has been sent to the owner for approval.",
-            parse_mode="HTML",
+            "Request submitted. The owner has been notified and will review it shortly.",
         )
 
 
@@ -149,7 +149,7 @@ async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_fname = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await update.effective_message.reply_text(
-            "Reply to a user, provide a user ID, or provide a username to demote."
+            "Specify a target — reply to a message, or provide a user ID or @username."
         )
         return
     if target_id == admin.id:
@@ -160,7 +160,7 @@ async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
     removed = await db.admins_db.remove_admin(target_id)
     if not removed:
-        await update.effective_message.reply_text("Not a Transsion Core Admin.")
+        await update.effective_message.reply_text("That user is not a Transsion Core Admin.")
         return
     lc, lt = cfg.logs
     log_text = parse_logmsg.admin_demoted(target_id, target_fname, admin.id, admin.first_name)
@@ -168,7 +168,10 @@ async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt)
     except Exception as exc:
         log.error("Demote log failed: %s", exc)
-    await update.effective_message.reply_text("User has been demoted from Transsion Core Admin.")
+    await update.effective_message.reply_text(
+        f"Done. {mention(target_id, target_fname)} has been removed from the admin team.",
+        parse_mode="HTML",
+    )
 
 
 ## ---------------------------------------------------------------------------
@@ -182,7 +185,7 @@ async def cmd_transfer(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_fname = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await update.effective_message.reply_text(
-            "Reply to a user, provide a user ID, or provide a username to transfer ownership to."
+            "Specify the new owner — reply to a message, or provide a user ID or @username."
         )
         return
     if target_id == current_owner.id:
@@ -199,7 +202,8 @@ async def cmd_transfer(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception as exc:
         log.error("Transfer log failed: %s", exc)
     await update.effective_message.reply_text(
-        f"Ownership transferred to {code(str(target_id))}.", parse_mode="HTML",
+        f"Done. Ownership has been transferred to {mention(target_id, target_fname)}.",
+        parse_mode="HTML",
     )
 
 
@@ -289,7 +293,8 @@ async def on_promo_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
         await db.queues_db.resolve(request_id, "approved", admin.id)
         try:
             await ctx.bot.send_message(
-                target_id, "Your promotion request has been approved. You are now a Transsion Core Admin.",
+                target_id,
+                "Your promotion request has been approved — you are now a Transsion Core Admin.",
             )
         except Exception:
             pass
@@ -302,14 +307,18 @@ async def on_promo_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
             pass
         try:
             await q.edit_message_text(
-                (q.message.text or "") + f"\n\nApproved by {admin.first_name}", reply_markup=None,
+                (q.message.text or "") + f"\n\n— Approved by {admin.first_name}",
+                reply_markup=None,
             )
         except Exception:
             pass
     elif action == "promo_reject":
         await db.queues_db.resolve(request_id, "rejected", admin.id)
         try:
-            await ctx.bot.send_message(target_id, "Your promotion request has been rejected.")
+            await ctx.bot.send_message(
+                target_id,
+                "Your promotion request has been reviewed and was not approved at this time.",
+            )
         except Exception:
             pass
         log_text = parse_logmsg.promo_rejected_log(
@@ -321,7 +330,8 @@ async def on_promo_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
             pass
         try:
             await q.edit_message_text(
-                (q.message.text or "") + f"\n\nRejected by {admin.first_name}", reply_markup=None,
+                (q.message.text or "") + f"\n\n— Rejected by {admin.first_name}",
+                reply_markup=None,
             )
         except Exception:
             pass

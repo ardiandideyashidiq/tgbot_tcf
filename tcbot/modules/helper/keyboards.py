@@ -248,29 +248,3 @@ def back_to_privacy_kb() -> InlineKeyboardMarkup:
     )
 
 
-## ---------------------------------------------------------------------------
-## Legacy compat
-## ---------------------------------------------------------------------------
-
-
-def join_decision_kb(chat_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("Accept", callback_data=f"join_accept:{chat_id}"),
-                InlineKeyboardButton("Reject", callback_data=f"join_reject:{chat_id}"),
-            ]
-        ]
-    )
-
-
-def confirm_ban_kb(key: str) -> InlineKeyboardMarkup:
-    return cancel_proof_kb()
-
-
-def appeal_confirm_kb(ban_id: str) -> InlineKeyboardMarkup:
-    return appeal_cancel_kb()
-
-
-def back_to_menu_kb() -> InlineKeyboardMarkup:
-    return back_to_start_kb()

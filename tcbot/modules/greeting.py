@@ -47,12 +47,9 @@ async def on_new_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             continue
 
         await msg.reply_text(
-            f"<b>Welcome to <i>{esc(chat.title or '')}</i>, "
-            f"{mention(member.id, member.first_name)}!</b>\n"
-            "We're glad to have you here. This is an official group of the Transsion Core Federation. "
-            "Please take a moment to review the group rules and feel free to introduce yourself.\n\n"
-            "If you have any questions or need assistance, don't hesitate to ask our admins.\n\n"
-            "Enjoy your stay!",
+            f"Welcome, {mention(member.id, member.first_name)}. "
+            f"This is an official Transsion Core Federation group. "
+            "Please review the group rules before participating.",
             parse_mode="HTML",
         )
 

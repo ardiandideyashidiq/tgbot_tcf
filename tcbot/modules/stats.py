@@ -83,7 +83,7 @@ async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     lines = [f"<b>Admins/Staff ({len(admins)})</b>\n"]
     for adm in admins:
         fname = await db.users_db.get_first_name(adm["user_id"], str(adm["user_id"]))
-        lines.append(f"- {fname} {code(str(adm['user_id']))}")
+        lines.append(f"- {mention(adm['user_id'], fname)}")
 
     await q.edit_message_text(
         "\n".join(lines), parse_mode="HTML",

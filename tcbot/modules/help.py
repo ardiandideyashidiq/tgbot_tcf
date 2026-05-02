@@ -56,10 +56,16 @@ HELP_TOPICS: list[tuple[str, str]] = [
 ## ---------------------------------------------------------------------------
 
 
+_HELP_INDEX_TEXT = (
+    "<b>TCF Bot Help</b>\n"
+    "This bot manages Transsion Core groups, bans, appeals, and more. "
+    "Select a topic below."
+)
+
+
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
-        "<b>TCF Bot Help</b>\n"
-        "I manage Transsion Core groups, bans, appeals, and more. Select a topic below:",
+        _HELP_INDEX_TEXT,
         parse_mode="HTML",
         reply_markup=keyboards.help_topics_kb(HELP_TOPICS),
     )
@@ -69,8 +75,7 @@ async def on_menu_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     await q.answer()
     await q.edit_message_text(
-        "<b>TCF Bot Help</b>\n"
-        "I manage Transsion Core groups, bans, appeals, and more. Select a topic below:",
+        _HELP_INDEX_TEXT,
         parse_mode="HTML",
         reply_markup=keyboards.help_topics_kb(HELP_TOPICS),
     )
@@ -81,13 +86,11 @@ async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await q.answer()
     topic = q.data
     if topic not in HELP_CONTENT:
-        await q.edit_message_text(
-            "Topic not found.", reply_markup=keyboards.back_to_help_kb()
-        )
+        await q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_kb())
         return
     name, text = HELP_CONTENT[topic]
     await q.edit_message_text(
-        f"Here help for <b>{name}</b>\n\n{text}",
+        f"<b>Help — {name}</b>\n\n{text}",
         parse_mode="HTML",
         reply_markup=keyboards.back_to_help_kb(),
     )

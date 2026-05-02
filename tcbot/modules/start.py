@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 __module_name__ = None
 
 _MENU_TEXT = (
-    "<b>Hey There! My Name is TC-Bot.</b>\n"
+    "<b>Hey there! I'm {bot_name}.</b>\n"
     "I help manage Transsion Core groups, bans, and appeals. "
     "Use the buttons below to learn more or view important links."
 )
@@ -35,6 +35,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     text  = (msg.text or "").strip()
     parts = text.split(None, 1)
     arg   = parts[1].strip() if len(parts) > 1 else ""
+    bot_name = ctx.bot.first_name or "TC Bot"
 
     if arg == "about":
         await msg.reply_text(
@@ -45,7 +46,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     ## appeal<ban_id> deep links are handled by the ConversationHandler in appealing.py
     await msg.reply_text(
-        _MENU_TEXT, parse_mode="HTML",
+        _MENU_TEXT.format(bot_name=bot_name), parse_mode="HTML",
         reply_markup=keyboards.main_menu_kb(),
     )
 
@@ -57,8 +58,9 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 async def on_menu_back_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     await q.answer()
+    bot_name = ctx.bot.first_name or "TC Bot"
     await q.edit_message_text(
-        _MENU_TEXT, parse_mode="HTML",
+        _MENU_TEXT.format(bot_name=bot_name), parse_mode="HTML",
         reply_markup=keyboards.main_menu_kb(),
     )
 

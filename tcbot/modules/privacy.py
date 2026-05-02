@@ -11,9 +11,9 @@ from tcbot.modules.helper import keyboards
 
 __module_name__ = None
 
-__privacy_msg__ = (
+_PRIVACY_MSG = (
     "<b>Privacy & Data</b>\n\n"
-    "We keep things simple. Here's what TCF Bot stores about you:\n\n"
+    "We keep things simple. Here's what {bot_name} stores about you:\n\n"
     "- <b>User ID & first name</b> — cached when you interact with the bot or a connected group.\n"
     "- <b>Ban records</b> — if you receive a federation ban, the reason and proof are stored alongside it.\n"
     "- <b>Warn & mute records</b> — logged per group for moderation tracking.\n"
@@ -24,11 +24,11 @@ __privacy_msg__ = (
     "Tap <b>Privacy Policy</b> below for the full policy."
 )
 
-__privacy_policy_msg__ = (
-    "<b>TCF Privacy Policy</b>\n\n"
+_PRIVACY_POLICY_MSG = (
+    "<b>{bot_name} Privacy Policy</b>\n\n"
 
     "<b>1. What we collect</b>\n"
-    "Your Telegram user ID, first name, and username are cached when you interact with TCF Bot "
+    "Your Telegram user ID, first name, and username are cached when you interact with {bot_name} "
     "or any connected group. We also store ban records, appeal submissions, warn records, "
     "mute records, and kick logs.\n\n"
 
@@ -57,8 +57,9 @@ __privacy_policy_msg__ = (
 async def on_menu_privacy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     await q.answer()
+    bot_name = ctx.bot.first_name or "This bot"
     await q.edit_message_text(
-        __privacy_msg__, parse_mode="HTML",
+        _PRIVACY_MSG.format(bot_name=bot_name), parse_mode="HTML",
         reply_markup=keyboards.privacy_kb(),
     )
 
@@ -66,8 +67,9 @@ async def on_menu_privacy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
 async def on_menu_privacy_policy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     await q.answer()
+    bot_name = ctx.bot.first_name or "This bot"
     await q.edit_message_text(
-        __privacy_policy_msg__, parse_mode="HTML",
+        _PRIVACY_POLICY_MSG.format(bot_name=bot_name), parse_mode="HTML",
         reply_markup=keyboards.back_to_privacy_kb(),
     )
 

@@ -74,7 +74,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    ## appeal_<ban_id> is handled by ConversationHandler in appealing.py
+    ## appeal<ban_id> deep links are handled by the ConversationHandler in appealing.py
     ## For all other starts (including no arg), show main menu
     await msg.reply_text(
         _MENU_TEXT, parse_mode="HTML",

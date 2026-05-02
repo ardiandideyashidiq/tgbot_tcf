@@ -4,21 +4,25 @@
 """Bans collection helpers."""
 from __future__ import annotations
 
+import secrets
+import string
 from datetime import datetime, timezone
 
 from tcbot.database.mongos import col
+
+_ALPHABET = string.ascii_lowercase + string.digits
 
 
 def _bans():
     return col("bans")
 
 
-def _now():
+def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def make_ban_id(user_id: int) -> str:
-    return f"{user_id}_{int(_now().timestamp())}"
+def make_ban_id() -> str:
+    return "".join(secrets.choice(_ALPHABET) for _ in range(10))
 
 
 async def get_active_ban(user_id: int) -> dict | None:
@@ -37,9 +41,8 @@ async def create_ban(
     log_msg_id: int,
     ban_id: str | None = None,
 ) -> dict:
-    """Create a new ban record. Pass ban_id to use a pre-generated ID (e.g. for inline keyboards)."""
     if ban_id is None:
-        ban_id = make_ban_id(target_id)
+        ban_id = make_ban_id()
     doc = {
         "ban_id": ban_id,
         "banned_user_id": target_id,
@@ -88,7 +91,6 @@ async def update_ban(
 
 
 async def set_log_message_id(ban_id: str, log_msg_id: int) -> None:
-    """Set or update the log_message_id on an existing ban record."""
     await _bans().update_one(
         {"ban_id": ban_id},
         {"$set": {"log_message_id": log_msg_id}},

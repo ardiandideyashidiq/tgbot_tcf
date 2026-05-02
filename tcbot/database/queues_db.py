@@ -4,10 +4,13 @@
 """Promotion request queue – collection: promotion_requests."""
 from __future__ import annotations
 
-import uuid
+import secrets
+import string
 from datetime import datetime, timezone
 
 from tcbot.database.mongos import col
+
+_ALPHABET = string.ascii_lowercase + string.digits
 
 
 def _col():
@@ -15,7 +18,7 @@ def _col():
 
 
 def _new_request_id() -> str:
-    return f"req_{uuid.uuid4().hex[:10]}"
+    return "".join(secrets.choice(_ALPHABET) for _ in range(10))
 
 
 async def enqueue(
@@ -24,7 +27,6 @@ async def enqueue(
     first_name: str,
     promoted_by: int,
 ) -> str:
-    """Create a new pending request; return the request_id."""
     request_id = _new_request_id()
     await _col().insert_one({
         "request_id": request_id,
@@ -45,7 +47,6 @@ async def get_request_by_id(request_id: str) -> dict | None:
 
 
 async def get_request(user_id: int) -> dict | None:
-    """Return active (pending) request for a user, if any."""
     return await _col().find_one({"target_id": user_id, "status": "pending"})
 
 

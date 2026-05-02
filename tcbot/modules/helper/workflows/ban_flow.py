@@ -243,7 +243,7 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict) -> None:
         )
     else:
         ## Pre-generate ban_id so we can use it in the log keyboard
-        ban_id = db.bans_db.make_ban_id(target_id)
+        ban_id = db.bans_db.make_ban_id()
         log_text = parse_logmsg.ban_log(
             target_id, target_fname, admin_id, admin_fname,
             reason, ban_id, proof_link, now,

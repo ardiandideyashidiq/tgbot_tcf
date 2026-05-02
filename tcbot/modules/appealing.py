@@ -1,7 +1,7 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Appeal system – entry via /start appeal_<ban_id> deep link and admin decision callbacks."""
+"""Appeal system – entry via /start appeal<ban_id> deep link and admin decision callbacks."""
 from __future__ import annotations
 
 from telegram.ext import CallbackQueryHandler

@@ -9,7 +9,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes
 
 __module_name__ = None
 
-_LINKS_TEXT = (
+__additional_msg__ = (
     "<b>Transsion Core Federation — Official Links</b>\n"
     "Use the buttons below to access our channels and groups. "
     "For developers interested in contributing to Transsion device development, "
@@ -38,7 +38,7 @@ async def on_menu_additional(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
     q: CallbackQuery = update.callback_query
     await q.answer()
     await q.edit_message_text(
-        _LINKS_TEXT,
+        __additional_msg__,
         parse_mode="HTML",
         reply_markup=_additional_kb(),
     )

@@ -43,11 +43,35 @@ __help_text__ = (
 
 
 async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    uid = update.effective_user.id
+    uid  = update.effective_user.id
+    msg  = update.effective_message
+    user = update.effective_user
+    fname = user.first_name or str(uid)
+
+    owner_id = await db.admins_db.get_owner_id()
+    if uid == owner_id:
+        await msg.reply_text(
+            f"Bro, {mention(uid, fname)}... seriously? 😭\n\n"
+            "You're the Founder. You literally built this place from scratch. "
+            "There is no ban for you — you ARE the federation.\n"
+            "Go touch grass, you're perfectly fine. ✅",
+            parse_mode="HTML",
+        )
+        return
+
+    if await db.admins_db.is_admin(uid):
+        await msg.reply_text(
+            f"Hey {mention(uid, fname)}, checking yourself? 😄\n\n"
+            "You're part of the staff team — the ones who handle bans, not receive them. "
+            "No active ban on your end. You're good, now go back to work! ✅",
+            parse_mode="HTML",
+        )
+        return
+
     ban = await db.bans_db.get_active_ban(uid)
 
     if not ban:
-        await update.effective_message.reply_text(
+        await msg.reply_text(
             "You are not banned in the Transsion Core."
         )
         return

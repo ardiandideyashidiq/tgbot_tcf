@@ -1,14 +1,19 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Group affiliation – bot join/leave events and manual join command."""
+"""Group connect – bot join/leave events and manual connect command."""
 from __future__ import annotations
 
 import logging
 
 from telegram import Update
 from telegram.constants import ChatMemberStatus
-from telegram.ext import CallbackQueryHandler, ChatMemberHandler, ContextTypes, MessageHandler
+from telegram.ext import (
+    CallbackQueryHandler,
+    ChatMemberHandler,
+    ContextTypes,
+    MessageHandler,
+)
 
 from tcbot import database as db
 from tcbot.modules.helper import keyboards, parse_logmsg
@@ -19,13 +24,31 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Connect"
 __help_text__ = (
-    "<code>/jointc</code> – request affiliation with TCF (group admin only).\n"
-    "Aliases: <code>/requestjoin</code>, <code>/applytc</code>\n\n"
-    "When the bot is added to a group, it automatically prompts the group owner to join TCF."
+    "<b>Help — Group Connect</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/tcconnect</code> — alias: <code>/tccon</code>\n\n"
+
+    "<b>Who can use it</b>\n"
+    "Group admins and creators only (checked per-group).\n\n"
+
+    "<b>Where to use it</b>\n"
+    "Inside the group you want to connect to TCF.\n\n"
+
+    "<b>What it does</b>\n"
+    "Connects your group to the Transsion Core Federation. Once connected, the bot will "
+    "automatically enforce federation bans in your group — banned users won't be able to stay.\n\n"
+    "Before connecting, make sure the bot is an admin in the group with these permissions: "
+    "<b>delete messages</b>, <b>ban users</b>, and <b>invite users</b>.\n\n"
+    "When the bot is added to a group for the first time, it will automatically prompt "
+    "the group owner to connect — so you can also just add the bot and follow the prompt.\n\n"
+
+    "<b>Example</b>\n"
+    "Add the bot as admin, then run <code>/tcconnect</code> inside the group."
 )
 
 
-async def cmd_jointc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def cmd_tcconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     chat = update.effective_chat
     user = update.effective_user
 
@@ -35,19 +58,26 @@ async def cmd_jointc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     member = await ctx.bot.get_chat_member(chat.id, user.id)
     if member.status not in ("administrator", "creator"):
-        await update.effective_message.reply_text("Only group admins can request affiliation.")
+        await update.effective_message.reply_text(
+            "Only group admins can request to connect."
+        )
         return
 
     if await db.groups_db.is_affiliated(chat.id):
-        await update.effective_message.reply_text("Already affiliated.")
+        await update.effective_message.reply_text("This group is already connected to TCF.")
         return
 
     if await db.groups_db.get_pending(chat.id):
-        await update.effective_message.reply_text("A join request for this group is already pending.")
+        await update.effective_message.reply_text(
+            "A connect request for this group is already pending."
+        )
         return
 
-    ## Check bot permissions
-    from tcbot.modules.helper.workflows.connected_flow import _REQUIRED_PERMS, _check_bot_perms
+    from tcbot.modules.helper.workflows.connected_flow import (
+        _REQUIRED_PERMS,
+        _check_bot_perms,
+    )
+
     try:
         bot_member = await ctx.bot.get_chat_member(chat.id, ctx.bot.id)
     except Exception:
@@ -56,26 +86,25 @@ async def cmd_jointc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     if not _check_bot_perms(bot_member):
         await update.effective_message.reply_text(
-            "Please make the bot an admin with the necessary permissions "
+            "Please make the bot an admin with the required permissions "
             "(delete messages, ban users, invite users) and try again."
         )
         return
 
-    ## Permissions OK – affiliate directly
     from tcbot.modules.helper.workflows.connected_flow import _complete_join
     await _complete_join(chat.id, chat.title or "", user.id, user.first_name, ctx.bot)
-    await update.effective_message.reply_text("This community is now affiliated with TCF.")
+    await update.effective_message.reply_text(
+        "This group is now connected to TCF."
+    )
 
 
-## Spec aliases: /jointc, /requestjoin, /applytc
-_JOINT_FILTER = (
-    build_prefixed_filters("jointc")
-    | build_prefixed_filters("requestjoin")
-    | build_prefixed_filters("applytc")
+_CONNECT_FILTER = (
+    build_prefixed_filters("tcconnect")
+    | build_prefixed_filters("tccon")
 )
 
 __handlers__ = [
     ChatMemberHandler(on_bot_added, ChatMemberHandler.MY_CHAT_MEMBER),
-    MessageHandler(_JOINT_FILTER, cmd_jointc),
+    MessageHandler(_CONNECT_FILTER, cmd_tcconnect),
     CallbackQueryHandler(on_join_decision, pattern=r"^(tc_join|tc_cancel)$"),
 ]

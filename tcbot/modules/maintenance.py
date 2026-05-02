@@ -20,10 +20,29 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Cleanup"
 __help_text__ = (
-    "<code>/leaveall</code> – leave all affiliated groups and deactivate them (owner only).\n"
-    "Aliases: <code>/exitall</code>, <code>/tcleave</code>\n\n"
-    "<code>/cleanup</code> – remove defunct groups the bot was kicked from (TC staff only).\n"
-    "Aliases: <code>/purge</code>, <code>/tcclean</code>"
+    "<b>Help — Maintenance</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/leaveall</code> — aliases: <code>/exitall</code>, <code>/tcleave</code>\n"
+    "<code>/cleanup</code> — aliases: <code>/tcclean</code>, <code>/tcc</code>\n\n"
+
+    "<b>Who can use it</b>\n"
+    "<code>/leaveall</code> — Owner only.\n"
+    "<code>/cleanup</code> — TC Staff (admins & owner).\n\n"
+
+    "<b>Where to use it</b>\n"
+    "Exec group or bot PM.\n\n"
+
+    "<b>What it does</b>\n"
+    "<code>/leaveall</code> — makes the bot leave every connected group and marks them all "
+    "as disconnected. A log entry is posted for each group. Use with care — this is irreversible "
+    "without re-connecting each group manually.\n\n"
+    "<code>/cleanup</code> — scans all connected groups and removes any that the bot was "
+    "kicked from or can no longer access. Keeps the database clean and the group list accurate.\n\n"
+
+    "<b>Examples</b>\n"
+    "<code>/cleanup</code> — run this periodically to remove stale groups.\n"
+    "<code>/leaveall</code> — emergency exit from all groups."
 )
 
 
@@ -32,7 +51,7 @@ async def cmd_leaveall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     admin = update.effective_user
     groups = await db.groups_db.active_groups()
     if not groups:
-        await update.effective_message.reply_text("No affiliated groups.")
+        await update.effective_message.reply_text("No connected groups.")
         return
 
     status = await update.effective_message.reply_text(f"Leaving {len(groups)} groups...")
@@ -44,7 +63,6 @@ async def cmd_leaveall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             await ctx.bot.leave_chat(grp["chat_id"])
             await db.groups_db.deactivate_group(grp["chat_id"])
             left += 1
-            ## Log each departure
             try:
                 await ctx.bot.send_message(
                     lc,
@@ -62,7 +80,7 @@ async def cmd_leaveall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     try:
         await status.edit_text(
-            f"Left {code(str(left))} groups. Failed to leave {code(str(failed))} groups.",
+            f"Left {code(str(left))} groups. Failed: {code(str(failed))}.",
             parse_mode="HTML",
         )
     except Exception:
@@ -85,22 +103,20 @@ async def cmd_cleanup(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             removed += 1
 
     await update.effective_message.reply_text(
-        f"Cleaned up {code(str(removed))} groups that were no longer accessible.",
+        f"Cleaned up {code(str(removed))} inaccessible group(s).",
         parse_mode="HTML",
     )
 
 
-## Spec aliases: /leaveall, /exitall, /tcleave
 _LEAVEALL_FILTER = (
     build_prefixed_filters("leaveall")
     | build_prefixed_filters("exitall")
     | build_prefixed_filters("tcleave")
 )
-## Spec aliases: /cleanup, /purge, /tcclean
 _CLEANUP_FILTER = (
     build_prefixed_filters("cleanup")
-    | build_prefixed_filters("purge")
     | build_prefixed_filters("tcclean")
+    | build_prefixed_filters("tcc")
 )
 
 __handlers__ = [

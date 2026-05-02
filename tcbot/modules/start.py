@@ -57,14 +57,6 @@ _PRIVACY_POLICY_TEXT = (
     "5. <b>Contact:</b> Reach staff via the TCF main group."
 )
 
-_LINKS_TEXT = (
-    "<b>Transsion Core Federation - Official Links</b>\n"
-    "Use the buttons below to access our channels and groups. "
-    "For developers interested in contributing to Transsion device development, "
-    "join TRAVEL - an independent community for collaboration and networking."
-)
-
-
 ## ---------------------------------------------------------------------------
 ## /start command
 ## ---------------------------------------------------------------------------
@@ -120,7 +112,7 @@ async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     groups = await db.groups_db.active_groups()
     if not groups:
         await q.edit_message_text(
-            "No groups are currently affiliated with TCF.",
+            "No groups are currently connected to TCF.",
             reply_markup=keyboards.back_to_start_kb(),
         )
         return
@@ -130,7 +122,7 @@ async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     start = page * _PAGE_SIZE
     chunk = groups[start: start + _PAGE_SIZE]
 
-    lines = [f"<b>Affiliated Groups ({total})</b>  Page {page + 1}/{total_pages}\n"]
+    lines = [f"<b>Connected Groups ({total})</b>  Page {page + 1}/{total_pages}\n"]
     for grp in chunk:
         lines.append(f"- {esc(grp['title'])} {code(str(grp['chat_id']))}")
 
@@ -147,29 +139,6 @@ async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     await q.edit_message_text(
         "\n".join(lines), parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(rows),
-    )
-
-
-async def on_menu_additional(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    await q.answer()
-    await q.edit_message_text(
-        _LINKS_TEXT,
-        parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("Main Channel", url="https://t.me/TranssionCoreFederation"),
-                InlineKeyboardButton("Discussion Group", url="https://t.me/TranssionCoreFederationGroup"),
-            ],
-            [
-                InlineKeyboardButton("Logs Channel", url="https://t.me/TranssionCoreFederationLogs"),
-                InlineKeyboardButton("Exec Group", url="https://t.me/+A105pfnCvkhiZWM1"),
-            ],
-            [
-                InlineKeyboardButton("TRAVEL (Dev Community)", url="http://t.me/+S2C_ppFvHlAwMzNl"),
-            ],
-            [InlineKeyboardButton("Back", callback_data="menu_back_start")],
-        ]),
     )
 
 
@@ -279,7 +248,6 @@ __handlers__ = [
     CallbackQueryHandler(on_menu_back_start, pattern=r"^menu_back_start$"),
     CallbackQueryHandler(on_menu_about, pattern=r"^menu_about$"),
     CallbackQueryHandler(on_menu_groups, pattern=r"^menu_groups(:\d+)?$"),
-    CallbackQueryHandler(on_menu_additional, pattern=r"^menu_additional$"),
     CallbackQueryHandler(on_menu_information, pattern=r"^menu_information$"),
     CallbackQueryHandler(on_info_admins, pattern=r"^info_admins:\d+$"),
     CallbackQueryHandler(on_info_chats, pattern=r"^info_chats:\d+$"),

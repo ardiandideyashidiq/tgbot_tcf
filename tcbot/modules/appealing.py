@@ -10,19 +10,38 @@ from tcbot.modules.helper.workflows.appeal_flow import build_handler, on_appeal_
 
 __module_name__ = "Appeal"
 __help_text__ = (
-    "Submit a federation ban appeal via the <b>Submit Appeal</b> button on your ban log,\n"
-    "or by using <code>/start appeal_&lt;ban_id&gt;</code> in my private chat.\n\n"
-    "Reply with a message starting with <code>#appeal</code> containing:\n"
-    "- <b>Log link:</b> (from @TranssionCoreFederationLogs)\n"
-    "- <b>Clarification:</b> (your honest explanation)\n"
-    "- <b>Agreement:</b> (your commitment not to repeat the violation)\n\n"
-    "Your appeal will be reviewed by Transsion Core admins. "
-    "The banning admin has 12 hours to decide; after that, any admin can approve or reject it.\n"
-    "If approved, the ban is lifted; if rejected, the ban remains. You will be notified of the decision."
+    "<b>Help — Ban Appeal</b>\n\n"
+
+    "<b>How to start an appeal</b>\n"
+    "Tap the <b>Submit Appeal</b> button on your ban log message, or open the bot in PM "
+    "and use the deep link from your ban notification.\n\n"
+
+    "<b>Who can use it</b>\n"
+    "Anyone with an active federation ban.\n\n"
+
+    "<b>Where to start</b>\n"
+    "Bot PM only.\n\n"
+
+    "<b>How it works</b>\n"
+    "Once you open the appeal flow, reply with a message that starts with <code>#appeal</code> "
+    "and includes the following:\n\n"
+    "- <b>Log link:</b> the link to your ban log (from @TranssionCoreFederationLogs)\n"
+    "- <b>Clarification:</b> your honest explanation of what happened\n"
+    "- <b>Agreement:</b> your commitment not to repeat the violation\n\n"
+    "<b>Format example:</b>\n"
+    "<pre>#appeal\n"
+    "Log link: https://t.me/TranssionCoreFederationLogs/123\n"
+    "Clarification: I spammed links without knowing the rules.\n"
+    "Agreement: I will follow all community rules going forward.</pre>\n\n"
+
+    "<b>What happens next</b>\n"
+    "Your appeal is forwarded to TC admins for review. The admin who issued the ban has "
+    "<b>12 hours</b> to respond — after that, any admin can approve or reject it.\n"
+    "If approved → ban is lifted immediately.\n"
+    "If rejected → ban stays. You'll be notified either way."
 )
 
 __handlers__ = [
     build_handler(),
-    ## Pattern: appeal_approve_<ban_id> or appeal_reject_<ban_id>
     CallbackQueryHandler(on_appeal_decision, pattern=r"^appeal_(approve|reject)_\S+$"),
 ]

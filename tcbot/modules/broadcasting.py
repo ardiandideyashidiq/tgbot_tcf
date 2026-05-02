@@ -1,7 +1,7 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Broadcast a message to all affiliated groups."""
+"""Broadcast a message to all connected groups."""
 from __future__ import annotations
 
 import asyncio
@@ -20,9 +20,25 @@ log = logging.getLogger(__name__)
 
 __module_name__ = "Broadcast"
 __help_text__ = (
-    "<code>/tcbroadcast</code> <i>&lt;message&gt;</i> – send a message to all affiliated groups (staff only).\n"
-    "Provide text directly or reply to a message to forward it.\n"
-    "Aliases: <code>/broadcast</code>, <code>/tcannounce</code>"
+    "<b>Help — Broadcast</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/tcbroadcast</code> — alias: <code>/bc</code>\n\n"
+
+    "<b>Who can use it</b>\n"
+    "TC Staff (admins & owner) only.\n\n"
+
+    "<b>Where to use it</b>\n"
+    "Exec group or bot PM.\n\n"
+
+    "<b>What it does</b>\n"
+    "Sends a message to every group currently connected to TCF. "
+    "You can either type the message directly after the command, or reply to an existing message to forward it. "
+    "The bot will show a progress summary when done and post a log entry to the logs channel.\n\n"
+
+    "<b>Examples</b>\n"
+    "<code>/tcbroadcast Reminder: respect the community rules!</code>\n"
+    "Or reply to a message and run <code>/bc</code> to broadcast it."
 )
 
 
@@ -31,7 +47,6 @@ async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg = update.effective_message
     admin = update.effective_user
 
-    ## Determine message content
     args = parse_cmd_args(msg.text)
     broadcast_text: str | None = " ".join(args).strip() if args else None
 
@@ -42,7 +57,7 @@ async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     groups = await db.groups_db.active_groups()
     if not groups:
-        await msg.reply_text("No affiliated groups.")
+        await msg.reply_text("No connected groups.")
         return
 
     status = await msg.reply_text(f"Broadcasting to {len(groups)} group(s)...")
@@ -60,7 +75,6 @@ async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             failed += 1
         await asyncio.sleep(0.05)
 
-    ## Log to LOG_CHANNEL
     preview = broadcast_text or (msg.reply_to_message.text or "media") if msg.reply_to_message else ""
     lc, lt = cfg.logs
     try:
@@ -75,18 +89,16 @@ async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     try:
         await status.edit_text(
-            f"Broadcast sent to {code(str(success))} groups. Failed: {code(str(failed))} groups.",
+            f"Broadcast sent to {code(str(success))} groups. Failed: {code(str(failed))}.",
             parse_mode="HTML",
         )
     except Exception:
         pass
 
 
-## Spec aliases: /tcbroadcast, /broadcast, /tcannounce
 _BROADCAST_FILTER = (
     build_prefixed_filters("tcbroadcast")
-    | build_prefixed_filters("broadcast")
-    | build_prefixed_filters("tcannounce")
+    | build_prefixed_filters("bc")
 )
 
 __handlers__ = [MessageHandler(_BROADCAST_FILTER, cmd_broadcast)]

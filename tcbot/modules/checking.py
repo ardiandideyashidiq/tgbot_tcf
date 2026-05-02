@@ -17,10 +17,33 @@ from tcbot.utils.timedate_format import fmt_dt
 
 __module_name__ = "Check"
 __help_text__ = (
-    "<code>/checkme</code> – check your own federation ban status (anyone).\n"
-    "Aliases: <code>/myban</code>, <code>/amibanned</code>\n\n"
-    "<code>/baninfo</code> <i>&lt;target&gt;</i> – check ban details for any user (anyone).\n"
-    "Aliases: <code>/checkban</code>, <code>/banstatus</code>"
+    "<b>Help — Check Ban</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/checkme</code> — alias: <code>/cme</code>\n"
+    "<code>/checkban</code> — alias: <code>/cban</code>\n\n"
+
+    "<b>Who can use it</b>\n"
+    "Anyone — no special permissions needed.\n\n"
+
+    "<b>Where to use it</b>\n"
+    "Anywhere — bot PM, exec group, or any connected group.\n\n"
+
+    "<b>What it does</b>\n"
+    "<code>/checkme</code> — checks your own federation ban status. "
+    "If you're banned, the bot will show the reason, who banned you, and give you a button "
+    "to submit an appeal.\n\n"
+    "<code>/checkban</code> — looks up the ban status of any user. "
+    "Shows full details including the reason, ban date, and who issued it. "
+    "If proof exists, you'll get a button to view it.\n\n"
+
+    "<b>How to specify the target (checkban)</b>\n"
+    "Reply to a message, or provide a user ID / @username.\n\n"
+
+    "<b>Examples</b>\n"
+    "<code>/checkme</code>\n"
+    "<code>/checkban @username</code>\n"
+    "<code>/cban 123456789</code>"
 )
 
 
@@ -39,15 +62,13 @@ async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
     bot_info = await ctx.bot.get_me()
     ban_id = ban["ban_id"]
-
     admin_fname = await db.users_db.get_first_name(ban.get("admin_user_id", 0), "Admin")
 
     lines = [
         "You are currently banned from Transsion Core.",
         f"Reason: {esc(ban['reason'])}",
-        f"Banned by Transsion Core Admin: {admin_fname}",
+        f"Banned by: {admin_fname}",
     ]
-
     await update.effective_message.reply_text(
         "\n".join(lines),
         parse_mode="HTML",
@@ -72,7 +93,6 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         message_link(proof_chat, ban["proof_message_id"], proof_thread)
         if ban.get("proof_message_id") else None
     )
-
     admin_fname = await db.users_db.get_first_name(ban.get("admin_user_id", 0), "Admin")
     admin_id = ban.get("admin_user_id", 0)
 
@@ -86,7 +106,6 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         f"Ban ID: {ban['ban_id']}",
         "Status: Active",
     ]
-
     if ban.get("update_count", 0) > 0 and ban.get("updated_timestamp"):
         lines.append(f"Last Updated: {fmt_dt(ban['updated_timestamp'])}")
 
@@ -98,17 +117,13 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-## Spec aliases: /checkme, /myban, /amibanned
 _CHECKME_FILTER = (
     build_prefixed_filters("checkme")
-    | build_prefixed_filters("myban")
-    | build_prefixed_filters("amibanned")
+    | build_prefixed_filters("cme")
 )
-## Spec aliases: /baninfo, /checkban, /banstatus
 _BANINFO_FILTER = (
-    build_prefixed_filters("baninfo")
-    | build_prefixed_filters("checkban")
-    | build_prefixed_filters("banstatus")
+    build_prefixed_filters("checkban")
+    | build_prefixed_filters("cban")
 )
 
 __handlers__ = [

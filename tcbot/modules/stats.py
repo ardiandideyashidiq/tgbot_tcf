@@ -13,36 +13,43 @@ from tcbot.utils.prefixes import build_prefixed_filters
 
 __module_name__ = "Stats"
 __help_text__ = (
-    "<code>/tcstats</code> – show federation statistics (anyone).\n"
-    "Aliases: <code>/stats</code>, <code>/tcinfo</code>"
+    "<b>Help — Statistics</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/tcstats</code>\n\n"
+
+    "<b>Who can use it</b>\n"
+    "Anyone — no special permissions needed.\n\n"
+
+    "<b>Where to use it</b>\n"
+    "Anywhere — bot PM, exec group, or any connected group.\n\n"
+
+    "<b>What it does</b>\n"
+    "Shows a quick overview of the federation: who the current owner is, "
+    "how many admins are active, how many groups are connected, "
+    "and how many federation bans are currently active.\n\n"
+
+    "<b>Example</b>\n"
+    "<code>/tcstats</code>"
 )
 
 
 async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     owner_id = await db.admins_db.get_owner_id()
     owner_fname = await db.users_db.get_first_name(owner_id, "Owner") if owner_id else "Unknown"
-
     admins = await db.admins_db.admin_count()
     groups = await db.groups_db.active_group_count()
     bans = await db.bans_db.active_ban_count()
-
     owner_mention = mention(owner_id, owner_fname) if owner_id else "Unknown"
 
     lines = [
         "<b>TCF Statistics</b>",
         f"Owner: {owner_mention}",
         f"Admin Count: {admins}",
-        f"Affiliated Groups: {groups}",
+        f"Connected Groups: {groups}",
         f"Active Bans: {bans}",
     ]
     await update.effective_message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
-## Spec aliases: /tcstats, /stats, /tcinfo
-_STATS_FILTER = (
-    build_prefixed_filters("tcstats")
-    | build_prefixed_filters("stats")
-    | build_prefixed_filters("tcinfo")
-)
-
-__handlers__ = [MessageHandler(_STATS_FILTER, cmd_stats)]
+__handlers__ = [MessageHandler(build_prefixed_filters("tcstats"), cmd_stats)]

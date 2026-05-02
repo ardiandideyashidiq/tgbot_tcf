@@ -1,7 +1,7 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Group de-affiliation commands."""
+"""Group disconnect commands."""
 from __future__ import annotations
 
 import logging
@@ -17,16 +17,35 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
 log = logging.getLogger(__name__)
 
-__module_name__ = "Disaffiliate"
+__module_name__ = "Disconnect"
 __help_text__ = (
-    "<code>/detc</code> – remove the current group from TCF (group owner or TC admin).\n"
-    "Aliases: <code>/leavetc</code>, <code>/untc</code>\n\n"
-    "<code>/rmtc</code> <i>&lt;chat_id&gt;</i> – force-remove a group by ID (TC staff only).\n"
-    "Aliases: <code>/removetc</code>, <code>/deletetc</code>"
+    "<b>Help — Group Disconnect</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/tcdisconnect</code> — alias: <code>/tcdiscon</code>\n"
+    "<code>/rmtc</code> — staff-only force removal\n\n"
+
+    "<b>Who can use it</b>\n"
+    "<code>/tcdisconnect</code> — group owner or TC Staff.\n"
+    "<code>/rmtc</code> — TC Staff only.\n\n"
+
+    "<b>Where to use it</b>\n"
+    "<code>/tcdisconnect</code> — inside the group you want to disconnect.\n"
+    "<code>/rmtc</code> — anywhere (exec group, bot PM).\n\n"
+
+    "<b>What it does</b>\n"
+    "<code>/tcdisconnect</code> — removes the current group from TCF. "
+    "The bot will leave the group after disconnecting and post a log entry.\n\n"
+    "<code>/rmtc</code> — force-removes a group by chat ID. Useful for groups the bot was kicked from "
+    "or groups that need to be removed remotely.\n\n"
+
+    "<b>Examples</b>\n"
+    "Run <code>/tcdisconnect</code> inside the group.\n"
+    "<code>/rmtc -1001234567890</code> — force remove by chat ID."
 )
 
 
-async def cmd_detc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def cmd_tcdisconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     chat = update.effective_chat
     user = update.effective_user
 
@@ -35,7 +54,9 @@ async def cmd_detc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     if not await db.groups_db.is_affiliated(chat.id):
-        await update.effective_message.reply_text("This group is not affiliated with TCF.")
+        await update.effective_message.reply_text(
+            "This group is not connected to TCF."
+        )
         return
 
     is_tc_staff = await db.admins_db.is_staff(user.id)
@@ -44,7 +65,7 @@ async def cmd_detc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     if not is_tc_staff and not is_group_owner:
         await update.effective_message.reply_text(
-            "Only the group owner or Transsion Core admins can disaffiliate this group."
+            "Only the group owner or TC admins can disconnect this group."
         )
         return
 
@@ -54,7 +75,9 @@ async def cmd_detc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         await ctx.bot.send_message(
             lc,
-            parse_logmsg.group_disconnected_log(chat.id, chat.title or "Unknown", user.id, user.first_name),
+            parse_logmsg.group_disconnected_log(
+                chat.id, chat.title or "Unknown", user.id, user.first_name
+            ),
             parse_mode="HTML",
             message_thread_id=lt,
         )
@@ -62,7 +85,7 @@ async def cmd_detc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         pass
 
     await update.effective_message.reply_text(
-        "This group has been removed from the Transsion Core Federation."
+        "This group has been disconnected from the Transsion Core Federation."
     )
     try:
         await ctx.bot.leave_chat(chat.id)
@@ -85,7 +108,9 @@ async def cmd_rmtc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             await ctx.bot.send_message(
                 lc,
                 parse_logmsg.group_disconnected_log(
-                    chat_id, str(chat_id), update.effective_user.id, update.effective_user.first_name,
+                    chat_id, str(chat_id),
+                    update.effective_user.id,
+                    update.effective_user.first_name,
                 ),
                 parse_mode="HTML",
                 message_thread_id=lt,
@@ -97,26 +122,19 @@ async def cmd_rmtc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         except Exception:
             pass
         await update.effective_message.reply_text(
-            f"Group {code(str(chat_id))} has been removed from the federation.", parse_mode="HTML",
+            f"Group {code(str(chat_id))} has been disconnected from TCF.",
+            parse_mode="HTML",
         )
     else:
         await update.effective_message.reply_text("Group not found or already removed.")
 
 
-## Spec aliases: /detc, /leavetc, /untc
-_DETC_FILTER = (
-    build_prefixed_filters("detc")
-    | build_prefixed_filters("leavetc")
-    | build_prefixed_filters("untc")
-)
-## Spec aliases: /rmtc, /removetc, /deletetc
-_RMTC_FILTER = (
-    build_prefixed_filters("rmtc")
-    | build_prefixed_filters("removetc")
-    | build_prefixed_filters("deletetc")
+_DISCONNECT_FILTER = (
+    build_prefixed_filters("tcdisconnect")
+    | build_prefixed_filters("tcdiscon")
 )
 
 __handlers__ = [
-    MessageHandler(_DETC_FILTER, cmd_detc),
-    MessageHandler(_RMTC_FILTER, cmd_rmtc),
+    MessageHandler(_DISCONNECT_FILTER, cmd_tcdisconnect),
+    MessageHandler(build_prefixed_filters("rmtc"), cmd_rmtc),
 ]

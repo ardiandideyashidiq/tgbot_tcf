@@ -13,17 +13,37 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
 __module_name__ = "Mute"
 __help_text__ = (
-    "<code>/tcmute</code> <i>&lt;target&gt; [duration] [reason]</i> – restrict a user from "
-    "sending messages in this group.\n"
-    "Aliases: <code>/tcm</code>\n\n"
-    "<b>Duration tokens</b> (optional, place before the reason):\n"
-    "<code>3s</code> · <code>5m</code> · <code>2h</code> · <code>7d</code> · "
-    "<code>1w</code> · <code>3mo</code> · <code>2ye</code>\n"
-    "Omit to mute permanently.\n\n"
-    "The bot will ask for a reason and optional proof, or you can provide them inline:\n"
-    "<code>/tcm @user 3d spamming</code>\n\n"
-    "<code>/tcunmute</code> <i>&lt;target&gt;</i> – restore a user's chat permissions.\n"
-    "Aliases: <code>/tcunm</code>"
+    "<b>Help — Mute</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/tcmute</code> — alias: <code>/tcm</code>\n"
+    "<code>/tcunmute</code> — alias: <code>/tcunm</code>\n\n"
+
+    "<b>Who can use it</b>\n"
+    "TC Staff (admins & owner) only.\n\n"
+
+    "<b>Where to use it</b>\n"
+    "Inside any connected group.\n\n"
+
+    "<b>What it does</b>\n"
+    "<code>/tcmute</code> — restricts a user from sending messages in the current group. "
+    "After the command, the bot will ask for a reason and optionally a proof (photo/video). "
+    "You can also skip both steps. If the user is already muted, this resets the duration.\n\n"
+    "<code>/tcunmute</code> — restores the user's full send permissions.\n\n"
+
+    "<b>Duration tokens</b> (optional — place before the reason):\n"
+    "<code>3s</code> seconds · <code>5m</code> minutes · <code>2h</code> hours\n"
+    "<code>7d</code> days · <code>1w</code> weeks · <code>3mo</code> months · <code>2ye</code> years\n"
+    "Omit duration to mute permanently.\n\n"
+
+    "<b>How to specify the target</b>\n"
+    "Reply to a message, or provide a user ID / @username.\n\n"
+
+    "<b>Examples</b>\n"
+    "<code>/tcmute @username 3d spamming</code> — mute for 3 days with reason inline\n"
+    "<code>/tcm @username 1w</code> — mute for 1 week, bot will ask for reason\n"
+    "<code>/tcm @username</code> — permanent mute, bot walks you through it\n"
+    "<code>/tcunmute @username</code> — unmute immediately"
 )
 
 
@@ -33,7 +53,7 @@ async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await update.effective_message.reply_text(
-            "Specify a target – reply to a message or provide a user ID."
+            "Specify a target — reply to a message or provide a user ID."
         )
         return
     await execute_unmute(update, ctx, target_id, target_name or str(target_id))

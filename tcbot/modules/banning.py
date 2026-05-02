@@ -8,9 +8,30 @@ from tcbot.modules.helper.workflows.ban_flow import build_handler
 
 __module_name__ = "Ban"
 __help_text__ = (
-    "<code>/tcban</code> <i>&lt;target&gt; &lt;reason&gt;</i> – ban a user federation-wide.\n"
-    "Reply to a message or provide a user ID / @username as the target.\n"
-    "Aliases: <code>/fban</code>, <code>/ban</code>, <code>/tcfban</code>"
+    "<b>Help — Ban</b>\n\n"
+
+    "<b>Commands & Aliases</b>\n"
+    "<code>/tcban</code> — alias: <code>/tcb</code>\n\n"
+
+    "<b>Who can use it</b>\n"
+    "TC Staff (admins & owner) only.\n\n"
+
+    "<b>Where to use it</b>\n"
+    "Exec group, connected groups, or bot PM — anywhere the bot is present.\n\n"
+
+    "<b>What it does</b>\n"
+    "Issues a <b>federation-wide ban</b> on the target. After the command, the bot will ask "
+    "you to submit proof (photo or video). Once proof is uploaded, the ban is logged and "
+    "enforced across all connected groups automatically.\n"
+    "If the user is already banned, the existing record gets updated with the new reason and proof.\n\n"
+
+    "<b>How to specify the target</b>\n"
+    "Reply to a message, or provide a user ID / @username.\n\n"
+
+    "<b>Examples</b>\n"
+    "<code>/tcban @username spamming affiliate links</code>\n"
+    "<code>/tcban 123456789 scamming members</code>\n"
+    "Or reply to a message, then: <code>/tcb reason here</code>"
 )
 
 __handlers__ = [build_handler()]

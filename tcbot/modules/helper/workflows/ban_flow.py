@@ -314,9 +314,7 @@ async def on_ban_timeout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 def build_handler() -> ConversationHandler:
     entry = (
         build_prefixed_filters("tcban")
-        | build_prefixed_filters("fban")
-        | build_prefixed_filters("ban")
-        | build_prefixed_filters("tcfban")
+        | build_prefixed_filters("tcb")
     )
     return ConversationHandler(
         entry_points=[MessageHandler(entry, cmd_ban_start)],

@@ -9,7 +9,7 @@ import logging
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
-from tcbot import database as db
+from tcbot import cfg, database as db
 from tcbot.modules.helper import keyboards
 from tcbot.modules.helper.formatter import code, esc, mention
 from tcbot.utils.prefixes import build_prefixed_filters
@@ -171,15 +171,15 @@ async def on_menu_information(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 
     owner_mention = mention(owner_id, owner_fname) if owner_id else "Unknown"
 
-    lines = [
-        "<b>Transsion Core Information</b>",
-        f"Owner: {owner_mention}",
-        f"Admins: {admins}",
-        f"Active Bans: {bans}",
-        f"Connected Chats: {groups}",
-    ]
+    text = (
+        f"<b>Stats {esc(cfg.community_name)}</b>\n\n"
+        f"Founder: {owner_mention}\n"
+        f"Number of admins: {admins}\n"
+        f"Number of bans: {bans}\n"
+        f"Number of connected chats: {groups}"
+    )
     await q.edit_message_text(
-        "\n".join(lines),
+        text,
         parse_mode="HTML",
         reply_markup=keyboards.info_sub_kb(),
     )

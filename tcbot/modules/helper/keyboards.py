@@ -159,12 +159,8 @@ def main_menu_kb() -> InlineKeyboardMarkup:
                 InlineKeyboardButton("About", callback_data="menu_about"),
                 InlineKeyboardButton("Help", callback_data="menu_help"),
             ],
-            [
-                InlineKeyboardButton("Connected", callback_data="menu_groups"),
-                InlineKeyboardButton("Additional", callback_data="menu_additional"),
-            ],
-            [InlineKeyboardButton("Information", callback_data="menu_information")],
-            [InlineKeyboardButton("Privacy", callback_data="menu_privacy")],
+            [InlineKeyboardButton("Additional", callback_data="menu_additional")],
+            [InlineKeyboardButton("Privacy",    callback_data="menu_privacy")],
         ]
     )
 
@@ -230,11 +226,9 @@ def back_to_help_kb() -> InlineKeyboardMarkup:
 def info_sub_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
-            [
-                InlineKeyboardButton("Admins", callback_data="info_admins:0"),
-                InlineKeyboardButton("Connected Chats", callback_data="info_chats:0"),
-            ],
-            [InlineKeyboardButton("Back", callback_data="menu_back_start")],
+            [InlineKeyboardButton("Admins/Staff",    callback_data="info_admins:0")],
+            [InlineKeyboardButton("Connected Chats", callback_data="info_chats:0")],
+            [InlineKeyboardButton("Back",            callback_data="menu_back_start")],
         ]
     )
 

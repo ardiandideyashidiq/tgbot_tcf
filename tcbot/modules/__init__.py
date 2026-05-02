@@ -62,7 +62,7 @@ __all__ = ALL_MODULES + ["ALL_MODULES"]
 ## ---------------------------------------------------------------------------
 
 ## ConversationHandlers and affiliation must be registered first
-_PRIORITY_FIRST = ["connecting", "admins", "appealing", "banning"]
+_PRIORITY_FIRST = ["connecting", "admins", "appealing", "banning", "muting"]
 ## Greeting and start last to avoid filter shadowing
 _PRIORITY_LAST = ["start", "greeting"]
 

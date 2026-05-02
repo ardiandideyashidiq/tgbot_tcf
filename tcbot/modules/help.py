@@ -3,6 +3,7 @@
 # © Copyright 2026 Aveum Apps
 """Help command – content is collected dynamically from each module's
 __module_name__ and __help_text__ attributes."""
+
 from __future__ import annotations
 
 import importlib
@@ -17,12 +18,11 @@ from tcbot.utils.prefixes import build_prefixed_filters
 
 log = logging.getLogger(__name__)
 
-__module_name__ = None
-
 
 ## ---------------------------------------------------------------------------
 ## Build help content dynamically from every loaded module
 ## ---------------------------------------------------------------------------
+
 
 def _build_help_content() -> dict[str, tuple[str, str]]:
     """
@@ -55,6 +55,7 @@ HELP_TOPICS: list[tuple[str, str]] = [
 ## Handlers
 ## ---------------------------------------------------------------------------
 
+
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(
         "<b>TCF Bot Help</b>\n"
@@ -80,7 +81,9 @@ async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await q.answer()
     topic = q.data
     if topic not in HELP_CONTENT:
-        await q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_kb())
+        await q.edit_message_text(
+            "Topic not found.", reply_markup=keyboards.back_to_help_kb()
+        )
         return
     name, text = HELP_CONTENT[topic]
     await q.edit_message_text(
@@ -90,10 +93,7 @@ async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-_HELP_FILTER = (
-    build_prefixed_filters("help")
-    | build_prefixed_filters("commands")
-)
+_HELP_FILTER = build_prefixed_filters("help") | build_prefixed_filters("commands")
 
 __handlers__ = [
     MessageHandler(_HELP_FILTER, cmd_help),

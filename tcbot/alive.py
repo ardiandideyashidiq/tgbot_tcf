@@ -1,28 +1,43 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Minimal Flask keep-alive server – daemon thread, health check only."""
-from __future__ import annotations
+
 
 import logging
 import threading
 
 from flask import Flask
 
-log = logging.getLogger(__name__)
-app = Flask(__name__)
+from . import configs
+
+logger = logging.getLogger(__name__)
+
+_app = Flask(__name__)
 
 
-@app.route("/")
-def _health():
+@_app.route("/")
+def index() -> str:
+    """Health‑check endpoint."""
     return "OK"
 
 
+def _run() -> None:
+    """Start Flask on the configured port."""
+    port = configs.port_int
+    _app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+        use_reloader=False,
+    )
+
+
 def start_keepalive() -> None:
-    from tcbot.config import cfg
-
-    def _run():
-        log.info("Keep-alive running on 0.0.0.0:%d", cfg.port)
-        app.run(host="0.0.0.0", port=cfg.port, debug=False, use_reloader=False)
-
-    threading.Thread(target=_run, daemon=True).start()
+    """Launch the keep‑alive server in a daemon thread."""
+    t = threading.Thread(
+        target=_run,
+        name="keepalive",
+        daemon=True,
+    )
+    t.start()
+    logger.info("Keep‑alive server started on 0.0.0.0:%d", configs.port_int)

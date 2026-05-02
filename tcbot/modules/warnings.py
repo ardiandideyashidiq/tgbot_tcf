@@ -64,6 +64,9 @@ async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             "Specify a target — reply to a message or provide a user ID."
         )
         return
+    if target_id == ctx.bot.id:
+        await update.effective_message.reply_text("That's me — no warnings to remove.")
+        return
     await execute_unwarn(update, ctx, target_id, target_name or str(target_id))
 
 
@@ -86,6 +89,9 @@ async def cmd_resetwarns(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
         await update.effective_message.reply_text(
             "Specify a target — reply to a message or provide a user ID."
         )
+        return
+    if target_id == ctx.bot.id:
+        await update.effective_message.reply_text("That's me — no warnings to clear.")
         return
     await execute_resetwarns(update, ctx, target_id, target_name or str(target_id))
 

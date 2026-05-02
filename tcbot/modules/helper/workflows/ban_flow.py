@@ -63,6 +63,10 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await msg.reply_text("A reason is required — /tcban <target> <reason>.")
         return ConversationHandler.END
 
+    if target_id == ctx.bot.id:
+        await msg.reply_text("That's me — I run the bans around here, not receive them.")
+        return ConversationHandler.END
+
     if target_id == admin.id:
         await msg.reply_text("You cannot ban yourself.")
         return ConversationHandler.END

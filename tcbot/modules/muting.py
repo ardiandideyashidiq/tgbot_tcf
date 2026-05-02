@@ -55,6 +55,11 @@ async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             "Specify a target — reply to a message or provide a user ID."
         )
         return
+    if target_id == ctx.bot.id:
+        await update.effective_message.reply_text(
+            "That's me — I'm not muted. Muting doesn't apply to a bot."
+        )
+        return
     await execute_unmute(update, ctx, target_id, target_name or str(target_id))
 
 

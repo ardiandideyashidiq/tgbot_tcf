@@ -94,6 +94,10 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return ConversationHandler.END
 
+    if target_id == ctx.bot.id:
+        await msg.reply_text("That's me — kicking a bot doesn't quite work like that. 😄")
+        return ConversationHandler.END
+
     ctx.user_data.update({
         "kick_target_id":   target_id,
         "kick_target_name": target_name or str(target_id),

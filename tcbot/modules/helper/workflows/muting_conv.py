@@ -75,6 +75,10 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await msg.reply_text("Cannot resolve target. Reply to a message or provide a user ID.")
         return ConversationHandler.END
 
+    if target_id == ctx.bot.id:
+        await msg.reply_text("That's me — you can't mute a bot. 😄")
+        return ConversationHandler.END
+
     if target_id == admin.id:
         await msg.reply_text("You cannot mute yourself.")
         return ConversationHandler.END

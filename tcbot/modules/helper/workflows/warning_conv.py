@@ -93,6 +93,10 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         )
         return ConversationHandler.END
 
+    if target_id == ctx.bot.id:
+        await msg.reply_text("That's me — warnings don't apply here, I'm the one issuing them. 😄")
+        return ConversationHandler.END
+
     ctx.user_data.update({
         "warn_target_id":   target_id,
         "warn_target_name": target_name or str(target_id),

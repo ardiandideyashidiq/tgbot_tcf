@@ -75,6 +75,10 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await msg.reply_text("The owner cannot be banned.")
         return ConversationHandler.END
 
+    if await db.admins_db.is_admin(target_id):
+        await msg.reply_text("Staff members cannot be banned.")
+        return ConversationHandler.END
+
     ctx.user_data["ban_target_id"] = target_id
     ctx.user_data["ban_target_fname"] = target_fname or str(target_id)
     ctx.user_data["ban_reason"] = reason

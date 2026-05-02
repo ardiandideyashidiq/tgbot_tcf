@@ -87,6 +87,10 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await msg.reply_text("The owner cannot be muted.")
         return ConversationHandler.END
 
+    if await db.admins_db.is_admin(target_id):
+        await msg.reply_text("Staff members cannot be muted.")
+        return ConversationHandler.END
+
     duration = None
     if remaining_args and _DURATION_RE.match(remaining_args[0]):
         duration = parse_duration(remaining_args.pop(0))

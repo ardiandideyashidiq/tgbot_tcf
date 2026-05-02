@@ -31,7 +31,7 @@ from telegram.ext import (
     filters,
 )
 
-from tcbot import cfg
+from tcbot import cfg, database as db
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.workflows.warning_flow import execute_warn
@@ -95,6 +95,14 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
     if target_id == ctx.bot.id:
         await msg.reply_text("That's me — warnings don't apply here, I'm the one issuing them. 😄")
+        return ConversationHandler.END
+
+    if await db.admins_db.is_owner(target_id):
+        await msg.reply_text("The owner cannot be warned.")
+        return ConversationHandler.END
+
+    if await db.admins_db.is_admin(target_id):
+        await msg.reply_text("Staff members cannot be warned.")
         return ConversationHandler.END
 
     ctx.user_data.update({

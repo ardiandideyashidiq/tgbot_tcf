@@ -7,6 +7,7 @@ from __future__ import annotations
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler
 
+from tcbot import database as db
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.workflows.muting_conv import build_handler
 from tcbot.modules.helper.workflows.muting_flow import execute_unmute
@@ -59,6 +60,9 @@ async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await update.effective_message.reply_text(
             "That's me — I'm not muted. Muting doesn't apply to a bot."
         )
+        return
+    if await db.admins_db.is_owner(target_id):
+        await update.effective_message.reply_text("The owner cannot be unmuted — they were never muted.")
         return
     await execute_unmute(update, ctx, target_id, target_name or str(target_id))
 

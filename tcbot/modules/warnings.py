@@ -7,6 +7,7 @@ from __future__ import annotations
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler
 
+from tcbot import database as db
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.workflows.warning_conv import warn_conversation
 from tcbot.modules.helper.workflows.warning_flow import (
@@ -67,6 +68,9 @@ async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if target_id == ctx.bot.id:
         await update.effective_message.reply_text("That's me — no warnings to remove.")
         return
+    if await db.admins_db.is_owner(target_id):
+        await update.effective_message.reply_text("The owner cannot be unwarned — they were never warned.")
+        return
     await execute_unwarn(update, ctx, target_id, target_name or str(target_id))
 
 
@@ -92,6 +96,9 @@ async def cmd_resetwarns(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
         return
     if target_id == ctx.bot.id:
         await update.effective_message.reply_text("That's me — no warnings to clear.")
+        return
+    if await db.admins_db.is_owner(target_id):
+        await update.effective_message.reply_text("The owner cannot have their warnings cleared — they were never warned.")
         return
     await execute_resetwarns(update, ctx, target_id, target_name or str(target_id))
 

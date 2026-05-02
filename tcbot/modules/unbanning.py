@@ -7,6 +7,7 @@ from __future__ import annotations
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler
 
+from tcbot import database as db
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.workflows.unban_flow import execute_unban
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
@@ -50,6 +51,9 @@ async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await update.effective_message.reply_text(
             "That's me — I'm not federation-banned to begin with."
         )
+        return
+    if await db.admins_db.is_owner(target_id):
+        await update.effective_message.reply_text("The owner cannot be unbanned — they were never banned.")
         return
     await execute_unban(update, ctx, target_id, target_fname)
 

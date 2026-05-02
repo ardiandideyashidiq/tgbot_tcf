@@ -8,7 +8,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler
 
 from tcbot import database as db
-from tcbot.config import cfg
+from tcbot import cfg
 from tcbot.modules.helper import extraction, keyboards
 from tcbot.modules.helper.formatter import code, esc, mention
 from tcbot.modules.helper.parse_link import message_link

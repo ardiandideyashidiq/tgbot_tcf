@@ -21,7 +21,7 @@ def db() -> AsyncIOMotorDatabase:
 
 async def connect() -> None:
     global _db
-    from tcbot.config import cfg
+    from tcbot import cfg
 
     client = AsyncIOMotorClient(cfg.mongodb_uri, serverSelectionTimeoutMS=10_000)
     _db = client[cfg.db_name]

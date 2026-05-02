@@ -47,17 +47,17 @@ def _find_free_port() -> int:
 def parse_port(port_str: str) -> int:
     """
     Resolve a port string to an integer.
-    - 'auto' or empty -> find a free system port.
+    - 'auto' or empty -> default to 5000.
     - numeric string -> convert to int.
-    - invalid -> fall back to auto with a warning.
+    - invalid -> fall back to 5000 with a warning.
     """
     if not port_str or port_str.lower() == "auto":
-        return _find_free_port()
+        return 5000
     try:
         return int(port_str)
     except ValueError:
-        print(f"Invalid PORT '{port_str}', using auto.", file=sys.stderr)
-        return _find_free_port()
+        print(f"Invalid PORT '{port_str}', defaulting to 5000.", file=sys.stderr)
+        return 5000
 
 
 def parse_chat_id(raw: str) -> Tuple[int, Optional[int]]:
@@ -120,7 +120,7 @@ class Configs:
 
     @property
     def port_int(self) -> int:
-        """Resolved integer port for web server and keep‑alive."""
+        """Resolved integer port for web server and keep-alive."""
         return parse_port(self.port)
 
     @property
@@ -138,6 +138,10 @@ class Configs:
     @property
     def logs_id(self) -> int:
         return int(self.logs) if self.logs else 0
+
+    @property
+    def logs_tuple(self) -> Tuple[int, Optional[int]]:
+        return parse_chat_id(self.logs)
 
     @property
     def proofs_id(self) -> Tuple[int, Optional[int]]:
@@ -184,7 +188,7 @@ class Configs:
             db_name=os.getenv("DB_NAME", "tcbot").strip(),
             community_name=os.getenv("COMMUNITY_NAME", "Bot").strip(),
             prefixes=prefixes,
-            port=os.getenv("PORT", "auto").strip(),
+            port=os.getenv("PORT", "5000").strip(),
             main_group=os.getenv("MAIN_GROUP", "").strip(),
             main_channel=os.getenv("MAIN_CHANNEL", "").strip(),
             proofs=os.getenv("PROOFS", "").strip(),
@@ -202,3 +206,99 @@ class Configs:
 
 ## Singleton instance
 configs = Configs.load()
+
+
+## cfg – canonical config accessor used by all modules.
+## Exposes the same names used throughout tcbot.modules and tcbot.utils,
+## mapping to the underlying Configs fields/properties.
+
+class _CfgAdapter:
+    """Thin adapter so modules can write `cfg.logs`, `cfg.main_group`, etc."""
+
+    def __init__(self, c: Configs) -> None:
+        self._c = c
+
+    ## Credentials / identity
+    @property
+    def bot_token(self) -> str:
+        return self._c.bot_token
+
+    @property
+    def initial_owner_id(self) -> int:
+        return self._c.owner_id
+
+    @property
+    def community_name(self) -> str:
+        return self._c.community_name
+
+    @property
+    def mongodb_uri(self) -> str:
+        return self._c.mongodb_uri
+
+    @property
+    def db_name(self) -> str:
+        return self._c.db_name
+
+    @property
+    def prefixes(self) -> List[str]:
+        return self._c.prefixes
+
+    ## Network
+    @property
+    def port(self) -> int:
+        return self._c.port_int
+
+    ## Chat IDs (resolved integers)
+    @property
+    def main_group(self) -> int:
+        return self._c.main_group_id
+
+    @property
+    def main_channel(self) -> int:
+        return self._c.main_channel_id
+
+    @property
+    def exec_group(self) -> int:
+        return self._c.extend_group_id
+
+    ## Chat ID tuples (chat_id, thread_id | None)
+    @property
+    def logs(self) -> Tuple[int, Optional[int]]:
+        return self._c.logs_tuple
+
+    @property
+    def logs_errors(self) -> Tuple[int, Optional[int]]:
+        return self._c.logs_errors_id
+
+    @property
+    def proofs(self) -> Tuple[int, Optional[int]]:
+        return self._c.proofs_id
+
+    @property
+    def appeals(self) -> Tuple[int, Optional[int]]:
+        return self._c.appeals_id
+
+    ## Timeouts / debounce
+    @property
+    def proof_timeout(self) -> int:
+        return self._c.proof_timeout_seconds
+
+    @property
+    def appeal_timeout(self) -> int:
+        return self._c.appeal_timeout_seconds
+
+    @property
+    def album_debounce(self) -> int:
+        return self._c.album_debounce_seconds
+
+    ## Module filtering
+    @property
+    def modules_load(self) -> List[str]:
+        return self._c.modules_load
+
+    @property
+    def modules_no_load(self) -> List[str]:
+        return self._c.modules_no_load
+
+
+cfg = _CfgAdapter(configs)

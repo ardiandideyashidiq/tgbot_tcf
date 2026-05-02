@@ -18,7 +18,7 @@ from telegram.ext import (
 )
 
 from tcbot import database as db
-from tcbot.config import cfg
+from tcbot import cfg
 from tcbot.modules.helper import keyboards, parse_logmsg
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.parse_link import message_link

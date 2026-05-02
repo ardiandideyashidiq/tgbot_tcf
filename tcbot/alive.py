@@ -8,7 +8,7 @@ import threading
 
 from flask import Flask
 
-from tcbot.config import cfg
+from tcbot import cfg
 
 logger = logging.getLogger(__name__)
 

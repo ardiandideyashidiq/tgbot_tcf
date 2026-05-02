@@ -4,54 +4,16 @@
 """Entry point – initialise DB, register all module handlers, start polling."""
 from __future__ import annotations
 
-import importlib
 import logging
-import pkgutil
-from pathlib import Path
-from typing import Any
 
 from telegram import Update
 from telegram.ext import Application, ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-import tcbot.modules as _mods_pkg
-from tcbot.config import cfg
+from tcbot import cfg
+from tcbot.modules import get_handlers
 from tcbot.utils.logger import setup as setup_logging
 
 log = logging.getLogger(__name__)
-
-
-def _discover_handlers() -> list[Any]:
-    """Auto-discover and collect all handlers from tcbot.modules."""
-    handlers: list[Any] = []
-    pkg_path = str(Path(_mods_pkg.__file__).parent)
-
-    ## ConversationHandlers and affiliation must be registered first
-    PRIORITY_FIRST = ["connecting", "admins", "appealing", "banning"]
-    ## Greeting and start last to avoid filter shadowing
-    PRIORITY_LAST = ["start", "greeting"]
-
-    mods_found: dict[str, Any] = {}
-    for _, mod_name, _ in pkgutil.iter_modules([pkg_path]):
-        try:
-            mod = importlib.import_module(f"tcbot.modules.{mod_name}")
-            mods_found[mod_name] = mod
-        except Exception as exc:
-            log.error("Failed to import tcbot.modules.%s: %s", mod_name, exc)
-
-    ordered = (
-        [n for n in PRIORITY_FIRST if n in mods_found]
-        + [n for n in mods_found if n not in PRIORITY_FIRST and n not in PRIORITY_LAST]
-        + [n for n in PRIORITY_LAST if n in mods_found]
-    )
-
-    for mod_name in ordered:
-        mod = mods_found[mod_name]
-        mod_handlers = getattr(mod, "__handlers__", [])
-        if mod_handlers:
-            handlers.extend(mod_handlers)
-            log.debug("Loaded %d handler(s) from %s", len(mod_handlers), mod_name)
-
-    return handlers
 
 
 async def _update_member_cache(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -101,8 +63,8 @@ def main() -> None:
         .build()
     )
 
-    ## Register all module handlers
-    for handler in _discover_handlers():
+    ## Register all module handlers via tcbot.modules
+    for handler in get_handlers():
         app.add_handler(handler)
 
     ## Low-priority handler: update member cache on every group message

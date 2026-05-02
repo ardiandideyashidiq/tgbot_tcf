@@ -10,7 +10,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler
 
 from tcbot import database as db
-from tcbot.config import cfg
+from tcbot import cfg
 from tcbot.modules.helper import decorators, parse_logmsg
 from tcbot.modules.helper.formatter import code
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args

@@ -38,7 +38,7 @@ class BotLogFormatter(logging.Formatter):
 
 
 def setup(level: int = logging.INFO) -> None:
-    from tcbot.config import cfg
+    from tcbot import cfg
     formatter = BotLogFormatter(cfg.community_name)
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)

@@ -10,7 +10,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler, filters
 
 from tcbot import database as db
-from tcbot.config import cfg
+from tcbot import cfg
 from tcbot.modules.helper.formatter import esc, mention
 
 log = logging.getLogger(__name__)

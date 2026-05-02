@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html
 
-from tcbot.config import cfg
+from tcbot import cfg
 
 ## The exact branding line required in every log message
 BRAND = cfg.community_name

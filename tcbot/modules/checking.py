@@ -11,13 +11,14 @@ from telegram.ext import ContextTypes, MessageHandler
 from tcbot import database as db
 from tcbot import cfg
 from tcbot.modules.helper import extraction, keyboards
-from tcbot.modules.helper.formatter import code, esc, mention
+from tcbot.modules.helper.ban_info import build_ban_detail
+from tcbot.modules.helper.formatter import esc
 from tcbot.modules.helper.parse_link import message_link
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
-from tcbot.utils.timedate_format import fmt_dt
 
 __module_name__ = "Checking"
 __help_text__ = (
+    "<b>Help — Check Ban</b>\n\n"
     "<b>Commands & Aliases</b>\n"
     "<code>/checkme</code> — alias: <code>/cme</code>\n"
     "<code>/checkban</code> — alias: <code>/cban</code>\n\n"
@@ -87,34 +88,9 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    proof_chat, proof_thread = cfg.proofs
-    proof_link = (
-        message_link(proof_chat, ban["proof_message_id"], proof_thread)
-        if ban.get("proof_message_id")
-        else None
-    )
-    admin_fname = await db.users_db.get_first_name(ban.get("admin_user_id", 0), "Admin")
-    admin_id = ban.get("admin_user_id", 0)
-
-    lines = [
-        "<b>Ban Details</b>",
-        f"User: {mention(target_id, target_fname)}",
-        f"User ID: {target_id}",
-        f"Reason: {esc(ban['reason'])}",
-        f"Banned by: {mention(admin_id, admin_fname)}",
-        f"Date: {fmt_dt(ban['timestamp'])}",
-        f"Ban ID: {ban['ban_id']}",
-        "Status: Active",
-    ]
-    if ban.get("update_count", 0) > 0 and ban.get("updated_timestamp"):
-        lines.append(f"Last Updated: {fmt_dt(ban['updated_timestamp'])}")
-
+    text, proof_link = await build_ban_detail(ban, target_fname)
     kb = keyboards.baninfo_proof_kb(proof_link) if proof_link else None
-    await update.effective_message.reply_text(
-        "\n".join(lines),
-        parse_mode="HTML",
-        reply_markup=kb,
-    )
+    await update.effective_message.reply_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 _CHECKME_FILTER = build_prefixed_filters("checkme") | build_prefixed_filters("cme")

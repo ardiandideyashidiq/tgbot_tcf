@@ -7,9 +7,9 @@ from __future__ import annotations
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
-from tcbot import cfg, database as db
+from tcbot import database as db
+from tcbot.modules.helper.ban_info import build_ban_detail
 from tcbot.modules.helper.formatter import code, esc, mention
-from tcbot.modules.helper.parse_link import message_link
 
 _PAGE_SIZE    = 6
 _SEARCH_KEY   = "stats_search_active"
@@ -82,33 +82,6 @@ def _ban_detail_kb(page: int, proof_link: str | None = None) -> InlineKeyboardMa
 
 
 # ---------------------------------------------------------------------------
-# Shared helper — build ban detail text + proof link
-# ---------------------------------------------------------------------------
-
-async def _ban_detail(ban: dict) -> tuple[str, str | None]:
-    uid  = ban["banned_user_id"]
-    aid  = ban["admin_user_id"]
-    fname = await db.users_db.get_first_name(uid, str(uid))
-    aname = await db.users_db.get_first_name(aid, str(aid))
-    ts    = ban["timestamp"].strftime("%Y-%m-%d %H:%M UTC") if ban.get("timestamp") else "Unknown"
-
-    proof_chat, proof_thread = cfg.proofs
-    proof_link = (
-        message_link(proof_chat, ban["proof_message_id"], proof_thread)
-        if ban.get("proof_message_id") else None
-    )
-    text = (
-        f"<b>Ban Details</b>\n\n"
-        f"User: {mention(uid, fname)} {code(str(uid))}\n"
-        f"Ban ID: {code(ban['ban_id'])}\n"
-        f"Reason: {esc(ban.get('reason', 'No reason'))}\n"
-        f"Banned by: {mention(aid, aname)}\n"
-        f"Date: {ts}"
-    )
-    return text, proof_link
-
-
-# ---------------------------------------------------------------------------
 # Bans list handlers
 # ---------------------------------------------------------------------------
 
@@ -146,7 +119,7 @@ async def on_stats_ban_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
 
     bans = await db.bans_db.active_bans()
     ban  = bans[page * _PAGE_SIZE + idx]
-    text, proof_link = await _ban_detail(ban)
+    text, proof_link = await build_ban_detail(ban)
     await q.edit_message_text(text, parse_mode="HTML", reply_markup=_ban_detail_kb(page, proof_link))
 
 
@@ -233,7 +206,7 @@ async def on_stats_search_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
         await q.answer("Result no longer available.", show_alert=True)
         return
 
-    text, proof_link = await _ban_detail(results[idx])
+    text, proof_link = await build_ban_detail(results[idx])
     await q.edit_message_text(text, parse_mode="HTML", reply_markup=_search_detail_kb(proof_link))
 
 

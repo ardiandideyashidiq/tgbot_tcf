@@ -1,7 +1,7 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Warn flow helpers – per-group warning tracking."""
+"""Warning flow helpers – per-group warning tracking."""
 from __future__ import annotations
 
 import logging
@@ -35,13 +35,98 @@ async def execute_warn(
         try:
             await ctx.bot.ban_chat_member(chat_id, target_id)
             await msg.reply_text(
-                f"⛔ {mention(target_id, target_name)} reached {WARN_LIMIT} warnings and has been banned.",
+                f"{mention(target_id, target_name)} reached {WARN_LIMIT} warnings "
+                f"and has been banned from this group.",
                 parse_mode="HTML",
             )
         except Exception as exc:
             log.error("Auto-ban on warn limit failed: %s", exc)
+            await msg.reply_text(
+                f"{mention(target_id, target_name)} reached {WARN_LIMIT} warnings "
+                f"but auto-ban failed. Please ban manually.",
+                parse_mode="HTML",
+            )
     else:
         await msg.reply_text(
-            f"⚠️ {mention(target_id, target_name)} warned ({count}/{WARN_LIMIT}): {reason}",
+            f"{mention(target_id, target_name)} has been warned "
+            f"({count}/{WARN_LIMIT}): {reason}",
             parse_mode="HTML",
         )
+
+
+async def execute_unwarn(
+    update: Update,
+    ctx: ContextTypes.DEFAULT_TYPE,
+    target_id: int,
+    target_name: str,
+) -> None:
+    msg = update.effective_message
+    chat_id = update.effective_chat.id
+
+    count = await db.warns_db.warn_count(target_id, chat_id)
+    if count == 0:
+        await msg.reply_text(
+            f"{mention(target_id, target_name)} {code(str(target_id))} has no warnings in this group.",
+            parse_mode="HTML",
+        )
+        return
+
+    await db.warns_db.remove_last_warn(target_id, chat_id)
+    new_count = max(count - 1, 0)
+    await msg.reply_text(
+        f"Removed one warning from {mention(target_id, target_name)}. "
+        f"They now have {new_count}/{WARN_LIMIT} warnings.",
+        parse_mode="HTML",
+    )
+
+
+async def execute_warnlist(
+    update: Update,
+    ctx: ContextTypes.DEFAULT_TYPE,
+    target_id: int,
+    target_name: str,
+) -> None:
+    msg = update.effective_message
+    chat_id = update.effective_chat.id
+
+    warns = await db.warns_db.get_warns(target_id, chat_id)
+    count = len(warns)
+
+    if count == 0:
+        await msg.reply_text(
+            f"{mention(target_id, target_name)} {code(str(target_id))} has no warnings in this group.",
+            parse_mode="HTML",
+        )
+        return
+
+    lines = [
+        f"{mention(target_id, target_name)} has {count}/{WARN_LIMIT} warnings:\n"
+    ]
+    for i, w in enumerate(warns, 1):
+        reason = w.get("reason", "No reason")
+        lines.append(f"  {i}. {reason}")
+
+    await msg.reply_text("\n".join(lines), parse_mode="HTML")
+
+
+async def execute_resetwarns(
+    update: Update,
+    ctx: ContextTypes.DEFAULT_TYPE,
+    target_id: int,
+    target_name: str,
+) -> None:
+    msg = update.effective_message
+    chat_id = update.effective_chat.id
+
+    removed = await db.warns_db.clear_warns(target_id, chat_id)
+    if removed == 0:
+        await msg.reply_text(
+            f"{mention(target_id, target_name)} {code(str(target_id))} had no warnings to clear.",
+            parse_mode="HTML",
+        )
+        return
+
+    await msg.reply_text(
+        f"Cleared all {removed} warning(s) for {mention(target_id, target_name)}.",
+        parse_mode="HTML",
+    )

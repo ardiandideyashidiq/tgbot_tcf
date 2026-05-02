@@ -54,7 +54,7 @@ async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             f"Bro, {mention(uid, fname)}... seriously? 😭\n\n"
             "You're the Founder. You literally built this place from scratch. "
             "There is no ban for you — you ARE the federation.\n"
-            "Go touch grass, you're perfectly fine. ✅",
+            "Go touch grass, you're perfectly fine. 😊",
             parse_mode="HTML",
         )
         return
@@ -63,7 +63,7 @@ async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await msg.reply_text(
             f"Hey {mention(uid, fname)}, checking yourself? 😄\n\n"
             "You're part of the staff team — the ones who handle bans, not receive them. "
-            "No active ban on your end. You're good, now go back to work! ✅",
+            "No active ban on your end. You're good, now go back to work! 😊",
             parse_mode="HTML",
         )
         return
@@ -133,7 +133,7 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if not ban:
         await msg.reply_text(
             f"All clear! {mention(target_id, fname)} has no active ban in TCF. "
-            "They're free to go — clean as a whistle. ✅",
+            "They're free to go — clean as a whistle. 😊",
             parse_mode="HTML",
         )
         return

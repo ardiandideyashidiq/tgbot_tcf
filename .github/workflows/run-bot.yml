@@ -2,26 +2,28 @@ name: TCF Bot — 24/7 Runner
 
 on:
   schedule:
-    - cron: "0 */3 * * *"
+    - cron: "0 */4 * * *"
   workflow_dispatch:
 
 concurrency:
   group: tcf-bot-runner
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run:
-    name: Run bot (~4.5 h)
+    name: Run bot (3.5 h window)
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 240
     permissions:
       contents: write
+      models: read
 
-    services:
-      mongodb:
-        image: mongo:8.0
-        ports:
-          - 27017:27017
+    env:
+      BOT_TOKEN:      ${{ secrets.BOT_TOKEN }}
+      MONGODB_URI:    ${{ secrets.MONGODB_URI }}
+      DB_NAME:        ${{ secrets.DB_NAME }}
+      COMMUNITY_NAME: ${{ secrets.COMMUNITY_NAME }}
+      OWNER_ID:       ${{ secrets.OWNER_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -36,26 +38,24 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt anthropic
+          pip install -r requirements.txt
 
-      - name: Wait for MongoDB
-        run: |
-          for i in $(seq 1 30); do
-            mongosh --quiet --eval "db.runCommand({ping:1})" > /dev/null 2>&1 && echo "MongoDB ready" && break
-            sleep 2
-          done
-
-      - name: AI pre-flight — read project, understand, fix obvious issues
+      # -----------------------------------------------------------------------
+      # AI PRE-FLIGHT — reads agents/ + full source, understands project,
+      # spots obvious issues and patches them before the bot starts.
+      # Uses GitHub Models (free, GITHUB_TOKEN — no external API key needed).
+      # -----------------------------------------------------------------------
+      - name: AI pre-flight check
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           python - << 'PYEOF'
-          import anthropic, json, pathlib, sys
+          import json, os, pathlib, sys, urllib.request
 
           SKIP = {".git", "__pycache__", ".pythonlibs", ".local", ".pytest_cache"}
 
-          def collect(roots: list[str], exts=(".py", ".md", ".toml")) -> dict[str, str]:
-              files: dict[str, str] = {}
+          def read_project(roots: list[str], exts=(".py", ".md", ".toml")) -> dict[str, str]:
+              out: dict[str, str] = {}
               for root in roots:
                   for p in pathlib.Path(root).rglob("*"):
                       if not p.is_file() or p.suffix not in exts:
@@ -63,51 +63,84 @@ jobs:
                       if any(s in p.parts for s in SKIP):
                           continue
                       try:
-                          files[str(p)] = p.read_text(errors="replace")
+                          out[str(p)] = p.read_text(errors="replace")
                       except OSError:
                           pass
-              return files
+              return out
 
-          project = collect(["agents", "tcbot", "tests", "pyproject.toml"])
-          ctx = "\n\n".join(f"=== {k} ===\n{v}" for k, v in sorted(project.items()))
+          def ask_ai(system: str, user: str) -> str:
+              token = os.environ["GITHUB_TOKEN"]
+              payload = json.dumps({
+                  "model": "gpt-4o-mini",
+                  "messages": [
+                      {"role": "system", "content": system},
+                      {"role": "user",   "content": user},
+                  ],
+                  "max_tokens": 8192,
+                  "temperature": 0.1,
+              }).encode()
+              req = urllib.request.Request(
+                  "https://models.inference.ai.azure.com/chat/completions",
+                  data=payload,
+                  headers={
+                      "Content-Type": "application/json",
+                      "Authorization": f"Bearer {token}",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=120) as resp:
+                  return json.loads(resp.read())["choices"][0]["message"]["content"]
 
-          client = anthropic.Anthropic()
-          resp = client.messages.create(
-              model="claude-opus-4-5",
-              max_tokens=4096,
-              system=(
-                  "You are a senior Python engineer doing a pre-flight check. "
-                  "Read the entire TCF bot project. The agents/ folder has architecture docs "
-                  "and coding rules — follow them exactly. tcbot/ is the main package. "
-                  "After reading: (1) confirm understanding, (2) identify any import errors, "
-                  "dead code, or rule violations. "
-                  "Return ONLY valid JSON: {\"fixes\": {\"relative/path.py\": \"full corrected content\"}}. "
-                  "If no fixes needed: {\"fixes\": {}}. No prose, no markdown fences."
-              ),
-              messages=[{
-                  "role": "user",
-                  "content": (
-                      "Read and fully understand this project. Check agents/ docs, tcbot/ source, "
-                      "tests/. Then return the JSON fix map for any issues you find.\n\n"
-                      + ctx
-                  ),
-              }],
+          project = read_project(["agents", "tcbot", "tests", "pyproject.toml"])
+          ctx     = "\n\n".join(f"=== {k} ===\n{v}" for k, v in sorted(project.items()))
+
+          SYSTEM = """
+          You are a senior Python engineer doing a pre-flight check on TCF Bot.
+          TCF Bot is a Telegram federation moderation bot:
+          - Runtime: Python 3.11, python-telegram-bot 22.5 (async), Motor (MongoDB), Flask keepalive
+          - Main package: tcbot/ — architecture and strict rules are in agents/
+          - Entry point: python -m tcbot
+
+          Read EVERY file provided. Then:
+          1. Confirm you understand the architecture.
+          2. List any bugs, broken imports, or rule violations (agents/RULES.md, agents/STYLE-CODE.md).
+          3. Return ONLY valid JSON — no prose, no markdown fences:
+             {"understood": true, "fixes": {"relative/path.py": "full corrected file content"}}
+          If there is nothing to fix: {"understood": true, "fixes": {}}
+          Only include files that genuinely need changing. Safety rule: only patch tcbot/ files.
+          """.strip()
+
+          USER = (
+              "Read this entire project. The agents/ folder contains architecture docs and "
+              "strict coding rules — they are authoritative. tcbot/ is the main package. "
+              "After understanding everything, return the JSON fix map.\n\n" + ctx
           )
 
-          raw = resp.content[0].text.strip()
+          raw = ask_ai(SYSTEM, USER)
+          if raw.startswith("```"):
+              raw = "\n".join(raw.split("\n")[1:]).rsplit("```", 1)[0].strip()
+
           try:
               data = json.loads(raw)
-          except json.JSONDecodeError:
-              print("AI returned non-JSON — skipping pre-flight fixes.", file=sys.stderr)
+          except json.JSONDecodeError as exc:
+              print(f"AI returned non-JSON ({exc}) — skipping pre-flight fixes.", file=sys.stderr)
               sys.exit(0)
 
           fixes: dict[str, str] = data.get("fixes", {})
+          patched = 0
           for path_str, content in fixes.items():
               p = pathlib.Path(path_str)
-              if p.exists() and str(p).startswith("tcbot/"):  # safety: only patch source
-                  p.write_text(content)
-                  print(f"Pre-flight patched: {p}")
-          print(f"Pre-flight done — {len(fixes)} fix(es) applied.")
+              if not str(p).startswith("tcbot/"):
+                  print(f"Skipped (safety): {p}", file=sys.stderr)
+                  continue
+              if not p.exists():
+                  print(f"Skipped (new file not allowed in pre-flight): {p}", file=sys.stderr)
+                  continue
+              p.write_text(content)
+              print(f"Pre-flight patched: {p}")
+              patched += 1
+
+          print(f"Pre-flight complete — {patched} fix(es) applied.")
+          print(f"AI understood project: {data.get('understood', False)}")
           PYEOF
 
       - name: Commit pre-flight fixes (if any)
@@ -115,44 +148,51 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tcbot/
-          git diff --cached --quiet || git commit -m "fix: AI pre-flight patch [skip ci]"
-          git diff --cached --quiet || git push
+          git diff --cached --quiet \
+            || git commit -m "fix: AI pre-flight patch before run [skip ci]"
+          git push 2>/dev/null || true
 
-      - name: Run bot for 4.5 hours
-        id: bot_run
-        env:
-          BOT_TOKEN:   ${{ secrets.BOT_TOKEN }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      # -----------------------------------------------------------------------
+      # BOT RUN — 3.5 hours in background, log to file
+      # -----------------------------------------------------------------------
+      - name: Start bot (3.5 h)
         run: |
           python -m tcbot > bot.log 2>&1 &
           BOT_PID=$!
           echo "BOT_PID=$BOT_PID" >> "$GITHUB_ENV"
-          sleep 16200  # 4.5 h
+          sleep 12600
           kill "$BOT_PID" 2>/dev/null || true
           wait "$BOT_PID" 2>/dev/null || true
 
-      - name: Check for crash errors
+      # -----------------------------------------------------------------------
+      # CRASH DETECTION
+      # -----------------------------------------------------------------------
+      - name: Detect crash
         if: always()
         run: |
-          if grep -qiE "(Traceback|Error:|CRITICAL)" bot.log 2>/dev/null; then
-            echo "CRASH_DETECTED=true" >> "$GITHUB_ENV"
-            tail -100 bot.log > crash_tail.log
+          if [[ -f bot.log ]] && grep -qiE "(Traceback|^\w+Error:|CRITICAL)" bot.log; then
+            echo "CRASH=true" >> "$GITHUB_ENV"
+            grep -n "" bot.log | tail -120 > crash_tail.log
+            echo "Crash detected — last 120 lines saved."
           else
-            echo "CRASH_DETECTED=false" >> "$GITHUB_ENV"
+            echo "CRASH=false" >> "$GITHUB_ENV"
           fi
 
+      # -----------------------------------------------------------------------
+      # AI CRASH FIX — only runs when crash is detected
+      # -----------------------------------------------------------------------
       - name: AI crash analysis and auto-fix
-        if: always() && env.CRASH_DETECTED == 'true'
+        if: always() && env.CRASH == 'true'
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           python - << 'PYEOF'
-          import anthropic, json, pathlib, sys
+          import json, os, pathlib, sys, urllib.request
 
           SKIP = {".git", "__pycache__", ".pythonlibs", ".local"}
 
-          def collect(roots, exts=(".py", ".md", ".toml")):
-              files = {}
+          def read_project(roots, exts=(".py", ".md", ".toml")):
+              out = {}
               for root in roots:
                   for p in pathlib.Path(root).rglob("*"):
                       if not p.is_file() or p.suffix not in exts:
@@ -160,67 +200,98 @@ jobs:
                       if any(s in p.parts for s in SKIP):
                           continue
                       try:
-                          files[str(p)] = p.read_text(errors="replace")
+                          out[str(p)] = p.read_text(errors="replace")
                       except OSError:
                           pass
-              return files
+              return out
+
+          def ask_ai(system: str, user: str) -> str:
+              token = os.environ["GITHUB_TOKEN"]
+              payload = json.dumps({
+                  "model": "gpt-4o-mini",
+                  "messages": [
+                      {"role": "system", "content": system},
+                      {"role": "user",   "content": user},
+                  ],
+                  "max_tokens": 8192,
+                  "temperature": 0.05,
+              }).encode()
+              req = urllib.request.Request(
+                  "https://models.inference.ai.azure.com/chat/completions",
+                  data=payload,
+                  headers={
+                      "Content-Type": "application/json",
+                      "Authorization": f"Bearer {token}",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=120) as resp:
+                  return json.loads(resp.read())["choices"][0]["message"]["content"]
 
           crash_log = pathlib.Path("crash_tail.log").read_text(errors="replace")
-          project   = collect(["agents", "tcbot"])
-          ctx = "\n\n".join(f"=== {k} ===\n{v}" for k, v in sorted(project.items()))
+          project   = read_project(["agents", "tcbot"])
+          ctx       = "\n\n".join(f"=== {k} ===\n{v}" for k, v in sorted(project.items()))
 
-          client = anthropic.Anthropic()
-          resp = client.messages.create(
-              model="claude-opus-4-5",
-              max_tokens=8192,
-              system=(
-                  "You are a senior Python engineer fixing a crashed Telegram bot. "
-                  "The project is TCF bot — a federation moderation bot built with PTB 22.5, "
-                  "Motor (async MongoDB), Flask keepalive. Entry point: python -m tcbot. "
-                  "agents/ folder contains architecture docs and strict coding rules — obey them. "
-                  "Analyse the crash log and fix the root cause. "
-                  "Return ONLY valid JSON: {\"fixes\": {\"relative/path.py\": \"full corrected content\"}}. "
-                  "Only include files that actually need changing. No prose, no fences."
-              ),
-              messages=[{
-                  "role": "user",
-                  "content": (
-                      f"=== CRASH LOG (last 100 lines) ===\n{crash_log}\n\n"
-                      f"=== PROJECT FILES ===\n{ctx}"
-                  ),
-              }],
+          SYSTEM = """
+          You are a senior Python engineer fixing a crashed Telegram bot in CI.
+          Bot: TCF Bot (python-telegram-bot 22.5, Motor/MongoDB, Python 3.11).
+          Architecture docs and rules are in agents/ — follow them exactly.
+          Main package: tcbot/. Entry: python -m tcbot.
+
+          You will receive a crash log and full source. Your job:
+          1. Identify the root cause precisely.
+          2. Fix it minimally — do not refactor unrelated code.
+          3. Follow agents/RULES.md, STYLE-CODE.md, STYLE-COMMENTS.md strictly.
+
+          Return ONLY valid JSON — no prose, no fences:
+          {"root_cause": "one sentence", "fixes": {"relative/path.py": "full corrected content"}}
+          Only patch files in tcbot/.
+          """.strip()
+
+          USER = (
+              f"=== CRASH LOG (last 120 lines) ===\n{crash_log}\n\n"
+              f"=== PROJECT SOURCE ===\n{ctx}"
           )
 
-          raw = resp.content[0].text.strip()
+          raw = ask_ai(SYSTEM, USER)
+          if raw.startswith("```"):
+              raw = "\n".join(raw.split("\n")[1:]).rsplit("```", 1)[0].strip()
+
           try:
               data = json.loads(raw)
-          except json.JSONDecodeError:
-              print("AI returned non-JSON — cannot auto-fix.", file=sys.stderr)
+          except json.JSONDecodeError as exc:
+              print(f"AI crash fix returned non-JSON ({exc}).", file=sys.stderr)
               sys.exit(1)
 
+          print(f"Root cause identified: {data.get('root_cause', '(unknown)')}")
           fixes = data.get("fixes", {})
+          patched = 0
           for path_str, content in fixes.items():
               p = pathlib.Path(path_str)
-              if str(p).startswith("tcbot/"):
-                  p.parent.mkdir(parents=True, exist_ok=True)
-                  p.write_text(content)
-                  print(f"Fixed: {p}")
-          print(f"Crash fix done — {len(fixes)} file(s) patched.")
+              if not str(p).startswith("tcbot/"):
+                  continue
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_text(content)
+              print(f"Fixed: {p}")
+              patched += 1
+          print(f"Crash fix done — {patched} file(s) patched.")
           PYEOF
 
       - name: Commit crash fix
-        if: always() && env.CRASH_DETECTED == 'true'
+        if: always() && env.CRASH == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tcbot/
-          git diff --cached --quiet || git commit -m "fix: AI auto-fix crash detected in runner [skip ci]"
-          git diff --cached --quiet || git push
+          git diff --cached --quiet \
+            || git commit -m "fix: AI auto-fix — crash detected during run [skip ci]"
+          git push 2>/dev/null || true
 
       - name: Upload bot log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bot-log-${{ github.run_id }}
-          path: bot.log
+          path: |
+            bot.log
+            crash_tail.log
           retention-days: 7

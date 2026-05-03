@@ -40,11 +40,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # -----------------------------------------------------------------------
-      # AI PRE-FLIGHT — reads agents/ + full source, understands project,
-      # spots obvious issues and patches them before the bot starts.
-      # Uses GitHub Models (free, GITHUB_TOKEN — no external API key needed).
-      # -----------------------------------------------------------------------
       - name: AI pre-flight check
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -53,8 +48,8 @@ jobs:
           import json, os, pathlib, sys, urllib.request
 
           SKIP = {".git", "__pycache__", ".pythonlibs", ".local", ".pytest_cache"}
-          MAX_FILE_CHARS  = 3_000   # truncate individual files larger than this
-          MAX_TOTAL_CHARS = 60_000  # hard cap on total context sent to AI
+          MAX_FILE_CHARS  = 1_200
+          MAX_TOTAL_CHARS = 12_000
 
           def read_project(roots: list[str], exts=(".py", ".md", ".toml")) -> dict[str, str]:
               out: dict[str, str] = {}
@@ -92,7 +87,7 @@ jobs:
                       {"role": "system", "content": system},
                       {"role": "user",   "content": user},
                   ],
-                  "max_tokens": 8192,
+                  "max_tokens": 2048,
                   "temperature": 0.1,
               }).encode()
               req = urllib.request.Request(
@@ -168,9 +163,6 @@ jobs:
             || git commit -m "fix: AI pre-flight patch before run [skip ci]"
           git push 2>/dev/null || true
 
-      # -----------------------------------------------------------------------
-      # BOT RUN — 3.5 hours in background, log to file
-      # -----------------------------------------------------------------------
       - name: Start bot (3.5 h)
         run: |
           python -m tcbot > bot.log 2>&1 &
@@ -180,9 +172,6 @@ jobs:
           kill "$BOT_PID" 2>/dev/null || true
           wait "$BOT_PID" 2>/dev/null || true
 
-      # -----------------------------------------------------------------------
-      # CRASH DETECTION
-      # -----------------------------------------------------------------------
       - name: Detect crash
         if: always()
         run: |
@@ -194,9 +183,6 @@ jobs:
             echo "CRASH=false" >> "$GITHUB_ENV"
           fi
 
-      # -----------------------------------------------------------------------
-      # AI CRASH FIX — only runs when crash is detected
-      # -----------------------------------------------------------------------
       - name: AI crash analysis and auto-fix
         if: always() && env.CRASH == 'true'
         env:
@@ -206,8 +192,8 @@ jobs:
           import json, os, pathlib, sys, urllib.request
 
           SKIP = {".git", "__pycache__", ".pythonlibs", ".local"}
-          MAX_FILE_CHARS  = 3_000
-          MAX_TOTAL_CHARS = 60_000
+          MAX_FILE_CHARS  = 1_200
+          MAX_TOTAL_CHARS = 12_000
 
           def read_project(roots, exts=(".py", ".md", ".toml")):
               out = {}
@@ -245,7 +231,7 @@ jobs:
                       {"role": "system", "content": system},
                       {"role": "user",   "content": user},
                   ],
-                  "max_tokens": 8192,
+                  "max_tokens": 2048,
                   "temperature": 0.05,
               }).encode()
               req = urllib.request.Request(

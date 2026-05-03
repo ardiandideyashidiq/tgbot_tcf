@@ -53,6 +53,8 @@ jobs:
           import json, os, pathlib, sys, urllib.request
 
           SKIP = {".git", "__pycache__", ".pythonlibs", ".local", ".pytest_cache"}
+          MAX_FILE_CHARS  = 3_000   # truncate individual files larger than this
+          MAX_TOTAL_CHARS = 60_000  # hard cap on total context sent to AI
 
           def read_project(roots: list[str], exts=(".py", ".md", ".toml")) -> dict[str, str]:
               out: dict[str, str] = {}
@@ -63,10 +65,24 @@ jobs:
                       if any(s in p.parts for s in SKIP):
                           continue
                       try:
-                          out[str(p)] = p.read_text(errors="replace")
+                          text = p.read_text(errors="replace")
+                          if len(text) > MAX_FILE_CHARS:
+                              text = text[:MAX_FILE_CHARS] + "\n... [truncated]"
+                          out[str(p)] = text
                       except OSError:
                           pass
               return out
+
+          def build_ctx(files: dict[str, str]) -> str:
+              parts = []
+              total = 0
+              for k, v in sorted(files.items()):
+                  chunk = f"=== {k} ===\n{v}"
+                  if total + len(chunk) > MAX_TOTAL_CHARS:
+                      break
+                  parts.append(chunk)
+                  total += len(chunk)
+              return "\n\n".join(parts)
 
           def ask_ai(system: str, user: str) -> str:
               token = os.environ["GITHUB_TOKEN"]
@@ -91,7 +107,7 @@ jobs:
                   return json.loads(resp.read())["choices"][0]["message"]["content"]
 
           project = read_project(["agents", "tcbot", "tests", "pyproject.toml"])
-          ctx     = "\n\n".join(f"=== {k} ===\n{v}" for k, v in sorted(project.items()))
+          ctx     = build_ctx(project)
 
           SYSTEM = """
           You are a senior Python engineer doing a pre-flight check on TCF Bot.
@@ -190,6 +206,8 @@ jobs:
           import json, os, pathlib, sys, urllib.request
 
           SKIP = {".git", "__pycache__", ".pythonlibs", ".local"}
+          MAX_FILE_CHARS  = 3_000
+          MAX_TOTAL_CHARS = 60_000
 
           def read_project(roots, exts=(".py", ".md", ".toml")):
               out = {}
@@ -200,10 +218,24 @@ jobs:
                       if any(s in p.parts for s in SKIP):
                           continue
                       try:
-                          out[str(p)] = p.read_text(errors="replace")
+                          text = p.read_text(errors="replace")
+                          if len(text) > MAX_FILE_CHARS:
+                              text = text[:MAX_FILE_CHARS] + "\n... [truncated]"
+                          out[str(p)] = text
                       except OSError:
                           pass
               return out
+
+          def build_ctx(files: dict) -> str:
+              parts = []
+              total = 0
+              for k, v in sorted(files.items()):
+                  chunk = f"=== {k} ===\n{v}"
+                  if total + len(chunk) > MAX_TOTAL_CHARS:
+                      break
+                  parts.append(chunk)
+                  total += len(chunk)
+              return "\n\n".join(parts)
 
           def ask_ai(system: str, user: str) -> str:
               token = os.environ["GITHUB_TOKEN"]
@@ -229,7 +261,7 @@ jobs:
 
           crash_log = pathlib.Path("crash_tail.log").read_text(errors="replace")
           project   = read_project(["agents", "tcbot"])
-          ctx       = "\n\n".join(f"=== {k} ===\n{v}" for k, v in sorted(project.items()))
+          ctx       = build_ctx(project)
 
           SYSTEM = """
           You are a senior Python engineer fixing a crashed Telegram bot in CI.

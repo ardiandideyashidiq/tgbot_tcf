@@ -42,7 +42,7 @@ jobs:
           versions = [v.strip() for v in '$VERSIONS'.split(',') if v.strip()]
           print(json.dumps({'python-version': versions}))
           ")
-          echo "matrix=$JSON" >> "\$GITHUB_OUTPUT"
+          echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
           echo "Matrix: $JSON"
 
   # ---------------------------------------------------------------------------
@@ -134,7 +134,7 @@ jobs:
         run: exit 1
 
   # ---------------------------------------------------------------------------
-  # AI step: fix failures + generate new tests
+  # AI step: fix failures only — no new files created
   # Runs when: any matrix job failed OR weekly schedule sweep
   # ---------------------------------------------------------------------------
   ai-patch:
@@ -164,7 +164,7 @@ jobs:
         with:
           path: artifacts/
 
-      - name: AI reads project → fixes failures + writes new tests
+      - name: AI reads project → fixes failures only
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -240,39 +240,35 @@ jobs:
               You are a senior Python engineer embedded in a CI pipeline for TCF Bot.
               Stack: Python 3.11+, python-telegram-bot 22.5 (async), Motor (MongoDB), Flask.
               Main package: tcbot/. Architecture and strict coding rules: agents/.
-              Tests live in tests/. All test files start with the copyright header in agents/STYLE-COMMENTS.md.
+              Tests live in tests/.
 
-              Your tasks:
-              1. Read and fully understand the project — every rule in agents/ is authoritative.
-              2. Fix any failing tests shown in the logs. If the bug is in source code (not the test),
-                 fix the source — follow agents/STYLE-CODE.md exactly.
-              3. Add NEW test functions (or new files) that cover Python 3.12 and 3.13 specific
-                 behaviour that is relevant to this codebase:
-                 - PEP 695 type aliases (type X = ...)
-                 - Improved match-case patterns
-                 - New asyncio APIs (asyncio.timeout, TaskGroup, etc.)
-                 - tomllib (stdlib in 3.11+)
-                 - Other stdlib additions that tcbot/ could use or already uses
-              4. Every new/fixed file must strictly follow agents/STYLE-CODE.md and
-                 agents/STYLE-COMMENTS.md — copyright header, no emojis, max 600 lines, etc.
+              Your ONLY task: fix failing tests shown in the failure logs.
+              - If the bug is in the test file, fix the test.
+              - If the bug is in the source code, fix the source.
+              - Follow agents/STYLE-CODE.md and agents/STYLE-COMMENTS.md exactly.
+              - NEVER create new files. ONLY modify files that already exist.
+              - NEVER add new test functions unrelated to the failures.
 
               Return ONLY valid JSON — no prose, no markdown fences:
               {
-                "summary": "one-sentence summary of what you changed",
+                "summary": "one-sentence summary of what you fixed",
                 "fixes": {
-                  "tests/test_foo.py": "full corrected/new file content",
+                  "tests/test_existing.py": "full corrected file content",
                   "tcbot/some_module.py": "corrected source only if bug is in source"
                 }
               }
+              If nothing needs fixing: {"summary": "no issues found", "fixes": {}}
+
               Safety rules:
-              - Only write to tests/ and tcbot/
+              - Only patch files in tests/ or tcbot/ that ALREADY EXIST
+              - Do not create new files
               - Do not delete existing test functions
-              - Do not touch Dockerfile, docker-compose*, .github/workflows/*, c.env
+              - Do not touch .github/workflows/*, config.env
           """).strip()
 
           USER = (
-              "Read the full project first — agents/ docs are your rules. "
-              "Then fix failures and add Python 3.12/3.13 test coverage.\n\n"
+              "Fix only the failing tests shown in the logs. "
+              "Do NOT create new files — only patch files that already exist.\n\n"
               f"=== PROJECT FILES ===\n{ctx}\n\n"
               f"=== PYTEST FAILURE LOGS ===\n{failures}"
           )
@@ -295,12 +291,14 @@ jobs:
               if not (str(p).startswith("tests/") or str(p).startswith("tcbot/")):
                   print(f"Skipped (outside allowed dirs): {p}", file=sys.stderr)
                   continue
-              p.parent.mkdir(parents=True, exist_ok=True)
+              if not p.exists():
+                  print(f"Skipped (new file not allowed): {p}", file=sys.stderr)
+                  continue
               p.write_text(content)
-              print(f"Written: {p}")
+              print(f"Fixed: {p}")
               written += 1
 
-          print(f"AI patch complete — {written} file(s) written.")
+          print(f"AI patch complete — {written} file(s) patched.")
           PYEOF
 
       - name: Commit AI patches
@@ -309,5 +307,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tests/ tcbot/
           git diff --cached --quiet \
-            || git commit -m "chore(tdd): AI patch — fix failures & add 3.12/3.13 coverage [skip ci]"
+            || git commit -m "fix(tdd): AI patch — fix test failures [skip ci]"
           git push 2>/dev/null || true

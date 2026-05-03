@@ -149,7 +149,7 @@ jobs:
       # Telegram notification — uses the existing bot token, no extra cost
       # -----------------------------------------------------------------------
       - name: Telegram notification
-        if: always() && secrets.BOT_TOKEN != ''
+        if: always()
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           OWNER_ID:  ${{ secrets.OWNER_ID }}

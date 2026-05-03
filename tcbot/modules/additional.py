@@ -4,6 +4,8 @@
 """Additional menu callback – official TCF links panel."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
@@ -38,11 +40,13 @@ def _additional_kb() -> InlineKeyboardMarkup:
 
 async def on_menu_additional(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
-    await q.edit_message_text(
-        __additional_msg__,
-        parse_mode="HTML",
-        reply_markup=_additional_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            __additional_msg__,
+            parse_mode="HTML",
+            reply_markup=_additional_kb(),
+        ),
     )
 
 

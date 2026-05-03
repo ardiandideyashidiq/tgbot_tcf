@@ -4,6 +4,7 @@
 """Start command and main interactive menu callbacks."""
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -76,12 +77,14 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def on_menu_back_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
     bot_name = ctx.bot.first_name or "TC Bot"
-    await q.edit_message_text(
-        _MENU_TEXT.format(bot_name=bot_name, community=cfg.community_name),
-        parse_mode="HTML",
-        reply_markup=keyboards.main_menu_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            _MENU_TEXT.format(bot_name=bot_name, community=cfg.community_name),
+            parse_mode="HTML",
+            reply_markup=keyboards.main_menu_kb(),
+        ),
     )
 
 
@@ -96,8 +99,7 @@ def _groups_menu_kb(detailed: bool) -> InlineKeyboardMarkup:
 
 async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
-    groups = await db.groups_db.active_groups()
+    _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
     if not groups:
         await q.edit_message_text(
             f"No groups are currently connected to {cfg.community_name}.",
@@ -112,8 +114,7 @@ async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
 
 async def on_menu_groups_details(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
-    groups = await db.groups_db.active_groups()
+    _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
     await q.edit_message_text(
         _render(groups, True), parse_mode="HTML",
         reply_markup=_groups_menu_kb(True),
@@ -122,8 +123,7 @@ async def on_menu_groups_details(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
 
 async def on_menu_groups_simple(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
-    groups = await db.groups_db.active_groups()
+    _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
     await q.edit_message_text(
         _render(groups, False), parse_mode="HTML",
         reply_markup=_groups_menu_kb(False),

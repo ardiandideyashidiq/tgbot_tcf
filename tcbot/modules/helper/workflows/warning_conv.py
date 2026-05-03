@@ -20,6 +20,7 @@ Flow
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -174,9 +175,11 @@ async def on_warn_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
 
 async def on_warn_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await q.answer()
     _clear(ctx)
-    await q.edit_message_text("Got it, warning cancelled. No action was taken.")
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text("Got it, warning cancelled. No action was taken."),
+    )
     return ConversationHandler.END
 
 

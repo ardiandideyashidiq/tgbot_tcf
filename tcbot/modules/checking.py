@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from telegram import Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
@@ -140,8 +142,10 @@ async def on_checkme_detail(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
         await q.answer("This ban is no longer active.", show_alert=True)
         return
 
-    await q.answer()
-    text, proof_link = await build_ban_detail(ban)
+    _, (text, proof_link) = await asyncio.gather(
+        q.answer(),
+        build_ban_detail(ban),
+    )
     await q.edit_message_text(
         text,
         parse_mode="HTML",
@@ -158,10 +162,14 @@ async def on_checkme_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
         await q.answer("Ban record not found.", show_alert=True)
         return
 
-    await q.answer()
-    uid   = ban["banned_user_id"]
-    fname = await db.users_db.get_first_name(uid, str(uid))
-    bot_info = await ctx.bot.get_me()
+    uid = ban["banned_user_id"]
+    _, (fname, bot_info) = await asyncio.gather(
+        q.answer(),
+        asyncio.gather(
+            db.users_db.get_first_name(uid, str(uid)),
+            ctx.bot.get_me(),
+        ),
+    )
     text, proof_link = await _ban_summary(ban, uid, fname)
 
     await q.edit_message_text(

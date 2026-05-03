@@ -4,6 +4,8 @@
 """Federation groups listing."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
@@ -65,10 +67,16 @@ async def cmd_tcfgroups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def _toggle(update: Update, ctx: ContextTypes.DEFAULT_TYPE, detailed: bool) -> None:
     q = update.callback_query
-    await q.answer()
-    groups = ctx.user_data.get("groups_cache") or await db.groups_db.active_groups()
-    ctx.user_data["groups_cache"] = groups
-    await q.edit_message_text(_render(groups, detailed), parse_mode="HTML", reply_markup=_kb(detailed))
+    groups = ctx.user_data.get("groups_cache")
+    if groups:
+        await asyncio.gather(
+            q.answer(),
+            q.edit_message_text(_render(groups, detailed), parse_mode="HTML", reply_markup=_kb(detailed)),
+        )
+    else:
+        _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
+        ctx.user_data["groups_cache"] = groups
+        await q.edit_message_text(_render(groups, detailed), parse_mode="HTML", reply_markup=_kb(detailed))
 
 
 async def on_groups_details(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:

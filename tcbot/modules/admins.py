@@ -4,6 +4,7 @@
 """Admin management — promote, demote, transfer ownership, and promotion requests."""
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from telegram import Bot, Update
@@ -281,8 +282,10 @@ async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 
 async def on_promote_role_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await q.answer()
-    await q.edit_message_text("Promotion cancelled. No changes were made.", reply_markup=None)
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text("Promotion cancelled. No changes were made.", reply_markup=None),
+    )
 
 
 ## ---------------------------------------------------------------------------
@@ -397,8 +400,10 @@ async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
 
 async def on_demote_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await q.answer()
-    await q.edit_message_text("Cancelled. No changes were made.", reply_markup=None)
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text("Cancelled. No changes were made.", reply_markup=None),
+    )
 
 
 ## ---------------------------------------------------------------------------

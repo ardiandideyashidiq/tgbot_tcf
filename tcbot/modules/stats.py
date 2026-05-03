@@ -80,35 +80,48 @@ async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def on_stats_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await q.answer()
-    text = await _stats_text()
+    _, text = await asyncio.gather(q.answer(), _stats_text())
     await q.edit_message_text(text, parse_mode="HTML", reply_markup=_stats_kb())
 
 
 async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await q.answer()
 
-    owner_id, admins, developers, testers = await asyncio.gather(
+    ## Gather q.answer() alongside all DB calls in one shot
+    _, owner_id, admins, developers, testers = await asyncio.gather(
+        q.answer(),
         db.admins_db.get_owner_id(),
         db.admins_db.all_admins(),
         db.roles_db.all_by_role("developer"),
         db.roles_db.all_by_role("tester"),
     )
 
+    ## Build name-fetch tasks in order: owner, admins, devs, testers
+    name_tasks: list = []
+    owner_idx = None
+    if owner_id:
+        owner_idx = len(name_tasks)
+        name_tasks.append(db.users_db.get_first_name(owner_id, "Founder"))
+    admin_start = len(name_tasks)
+    name_tasks.extend(db.users_db.get_first_name(a["user_id"], str(a["user_id"])) for a in admins)
+    dev_start = len(name_tasks)
+    name_tasks.extend(db.users_db.get_first_name(d["user_id"], str(d["user_id"])) for d in developers)
+    tester_start = len(name_tasks)
+    name_tasks.extend(db.users_db.get_first_name(t["user_id"], str(t["user_id"])) for t in testers)
+
+    all_names = list(await asyncio.gather(*name_tasks)) if name_tasks else []
+
     lines: list[str] = [f"<b>Staff Roster — {esc(cfg.community_name)}</b>\n"]
 
     ## Founder
-    if owner_id:
-        fname = await db.users_db.get_first_name(owner_id, "Founder")
+    if owner_idx is not None:
         lines.append("<b>Founder</b>")
-        lines.append(f"— {mention(owner_id, fname)}\n")
+        lines.append(f"— {mention(owner_id, all_names[owner_idx])}\n")
 
     ## Admins
     lines.append(f"<b>Admins ({len(admins)})</b>")
     if admins:
-        for adm in admins:
-            fname = await db.users_db.get_first_name(adm["user_id"], str(adm["user_id"]))
+        for adm, fname in zip(admins, all_names[admin_start:admin_start + len(admins)]):
             lines.append(f"— {mention(adm['user_id'], fname)}")
     else:
         lines.append("— None assigned")
@@ -117,8 +130,7 @@ async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     ## Developers
     lines.append(f"<b>Developers ({len(developers)})</b>")
     if developers:
-        for dev in developers:
-            fname = await db.users_db.get_first_name(dev["user_id"], str(dev["user_id"]))
+        for dev, fname in zip(developers, all_names[dev_start:dev_start + len(developers)]):
             lines.append(f"— {mention(dev['user_id'], fname)}")
     else:
         lines.append("— None assigned")
@@ -127,8 +139,7 @@ async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     ## Testers
     lines.append(f"<b>Testers ({len(testers)})</b>")
     if testers:
-        for tst in testers:
-            fname = await db.users_db.get_first_name(tst["user_id"], str(tst["user_id"]))
+        for tst, fname in zip(testers, all_names[tester_start:tester_start + len(testers)]):
             lines.append(f"— {mention(tst['user_id'], fname)}")
     else:
         lines.append("— None assigned")

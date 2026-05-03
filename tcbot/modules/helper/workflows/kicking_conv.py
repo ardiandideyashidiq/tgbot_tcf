@@ -20,6 +20,7 @@ Flow
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -163,13 +164,15 @@ async def on_kick_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def on_kick_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await q.answer()
     ctx.user_data["kick_reason"] = "No reason provided"
-    await q.edit_message_text(
-        "No reason — send proof (photo or video) if any, "
-        "or tap <b>Skip</b> to proceed.",
-        parse_mode="HTML",
-        reply_markup=_KB_PROOF,
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            "No reason — send proof (photo or video) if any, "
+            "or tap <b>Skip</b> to proceed.",
+            parse_mode="HTML",
+            reply_markup=_KB_PROOF,
+        ),
     )
     return WAITING_PROOF
 
@@ -194,9 +197,11 @@ async def on_kick_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
 
 async def on_kick_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await q.answer()
     _clear(ctx)
-    await q.edit_message_text("Got it, kick cancelled. No action was taken.")
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text("Got it, kick cancelled. No action was taken."),
+    )
     return ConversationHandler.END
 
 

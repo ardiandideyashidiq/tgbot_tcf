@@ -4,6 +4,7 @@
 """Appeal conversation – entry via /start appeal<ban_id> deep link, DM only."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -88,10 +89,12 @@ async def cmd_start_appeal_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
 
 async def on_appeal_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await q.answer()
-    await q.edit_message_text("Appeal cancelled. Nothing was submitted.")
     for key in ("appeal_ban_id", "appeal_log_msg_id", "appeal_instruction_msg_id"):
         ctx.user_data.pop(key, None)
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text("Appeal cancelled. Nothing was submitted."),
+    )
     return ConversationHandler.END
 
 

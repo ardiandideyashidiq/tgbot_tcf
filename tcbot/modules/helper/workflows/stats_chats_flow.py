@@ -4,6 +4,8 @@
 """Connected chats list flow for /tcstats — paginated list with per-group detail view."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
@@ -75,15 +77,14 @@ def _chat_detail_kb(page: int) -> InlineKeyboardMarkup:
 # ---------------------------------------------------------------------------
 
 async def on_stats_chats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q = update.callback_query
-    await q.answer()
+    q    = update.callback_query
+    page = int(q.data.split(":")[1])
 
-    page   = int(q.data.split(":")[1])
-    groups = await db.groups_db.active_groups()
-    total  = len(groups)
+    _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
+    total       = len(groups)
     total_pages = max(1, (total + _PAGE_SIZE - 1) // _PAGE_SIZE)
-    page   = min(page, total_pages - 1)
-    chunk  = groups[page * _PAGE_SIZE: (page + 1) * _PAGE_SIZE]
+    page        = min(page, total_pages - 1)
+    chunk       = groups[page * _PAGE_SIZE: (page + 1) * _PAGE_SIZE]
 
     lines = [f"<b>Connected Chats ({total})</b>\n"]
     for i, grp in enumerate(chunk, start=1):
@@ -98,16 +99,13 @@ async def on_stats_chats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
 
 
 async def on_stats_chat_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q = update.callback_query
-    await q.answer()
-
+    q              = update.callback_query
     _, page_str, idx_str = q.data.split(":")
-    page = int(page_str)
-    idx  = int(idx_str)
+    page           = int(page_str)
+    idx            = int(idx_str)
 
-    groups = await db.groups_db.active_groups()
-    grp    = groups[page * _PAGE_SIZE + idx]
-
+    _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
+    grp  = groups[page * _PAGE_SIZE + idx]
     text = await build_chat_detail(grp)
     await q.edit_message_text(
         text, parse_mode="HTML",

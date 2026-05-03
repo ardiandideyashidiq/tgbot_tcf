@@ -4,6 +4,8 @@
 """Ban list flow for /tcstats — numbered list, detail view, full search flow."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
@@ -86,21 +88,22 @@ def _ban_detail_kb(page: int, proof_link: str | None = None) -> InlineKeyboardMa
 # ---------------------------------------------------------------------------
 
 async def on_stats_bans(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q = update.callback_query
-    await q.answer()
+    q    = update.callback_query
     _clear_search(ctx)
+    page = int(q.data.split(":")[1])
 
-    page  = int(q.data.split(":")[1])
-    bans  = await db.bans_db.active_bans()
-    total = len(bans)
+    _, bans = await asyncio.gather(q.answer(), db.bans_db.active_bans())
+    total       = len(bans)
     total_pages = max(1, (total + _PAGE_SIZE - 1) // _PAGE_SIZE)
-    page  = min(page, total_pages - 1)
-    chunk = bans[page * _PAGE_SIZE: (page + 1) * _PAGE_SIZE]
+    page        = min(page, total_pages - 1)
+    chunk       = bans[page * _PAGE_SIZE: (page + 1) * _PAGE_SIZE]
+
+    uids   = [ban["banned_user_id"] for ban in chunk]
+    fnames = await asyncio.gather(*[db.users_db.get_first_name(uid, str(uid)) for uid in uids])
 
     lines = [f"<b>User Bans ({total})</b>\n"]
-    for i, ban in enumerate(chunk, start=1):
-        uid   = ban["banned_user_id"]
-        fname = await db.users_db.get_first_name(uid, str(uid))
+    for i, (ban, fname) in enumerate(zip(chunk, fnames), start=1):
+        uid = ban["banned_user_id"]
         lines.append(f"{page * _PAGE_SIZE + i}. {esc(fname)} — {code(str(uid))}")
 
     await q.edit_message_text(
@@ -110,15 +113,13 @@ async def on_stats_bans(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def on_stats_ban_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q = update.callback_query
-    await q.answer()
-
+    q              = update.callback_query
     _, page_str, idx_str = q.data.split(":")
-    page = int(page_str)
-    idx  = int(idx_str)
+    page           = int(page_str)
+    idx            = int(idx_str)
 
-    bans = await db.bans_db.active_bans()
-    ban  = bans[page * _PAGE_SIZE + idx]
+    _, bans = await asyncio.gather(q.answer(), db.bans_db.active_bans())
+    ban              = bans[page * _PAGE_SIZE + idx]
     text, proof_link = await build_ban_detail(ban)
     await q.edit_message_text(text, parse_mode="HTML", reply_markup=_ban_detail_kb(page, proof_link))
 
@@ -134,14 +135,16 @@ def _clear_search(ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def on_stats_bans_search(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await q.answer()
     ctx.user_data[_SEARCH_KEY] = True
     ctx.user_data[_MSG_KEY]    = q.message.message_id
     ctx.user_data[_CHAT_KEY]   = q.message.chat_id
-    await q.edit_message_text(
-        "<b>Search User Bans</b>\n\nSend a name or user ID in the chat.",
-        parse_mode="HTML",
-        reply_markup=_search_panel_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            "<b>Search User Bans</b>\n\nSend a name or user ID in the chat.",
+            parse_mode="HTML",
+            reply_markup=_search_panel_kb(),
+        ),
     )
 
 
@@ -198,7 +201,6 @@ async def on_bans_search_input(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
 
 async def on_stats_search_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q   = update.callback_query
-    await q.answer()
     idx = int(q.data.split(":")[1])
 
     results = ctx.user_data.get(_RESULTS_KEY, [])
@@ -206,28 +208,38 @@ async def on_stats_search_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
         await q.answer("Result no longer available.", show_alert=True)
         return
 
-    text, proof_link = await build_ban_detail(results[idx])
+    _, (text, proof_link) = await asyncio.gather(
+        q.answer(),
+        build_ban_detail(results[idx]),
+    )
     await q.edit_message_text(text, parse_mode="HTML", reply_markup=_search_detail_kb(proof_link))
 
 
 async def on_stats_search_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q       = update.callback_query
-    await q.answer()
     results = ctx.user_data.get(_RESULTS_KEY, [])
 
     if not results:
-        await q.edit_message_text(
-            "<b>Search User Bans</b>\n\nSend a name or user ID in the chat.",
-            parse_mode="HTML",
-            reply_markup=_search_panel_kb(),
-        )
         ctx.user_data[_SEARCH_KEY] = True
+        await asyncio.gather(
+            q.answer(),
+            q.edit_message_text(
+                "<b>Search User Bans</b>\n\nSend a name or user ID in the chat.",
+                parse_mode="HTML",
+                reply_markup=_search_panel_kb(),
+            ),
+        )
         return
 
+    uids   = [ban["banned_user_id"] for ban in results]
+    _, fnames = await asyncio.gather(
+        q.answer(),
+        asyncio.gather(*[db.users_db.get_first_name(uid, str(uid)) for uid in uids]),
+    )
+
     lines = [f"<b>Search Results ({len(results)} found)</b>\n"]
-    for i, ban in enumerate(results, 1):
-        uid   = ban["banned_user_id"]
-        fname = await db.users_db.get_first_name(uid, str(uid))
+    for i, (ban, fname) in enumerate(zip(results, fnames), 1):
+        uid = ban["banned_user_id"]
         lines.append(f"{i}. {esc(fname)} — {code(str(uid))}")
 
     await q.edit_message_text(
@@ -238,17 +250,18 @@ async def on_stats_search_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
 
 async def on_stats_search_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await q.answer()
     _clear_search(ctx)
 
-    bans  = await db.bans_db.active_bans()
-    total = len(bans)
-    chunk = bans[:_PAGE_SIZE]
+    _, bans = await asyncio.gather(q.answer(), db.bans_db.active_bans())
+    total  = len(bans)
+    chunk  = bans[:_PAGE_SIZE]
+
+    uids   = [ban["banned_user_id"] for ban in chunk]
+    fnames = await asyncio.gather(*[db.users_db.get_first_name(uid, str(uid)) for uid in uids])
 
     lines = [f"<b>User Bans ({total})</b>\n"]
-    for i, ban in enumerate(chunk, start=1):
-        uid   = ban["banned_user_id"]
-        fname = await db.users_db.get_first_name(uid, str(uid))
+    for i, (ban, fname) in enumerate(zip(chunk, fnames), start=1):
+        uid = ban["banned_user_id"]
         lines.append(f"{i}. {esc(fname)} — {code(str(uid))}")
 
     await q.edit_message_text(

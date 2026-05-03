@@ -20,6 +20,7 @@ Flow
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from telegram import Update
@@ -162,18 +163,20 @@ async def on_reason_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def on_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await q.answer()
     ctx.user_data["mute_reason"] = "No reason provided"
     target_id    = ctx.user_data["mute_target_id"]
     target_fname = ctx.user_data["mute_target_fname"]
     duration     = ctx.user_data["mute_duration"]
     dur_str      = fmt_duration(duration)
     try:
-        await q.edit_message_text(
-            f"Muting {mention(target_id, target_fname)} {code(str(target_id))} {dur_str}.\n\n"
-            f"Send proof (photo / video) or press <b>Skip</b>.",
-            parse_mode="HTML",
-            reply_markup=keyboards.mute_proof_kb(),
+        await asyncio.gather(
+            q.answer(),
+            q.edit_message_text(
+                f"Muting {mention(target_id, target_fname)} {code(str(target_id))} {dur_str}.\n\n"
+                f"Send proof (photo / video) or press <b>Skip</b>.",
+                parse_mode="HTML",
+                reply_markup=keyboards.mute_proof_kb(),
+            ),
         )
     except Exception:
         pass
@@ -207,8 +210,10 @@ async def on_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def on_mute_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await q.answer()
-    await q.edit_message_text("Got it, mute cancelled. No action was taken.")
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text("Got it, mute cancelled. No action was taken."),
+    )
     return ConversationHandler.END
 
 

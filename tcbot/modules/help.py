@@ -6,6 +6,7 @@ __module_name__ and __help_text__ attributes."""
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 import logging
 
@@ -86,16 +87,15 @@ async def _render_help_index(
 ) -> None:
     """Edit (or send) the help index message on the appropriate callback query."""
     q: CallbackQuery = update.callback_query
-    await q.answer()
     bot_name = ctx.bot.first_name or "TC Bot"
-    if with_back_to_start:
-        kb = keyboards.help_topics_menu_kb(HELP_TOPICS_MENU)
-    else:
-        kb = keyboards.help_topics_kb(HELP_TOPICS_CMD)
-    await q.edit_message_text(
-        _HELP_INDEX_TEXT.format(bot_name=bot_name, community=cfg.community_name),
-        parse_mode="HTML",
-        reply_markup=kb,
+    kb = keyboards.help_topics_menu_kb(HELP_TOPICS_MENU) if with_back_to_start else keyboards.help_topics_kb(HELP_TOPICS_CMD)
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            _HELP_INDEX_TEXT.format(bot_name=bot_name, community=cfg.community_name),
+            parse_mode="HTML",
+            reply_markup=kb,
+        ),
     )
 
 
@@ -152,16 +152,21 @@ async def on_helpcmd_idx(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
 
 async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
     topic = q.data
     if topic not in HELP_CONTENT:
-        await q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_kb())
+        await asyncio.gather(
+            q.answer(),
+            q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_kb()),
+        )
         return
     name, text = HELP_CONTENT[topic]
-    await q.edit_message_text(
-        f"<b>Help for {name}</b>\n\n{text}",
-        parse_mode="HTML",
-        reply_markup=keyboards.back_to_help_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            f"<b>Help for {name}</b>\n\n{text}",
+            parse_mode="HTML",
+            reply_markup=keyboards.back_to_help_kb(),
+        ),
     )
 
 
@@ -172,17 +177,22 @@ async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def on_help_topic_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
     ## "helpc_banning" → "help_banning"
     menu_key = "help_" + q.data[6:]
     if menu_key not in HELP_CONTENT:
-        await q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_cmd_kb())
+        await asyncio.gather(
+            q.answer(),
+            q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_cmd_kb()),
+        )
         return
     name, text = HELP_CONTENT[menu_key]
-    await q.edit_message_text(
-        f"<b>Help for {name}</b>\n\n{text}",
-        parse_mode="HTML",
-        reply_markup=keyboards.back_to_help_cmd_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            f"<b>Help for {name}</b>\n\n{text}",
+            parse_mode="HTML",
+            reply_markup=keyboards.back_to_help_cmd_kb(),
+        ),
     )
 
 

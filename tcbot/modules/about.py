@@ -4,6 +4,8 @@
 """About menu callback."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import CallbackQuery, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
@@ -25,10 +27,12 @@ __about_msg__ = (
 
 async def on_menu_about(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
-    await q.edit_message_text(
-        __about_msg__, parse_mode="HTML",
-        reply_markup=keyboards.back_to_start_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            __about_msg__, parse_mode="HTML",
+            reply_markup=keyboards.back_to_start_kb(),
+        ),
     )
 
 

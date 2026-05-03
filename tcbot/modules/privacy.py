@@ -4,6 +4,8 @@
 """Privacy menu callbacks."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import CallbackQuery, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
@@ -57,21 +59,25 @@ _PRIVACY_POLICY_MSG = (
 
 async def on_menu_privacy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
     bot_name = ctx.bot.first_name or "This bot"
-    await q.edit_message_text(
-        _PRIVACY_MSG.format(bot_name=bot_name, community=cfg.community_name), parse_mode="HTML",
-        reply_markup=keyboards.privacy_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            _PRIVACY_MSG.format(bot_name=bot_name, community=cfg.community_name), parse_mode="HTML",
+            reply_markup=keyboards.privacy_kb(),
+        ),
     )
 
 
 async def on_menu_privacy_policy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    await q.answer()
     bot_name = ctx.bot.first_name or "This bot"
-    await q.edit_message_text(
-        _PRIVACY_POLICY_MSG.format(bot_name=bot_name, community=cfg.community_name), parse_mode="HTML",
-        reply_markup=keyboards.back_to_privacy_kb(),
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text(
+            _PRIVACY_POLICY_MSG.format(bot_name=bot_name, community=cfg.community_name), parse_mode="HTML",
+            reply_markup=keyboards.back_to_privacy_kb(),
+        ),
     )
 
 

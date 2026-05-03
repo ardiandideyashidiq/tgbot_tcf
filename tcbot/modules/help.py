@@ -12,6 +12,7 @@ import logging
 from telegram import CallbackQuery, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
+from tcbot import cfg
 from tcbot.modules import ALL_MODULES
 from tcbot.modules.helper import keyboards
 from tcbot.utils.prefixes import build_prefixed_filters

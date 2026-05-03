@@ -8,6 +8,17 @@ on:
   schedule:
     - cron: "0 3 * * 1"    # every Monday 03:00 UTC — full latest-package sweep
   workflow_dispatch:
+    inputs:
+      python_versions:
+        description: "Python versions to test (comma-separated, e.g: 3.11,3.12,3.13,3.14)"
+        required: false
+        default: "3.11,3.12,3.13"
+        type: string
+      use_latest_packages:
+        description: "Upgrade all packages to latest? (uncheck = use pinned requirements.txt)"
+        required: false
+        default: true
+        type: boolean
 
 concurrency:
   group: tdd-${{ github.ref }}
@@ -15,16 +26,36 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Matrix: run tests across all supported Python versions with latest packages
+  # Setup: parse python_versions input into a JSON matrix
+  # ---------------------------------------------------------------------------
+  setup:
+    name: Build matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          VERSIONS="${{ inputs.python_versions || '3.11,3.12,3.13' }}"
+          JSON=$(python3 -c "
+          import json
+          versions = [v.strip() for v in '$VERSIONS'.split(',') if v.strip()]
+          print(json.dumps({'python-version': versions}))
+          ")
+          echo "matrix=$JSON" >> "\$GITHUB_OUTPUT"
+          echo "Matrix: $JSON"
+
+  # ---------------------------------------------------------------------------
+  # Matrix: run tests across selected Python versions
   # ---------------------------------------------------------------------------
   pytest:
     name: pytest / Python ${{ matrix.python-version }}
+    needs: setup
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
-      matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
 
     services:
       mongodb:
@@ -43,18 +74,23 @@ jobs:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
 
-      - name: Upgrade all packages to latest
+      - name: Install packages
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          # Always fetch latest compatible versions — this is the point of the matrix
-          pip install --upgrade \
-            "python-telegram-bot[job-queue]" \
-            motor \
-            flask \
-            python-dotenv \
-            pytest \
-            pytest-asyncio
-          # Install project in editable mode so tcbot/ is importable
+          if [[ "${{ inputs.use_latest_packages }}" == "false" ]]; then
+            echo "Using pinned packages from requirements.txt"
+            pip install -r requirements.txt
+            pip install pytest pytest-asyncio
+          else
+            echo "Upgrading all packages to latest"
+            pip install --upgrade \
+              "python-telegram-bot[job-queue]" \
+              motor \
+              flask \
+              python-dotenv \
+              pytest \
+              pytest-asyncio
+          fi
           pip install -e . --no-deps 2>/dev/null || true
 
       - name: Run test suite
@@ -98,9 +134,8 @@ jobs:
         run: exit 1
 
   # ---------------------------------------------------------------------------
-  # AI step: fix failures + generate new tests for Python 3.12/3.13 features.
-  # Runs when: any matrix job failed  OR  weekly schedule sweep.
-  # Uses GitHub Models — free, no external API key.
+  # AI step: fix failures + generate new tests
+  # Runs when: any matrix job failed OR weekly schedule sweep
   # ---------------------------------------------------------------------------
   ai-patch:
     name: AI — fix failures & generate new tests
@@ -137,6 +172,8 @@ jobs:
           import json, os, pathlib, sys, textwrap, urllib.request
 
           SKIP = {".git", "__pycache__", ".pythonlibs", ".local", ".pytest_cache", "artifacts"}
+          MAX_FILE_CHARS  = 1_200
+          MAX_TOTAL_CHARS = 12_000
 
           def read_project(roots: list[str], exts=(".py", ".md", ".toml")) -> dict[str, str]:
               out: dict[str, str] = {}
@@ -147,14 +184,28 @@ jobs:
                       if any(s in p.parts for s in SKIP):
                           continue
                       try:
-                          out[str(p)] = p.read_text(errors="replace")
+                          text = p.read_text(errors="replace")
+                          if len(text) > MAX_FILE_CHARS:
+                              text = text[:MAX_FILE_CHARS] + "\n... [truncated]"
+                          out[str(p)] = text
                       except OSError:
                           pass
               return out
 
+          def build_ctx(files: dict[str, str]) -> str:
+              parts = []
+              total = 0
+              for k, v in sorted(files.items()):
+                  chunk = f"--- {k} ---\n{v}"
+                  if total + len(chunk) > MAX_TOTAL_CHARS:
+                      break
+                  parts.append(chunk)
+                  total += len(chunk)
+              return "\n\n".join(parts)
+
           def read_artifacts() -> str:
               parts = [
-                  f"=== {p.name} ===\n{p.read_text(errors='replace')}"
+                  f"=== {p.name} ===\n{p.read_text(errors='replace')[:2000]}"
                   for p in sorted(pathlib.Path("artifacts").rglob("*.log"))
               ]
               return "\n\n".join(parts) if parts else "(no failure logs — weekly sweep)"
@@ -167,7 +218,7 @@ jobs:
                       {"role": "system", "content": system},
                       {"role": "user",   "content": user},
                   ],
-                  "max_tokens": 8192,
+                  "max_tokens": 2048,
                   "temperature": 0.1,
               }).encode()
               req = urllib.request.Request(
@@ -182,7 +233,7 @@ jobs:
                   return json.loads(resp.read())["choices"][0]["message"]["content"]
 
           project  = read_project(["agents", "tcbot", "tests", "pyproject.toml"])
-          ctx      = "\n\n".join(f"--- {k} ---\n{v}" for k, v in sorted(project.items()))
+          ctx      = build_ctx(project)
           failures = read_artifacts()
 
           SYSTEM = textwrap.dedent("""

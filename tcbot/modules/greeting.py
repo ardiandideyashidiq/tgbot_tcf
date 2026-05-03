@@ -11,7 +11,7 @@ from telegram.ext import ContextTypes, MessageHandler, filters
 
 from tcbot import database as db
 from tcbot import cfg
-from tcbot.modules.helper.formatter import esc, mention
+from tcbot.modules.helper.formatter import mention
 
 log = logging.getLogger(__name__)
 

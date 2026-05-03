@@ -16,7 +16,6 @@ from telegram.ext import (
 )
 
 from tcbot import cfg, database as db
-from tcbot.modules.helper import keyboards, parse_logmsg
 from tcbot.modules.helper.workflows.connected_flow import on_bot_added, on_join_decision
 from tcbot.utils.prefixes import build_prefixed_filters
 

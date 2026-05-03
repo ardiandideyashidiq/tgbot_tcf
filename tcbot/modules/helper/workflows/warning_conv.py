@@ -31,9 +31,9 @@ from telegram.ext import (
     filters,
 )
 
-from tcbot import cfg, database as db
+from tcbot import cfg
 from tcbot.database.roles_db import get_effective_role, role_rank, ROLE_LABEL
-from tcbot.modules.helper import decorators, extraction
+from tcbot.modules.helper import extraction
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.workflows.warning_flow import execute_warn
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args

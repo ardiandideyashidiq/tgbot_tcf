@@ -31,7 +31,7 @@ from telegram.ext import (
     filters,
 )
 
-from tcbot import cfg, database as db
+from tcbot import cfg
 from tcbot.database.roles_db import get_effective_role, role_rank, ROLE_LABEL
 from tcbot.modules.helper import extraction, keyboards
 from tcbot.modules.helper.formatter import code, mention
@@ -186,8 +186,6 @@ async def on_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def on_proof_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     msg = update.effective_message
-    if not await db.admins_db.is_staff(update.effective_user.id):
-        return WAITING_PROOF
     if msg.photo:
         ctx.user_data["mute_proof_desc"] = f"Photo (msg {msg.message_id})"
     elif msg.video:

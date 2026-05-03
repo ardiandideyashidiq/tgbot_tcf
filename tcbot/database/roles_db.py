@@ -81,10 +81,3 @@ async def get_effective_role(user_id: int) -> str | None:
     if await is_admin(user_id):
         return "admin"
     return await get_role(user_id)
-
-
-async def can_act_on(executor_id: int, target_id: int) -> bool:
-    """True when executor's role rank is strictly greater than target's."""
-    ex_rank = role_rank(await get_effective_role(executor_id))
-    tg_rank = role_rank(await get_effective_role(target_id))
-    return ex_rank > tg_rank

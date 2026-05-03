@@ -9,7 +9,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler, fil
 
 from tcbot import database as db
 from tcbot.modules.helper.ban_info import build_ban_detail
-from tcbot.modules.helper.formatter import code, esc, mention
+from tcbot.modules.helper.formatter import code, esc
 
 _PAGE_SIZE    = 6
 _SEARCH_KEY   = "stats_search_active"

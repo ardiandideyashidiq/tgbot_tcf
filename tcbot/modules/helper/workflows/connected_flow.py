@@ -13,7 +13,6 @@ from telegram.ext import ContextTypes
 from tcbot import database as db
 from tcbot import cfg
 from tcbot.modules.helper import parse_logmsg
-from tcbot.modules.helper.formatter import esc
 from tcbot.modules.helper.keyboards import join_group_kb
 
 log = logging.getLogger(__name__)

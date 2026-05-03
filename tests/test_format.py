@@ -1,13 +1,13 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Unit tests for :mod:`tgbot_tcf.utils.format`."""
+"""Unit tests for :mod:`tcbot.modules.helper.parse_link` formatters."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from tcbot.utils.format import (
+from tcbot.modules.helper.parse_link import (
     chat_id_to_link_id,
     fmt_dt,
     fmt_now,

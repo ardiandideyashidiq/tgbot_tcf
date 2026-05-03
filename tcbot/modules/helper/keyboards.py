@@ -57,6 +57,34 @@ def ban_log_update_kb(
     )
 
 
+def ban_log_new(
+    target_id: int,
+    proof_link: str,
+    appeal_url: str,
+) -> InlineKeyboardMarkup:
+    """Ban-log keyboard with explicit appeal URL (no bot_username needed)."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"Proof {target_id}", url=proof_link)],
+        [InlineKeyboardButton("Submit Appeal",       url=appeal_url)],
+    ])
+
+
+def ban_log_update(
+    target_id: int,
+    proof_link: str,
+    previous_proof_link: str,
+    appeal_url: str,
+) -> InlineKeyboardMarkup:
+    """Updated ban-log keyboard with explicit appeal URL and previous-proof button."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(f"Proof {target_id}",          url=proof_link),
+            InlineKeyboardButton(f"Previous Proof {target_id}", url=previous_proof_link),
+        ],
+        [InlineKeyboardButton("Submit Appeal", url=appeal_url)],
+    ])
+
+
 ## ---------------------------------------------------------------------------
 ## Appeal flow
 ## ---------------------------------------------------------------------------
@@ -85,6 +113,11 @@ def appeal_review_kb(ban_id: str) -> InlineKeyboardMarkup:
     )
 
 
+def appeal_review(ban_id: str) -> InlineKeyboardMarkup:
+    """Alias for appeal_review_kb with the public API naming convention."""
+    return appeal_review_kb(ban_id)
+
+
 ## ---------------------------------------------------------------------------
 ## Admin promotion
 ## ---------------------------------------------------------------------------
@@ -103,6 +136,14 @@ def promo_decision_kb(request_id: str) -> InlineKeyboardMarkup:
             ]
         ]
     )
+
+
+def promotion_request(request_id: str) -> InlineKeyboardMarkup:
+    """Approve/Reject keyboard for a promotion request (public API naming)."""
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton("Approve", callback_data=f"approve_promote_{request_id}"),
+        InlineKeyboardButton("Reject",  callback_data=f"reject_promote_{request_id}"),
+    ]])
 
 
 ## ---------------------------------------------------------------------------
@@ -169,6 +210,34 @@ def baninfo_proof_kb(proof_lnk: str) -> InlineKeyboardMarkup:
 ## ---------------------------------------------------------------------------
 
 
+def start_menu() -> InlineKeyboardMarkup:
+    """Main /start menu – four rows of navigation buttons."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("About",      callback_data="menu_about"),
+            InlineKeyboardButton("Help",       callback_data="menu_help"),
+        ],
+        [
+            InlineKeyboardButton("Stats",      callback_data="menu_stats"),
+            InlineKeyboardButton("Additional", callback_data="menu_additional"),
+        ],
+        [
+            InlineKeyboardButton("Information", callback_data="menu_information"),
+            InlineKeyboardButton("Groups",      callback_data="menu_groups"),
+        ],
+        [
+            InlineKeyboardButton("Privacy", callback_data="menu_privacy"),
+        ],
+    ])
+
+
+def back_to_start() -> InlineKeyboardMarkup:
+    """Single Back button that returns the user to the start menu."""
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton("Back", callback_data="menu_back_start"),
+    ]])
+
+
 def main_menu_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
@@ -191,6 +260,26 @@ def group_start_kb(bot_username: str) -> InlineKeyboardMarkup:
             [InlineKeyboardButton("Help",          callback_data="menu_help_group")],
         ]
     )
+
+
+def help_modules(
+    rows: list[list[tuple[str, str]]],
+    *,
+    with_back_to_start: bool = False,
+) -> InlineKeyboardMarkup:
+    """Build a help menu keyboard from (text, callback_data) tuples.
+
+    Args:
+        rows: Each inner list is a button row; each element is (text, callback_data).
+        with_back_to_start: Append a Back button pointing to the start menu.
+    """
+    kb_rows = [
+        [InlineKeyboardButton(text, callback_data=cb) for text, cb in row]
+        for row in rows
+    ]
+    if with_back_to_start:
+        kb_rows.append([InlineKeyboardButton("Back", callback_data="menu_back_start")])
+    return InlineKeyboardMarkup(kb_rows)
 
 
 def help_topics_menu_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:

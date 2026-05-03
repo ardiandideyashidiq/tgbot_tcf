@@ -25,11 +25,11 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 | `tcbot/database/bans_db.py` | Federation bans collection |
 | `tcbot/database/queues_db.py` | Promotion-request queue collection |
 | `tcbot/database/users_db.py` | Member-cache collection |
-| `tcbot/modules/keyboards.py` | Public inline-keyboard factory functions |
+| `tcbot/modules/helper/parse_link.py` | Link builders, HTML helpers (`user_link`, `safe_first_name`), datetime (`utcnow`, `fmt_dt`) |
+| `tcbot/modules/helper/keyboards.py` | All inline-keyboard factory functions |
 | `tcbot/modules/messages.py` | Central `M` namespace for all user-facing strings |
 | `tcbot/modules/appeals.py` | Pure functions for appeal business logic |
-| `tcbot/modules/admins_mod.py` | Admin service layer (promote, demote, transfer ownership) |
-| `tcbot/utils/format.py` | `utcnow()`, `fmt_dt()`, `user_link()`, `topic_link()`, `safe_first_name()` |
+| `tcbot/modules/admins_ext.py` | Admin service layer (promote, demote, transfer ownership) |
 | `tcbot/utils/targets.py` | `ResolvedTarget` dataclass and `get_reason()` |
 | `tcbot/utils/users.py` | `UserIdentity`, `resolve_identity()`, `members_repo` |
 | `tcbot/utils/prefixes.py` | Prefix filter builder + alt-prefix dispatcher (`_REGISTRY`) |
@@ -53,18 +53,18 @@ The `config.env` file is kept as a local fallback only and is excluded from vers
 Run with: `python3 -m pytest`
 
 61 tests across 8 files — all pass offline (no real bot token or MongoDB needed).
-Test dependencies are installed via `pip install pytest pytest-asyncio` (Replit) or `uv sync --extra test` (local).
+Test dependencies: `pip install pytest pytest-asyncio` (Replit) or `uv sync --extra test` (local).
 
 | File | What it tests |
 |---|---|
-| `tests/test_format.py` | `tcbot.utils.format` helpers |
+| `tests/test_format.py` | `tcbot.modules.helper.parse_link` helpers |
 | `tests/test_targets.py` | `ResolvedTarget` and `get_reason` |
 | `tests/test_users_resolver.py` | `resolve_identity` with mocked repos |
 | `tests/test_prefix.py` | Alt-prefix dispatcher and registry |
-| `tests/test_keyboards.py` | Inline-keyboard factory shapes |
+| `tests/test_keyboards.py` | `tcbot.modules.helper.keyboards` factory shapes |
 | `tests/test_messages.py` | `M` string constants |
 | `tests/test_appeals_pure.py` | Pure appeal logic functions |
-| `tests/test_admins_mod.py` | Admin service layer with mocked DB |
+| `tests/test_admins_mod.py` | `admins_ext` service layer with mocked DB |
 
 ## Docker
 
@@ -72,7 +72,7 @@ Test dependencies are installed via `pip install pytest pytest-asyncio` (Replit)
 docker-compose up --build
 ```
 
-- `Dockerfile` — multi-stage build using `uv` (`--from=ghcr.io/astral-sh/uv:latest`) with `uv sync --frozen --no-dev`
+- `Dockerfile` — uses `uv` (`COPY --from=ghcr.io/astral-sh/uv:latest`) with `uv sync --frozen --no-dev`
 - `docker-compose.yml` — `bot` + `mongo:7` services; bot waits for MongoDB health-check
 
 ## Deployment

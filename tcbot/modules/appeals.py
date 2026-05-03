@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta
 
-from tcbot.utils.format import utcnow
+from tcbot.modules.helper.parse_link import utcnow
 
 _LOCK_WINDOW = timedelta(hours=12)
 

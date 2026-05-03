@@ -1,7 +1,7 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Tests for the inline keyboard factories in :mod:`tgbot_tcf.modules.keyboards`.
+"""Tests for the inline keyboard factories in :mod:`tcbot.modules.helper.keyboards`.
 
 PROMPT Feature 26 requires the layouts below; these tests guard the row
 shape and callback-data naming.
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from telegram import InlineKeyboardMarkup
 
-from tcbot.modules import keyboards
+from tcbot.modules.helper import keyboards
 
 
 def _rows(markup: InlineKeyboardMarkup) -> list[list[dict[str, str | None]]]:

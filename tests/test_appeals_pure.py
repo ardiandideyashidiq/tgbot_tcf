@@ -8,7 +8,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from tcbot.modules import appeals
-from tcbot.utils.format import utcnow
+from tcbot.modules.helper.parse_link import utcnow
 
 
 def test_starts_with_appeal_tag_accepts_uppercase_and_whitespace() -> None:

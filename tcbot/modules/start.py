@@ -62,7 +62,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    ## appeal<ban_id> deep links are handled by the ConversationHandler in appealing.py
+    ## appeal<ban_id> deep links are handled by the ConversationHandler in appeals.py
     await msg.reply_text(
         _MENU_TEXT.format(bot_name=bot_name, community=cfg.community_name),
         parse_mode="HTML",

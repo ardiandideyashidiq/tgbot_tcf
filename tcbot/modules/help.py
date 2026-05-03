@@ -46,14 +46,48 @@ def _build_help_content() -> dict[str, tuple[str, str]]:
 
 HELP_CONTENT = _build_help_content()
 
-## Menu-path topics  — callback keys stay as "help_<mod>"
-HELP_TOPICS_MENU: list[tuple[str, str]] = [
-    (name, key) for key, (name, _) in HELP_CONTENT.items()
+## Explicit display order: core moderation → admin → check/appeal → groups → utility
+_HELP_ORDER = [
+    "banning",
+    "unbanning",
+    "kicking",
+    "muting",
+    "warnings",
+    "admins",
+    "checking",
+    "appealing",
+    "connecting",
+    "disconnecting",
+    "groups",
+    "stats",
+    "broadcasting",
+    "maintenance",
 ]
+
+
+def _ordered_topics() -> list[tuple[str, str]]:
+    """Return (name, menu_key) pairs in _HELP_ORDER, then any leftover alphabetically."""
+    seen: set[str] = set()
+    result: list[tuple[str, str]] = []
+    for mod in _HELP_ORDER:
+        key = f"help_{mod}"
+        if key in HELP_CONTENT:
+            result.append((HELP_CONTENT[key][0], key))
+            seen.add(key)
+    for key, (name, _) in sorted(HELP_CONTENT.items()):
+        if key not in seen:
+            result.append((name, key))
+    return result
+
+
+_TOPICS_ORDERED = _ordered_topics()
+
+## Menu-path topics  — callback keys stay as "help_<mod>"
+HELP_TOPICS_MENU: list[tuple[str, str]] = _TOPICS_ORDERED
 
 ## Command-path topics — callback keys become "helpc_<mod>"
 HELP_TOPICS_CMD: list[tuple[str, str]] = [
-    (name, "helpc_" + key[5:]) for key, (name, _) in HELP_CONTENT.items()
+    (name, "helpc_" + key[5:]) for name, key in _TOPICS_ORDERED
 ]
 
 

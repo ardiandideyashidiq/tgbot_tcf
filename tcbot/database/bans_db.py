@@ -109,6 +109,22 @@ async def set_review(ban_id: str, msg_id: int) -> None:
     )
 
 
+async def set_appeal_log_msg(
+    ban_id: str,
+    msg_id: int,
+    submitted_at: datetime | None = None,
+    appeal_link: str = "",
+) -> None:
+    await _bans().update_one(
+        {"ban_id": ban_id},
+        {"$set": {
+            "appeal_log_msg_id": msg_id,
+            "appeal_submitted_at": submitted_at or _now(),
+            "appeal_link": appeal_link,
+        }},
+    )
+
+
 async def active_ban_count() -> int:
     return await _bans().count_documents({"is_active": True})
 

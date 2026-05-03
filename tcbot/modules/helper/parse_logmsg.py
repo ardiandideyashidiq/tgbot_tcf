@@ -163,7 +163,7 @@ def appeal_submitted_log(
     ban_id: str,
     appeal_link: str,
 ) -> str:
-    """Log posted to LOG_CHANNEL when appeal is submitted."""
+    """Initial log posted to LOG_CHANNEL when appeal is submitted."""
     dt = fmt_dt(utc_now())
     return (
         f"New Appeal Submitted\n"
@@ -172,11 +172,81 @@ def appeal_submitted_log(
         f"ID: {target_id}\n\n"
         f"Ban ID: {ban_id}\n"
         f"Appeal: {link('View', appeal_link) if appeal_link else 'N/A'}\n\n"
+        f"Submitted: {dt}"
+    )
+
+
+def appeal_approved_edit(
+    target_id: int,
+    target_fname: str,
+    admin_id: int,
+    admin_fname: str,
+    ban_id: str,
+    appeal_link: str = "",
+    submitted_at=None,
+) -> str:
+    """Edited version of the submitted log — shown when appeal is approved."""
+    submitted_str = fmt_dt(submitted_at) if submitted_at else "N/A"
+    approved_str = fmt_dt(utc_now())
+    return (
+        f"Appeal Approved\n"
+        f"{BRAND}\n\n"
+        f"User: {mention(target_id, target_fname)}\n"
+        f"ID: {target_id}\n\n"
+        f"Ban ID: {ban_id}\n"
+        f"Appeal: {link('View', appeal_link) if appeal_link else 'N/A'}\n\n"
+        f"Submitted: {submitted_str}\n"
+        f"Approved by: {mention(admin_id, admin_fname)}\n"
+        f"Approved at: {approved_str}"
+    )
+
+
+def appeal_rejected_edit(
+    target_id: int,
+    target_fname: str,
+    admin_id: int,
+    admin_fname: str,
+    ban_id: str,
+    appeal_link: str = "",
+    submitted_at=None,
+) -> str:
+    """Edited version of the submitted log — shown when appeal is rejected."""
+    submitted_str = fmt_dt(submitted_at) if submitted_at else "N/A"
+    rejected_str = fmt_dt(utc_now())
+    return (
+        f"Appeal Rejected\n"
+        f"{BRAND}\n\n"
+        f"User: {mention(target_id, target_fname)}\n"
+        f"ID: {target_id}\n\n"
+        f"Ban ID: {ban_id}\n"
+        f"Appeal: {link('View', appeal_link) if appeal_link else 'N/A'}\n\n"
+        f"Submitted: {submitted_str}\n"
+        f"Rejected by: {mention(admin_id, admin_fname)}\n"
+        f"Rejected at: {rejected_str}"
+    )
+
+
+def appeal_unban_log(
+    target_id: int,
+    target_fname: str,
+    admin_id: int,
+    admin_fname: str,
+    ban_id: str,
+) -> str:
+    """Separate unban log posted to LOG_CHANNEL when appeal is approved."""
+    dt = fmt_dt(utc_now())
+    return (
+        f"{cfg.community_name} Unban (via Appeal)\n"
+        f"{BRAND}\n\n"
+        f"Admin: {mention(admin_id, admin_fname)}\n"
+        f"User: {mention(target_id, target_fname)}\n"
+        f"User ID: {target_id}\n"
+        f"Ban ID: {ban_id}\n\n"
         f"Date: {dt}"
     )
 
 
-## Legacy alias
+## Legacy aliases (kept for backward compatibility)
 def appeal_submitted(
     target_id: int,
     target_fname: str,
@@ -194,16 +264,7 @@ def appeal_accepted(
     admin_fname: str,
     ban_id: str,
 ) -> str:
-    dt = fmt_dt(utc_now())
-    return (
-        f"Appeal Approved\n"
-        f"{BRAND}\n\n"
-        f"User: {mention(target_id, target_fname)}\n"
-        f"ID: {target_id}\n\n"
-        f"Ban ID: {ban_id}\n"
-        f"Approved by: {mention(admin_id, admin_fname)}\n\n"
-        f"Date: {dt}"
-    )
+    return appeal_approved_edit(target_id, target_fname, admin_id, admin_fname, ban_id)
 
 
 def appeal_rejected(
@@ -214,16 +275,7 @@ def appeal_rejected(
     ban_id: str,
     response: str | None = None,
 ) -> str:
-    dt = fmt_dt(utc_now())
-    return (
-        f"Appeal Rejected\n"
-        f"{BRAND}\n\n"
-        f"User: {mention(target_id, target_fname)}\n"
-        f"ID: {target_id}\n\n"
-        f"Ban ID: {ban_id}\n\n"
-        f"Rejected by: {mention(admin_id, admin_fname)}\n\n"
-        f"Date: {dt}"
-    )
+    return appeal_rejected_edit(target_id, target_fname, admin_id, admin_fname, ban_id)
 
 
 ## ---------------------------------------------------------------------------

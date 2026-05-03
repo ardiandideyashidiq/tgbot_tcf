@@ -16,6 +16,12 @@ from tcbot.utils.logger import setup as setup_logging
 log = logging.getLogger(__name__)
 
 
+async def _debug_all_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = update.effective_message
+    if msg and msg.text:
+        log.info("DBG RCV | chat=%s type=%s text=%r", update.effective_chat.id, update.effective_chat.type, msg.text[:40])
+
+
 async def _update_member_cache(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """Cache sender's info on every message sent in any affiliated group."""
     chat = update.effective_chat
@@ -66,6 +72,12 @@ def main() -> None:
     ## Register all module handlers via tcbot.modules
     for handler in get_handlers():
         app.add_handler(handler)
+
+    ## Temporary debug: log every received text message
+    app.add_handler(
+        MessageHandler(filters.TEXT, _debug_all_text),
+        group=99,
+    )
 
     ## Low-priority handler: update member cache on every group message
     app.add_handler(

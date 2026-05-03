@@ -4,6 +4,8 @@
 """Federation statistics command."""
 from __future__ import annotations
 
+import asyncio
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
@@ -25,8 +27,9 @@ __help_text__ = (
 
     "<b>What it does</b>\n"
     "Shows a quick overview of the federation: who the founder is, "
-    "how many admins are active, how many bans are in effect, "
-    "and how many groups are connected.\n\n"
+    "how many staff members are active across all roles, "
+    "how many bans are in effect, and how many groups are connected.\n"
+    "Tap <b>Staff Roster</b> to see the full breakdown by role.\n\n"
 
     "<b>Example</b>\n"
     "<code>/tcstats</code>"
@@ -35,7 +38,7 @@ __help_text__ = (
 
 def _stats_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Admins/Staff",    callback_data="stats_admins")],
+        [InlineKeyboardButton("Staff Roster",    callback_data="stats_admins")],
         [InlineKeyboardButton("Connected Chats", callback_data="stats_chats")],
         [InlineKeyboardButton("User Bans",       callback_data="stats_bans:0")],
     ])
@@ -48,18 +51,24 @@ def _simple_back_kb() -> InlineKeyboardMarkup:
 
 
 async def _stats_text() -> str:
-    owner_id = await db.admins_db.get_owner_id()
-    owner_fname = await db.users_db.get_first_name(owner_id, "Owner") if owner_id else "Unknown"
-    admins = await db.admins_db.admin_count()
-    bans = await db.bans_db.active_ban_count()
-    groups = await db.groups_db.active_group_count()
+    (owner_id, admin_cnt, dev_list, tester_list,
+     bans, groups) = await asyncio.gather(
+        db.admins_db.get_owner_id(),
+        db.admins_db.admin_count(),
+        db.roles_db.all_by_role("developer"),
+        db.roles_db.all_by_role("tester"),
+        db.bans_db.active_ban_count(),
+        db.groups_db.active_group_count(),
+    )
+    owner_fname   = await db.users_db.get_first_name(owner_id, "Owner") if owner_id else "Unknown"
     owner_mention = mention(owner_id, owner_fname) if owner_id else "Unknown"
+    staff_total   = 1 + admin_cnt + len(dev_list) + len(tester_list)
     return (
-        f"<b>Stats {esc(cfg.community_name)}</b>\n\n"
+        f"<b>Stats — {esc(cfg.community_name)}</b>\n\n"
         f"Founder: {owner_mention}\n"
-        f"Number of admins: {admins}\n"
-        f"Number of bans: {bans}\n"
-        f"Number of connected chats: {groups}"
+        f"Staff: {staff_total} total\n"
+        f"Active bans: {bans}\n"
+        f"Connected chats: {groups}"
     )
 
 
@@ -79,11 +88,49 @@ async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     q = update.callback_query
     await q.answer()
 
-    admins = await db.admins_db.all_admins()
-    lines = [f"<b>Admins/Staff ({len(admins)})</b>\n"]
-    for adm in admins:
-        fname = await db.users_db.get_first_name(adm["user_id"], str(adm["user_id"]))
-        lines.append(f"- {mention(adm['user_id'], fname)}")
+    owner_id, admins, developers, testers = await asyncio.gather(
+        db.admins_db.get_owner_id(),
+        db.admins_db.all_admins(),
+        db.roles_db.all_by_role("developer"),
+        db.roles_db.all_by_role("tester"),
+    )
+
+    lines: list[str] = [f"<b>Staff Roster — {esc(cfg.community_name)}</b>\n"]
+
+    ## Founder
+    if owner_id:
+        fname = await db.users_db.get_first_name(owner_id, "Founder")
+        lines.append("<b>Founder</b>")
+        lines.append(f"— {mention(owner_id, fname)}\n")
+
+    ## Admins
+    lines.append(f"<b>Admins ({len(admins)})</b>")
+    if admins:
+        for adm in admins:
+            fname = await db.users_db.get_first_name(adm["user_id"], str(adm["user_id"]))
+            lines.append(f"— {mention(adm['user_id'], fname)}")
+    else:
+        lines.append("— None assigned")
+    lines.append("")
+
+    ## Developers
+    lines.append(f"<b>Developers ({len(developers)})</b>")
+    if developers:
+        for dev in developers:
+            fname = await db.users_db.get_first_name(dev["user_id"], str(dev["user_id"]))
+            lines.append(f"— {mention(dev['user_id'], fname)}")
+    else:
+        lines.append("— None assigned")
+    lines.append("")
+
+    ## Testers
+    lines.append(f"<b>Testers ({len(testers)})</b>")
+    if testers:
+        for tst in testers:
+            fname = await db.users_db.get_first_name(tst["user_id"], str(tst["user_id"]))
+            lines.append(f"— {mention(tst['user_id'], fname)}")
+    else:
+        lines.append("— None assigned")
 
     await q.edit_message_text(
         "\n".join(lines), parse_mode="HTML",
@@ -96,9 +143,9 @@ async def on_stats_chats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     await q.answer()
 
     groups = await db.groups_db.active_groups()
-    lines = [f"<b>Connected Chats ({len(groups)})</b>\n"]
+    lines  = [f"<b>Connected Chats ({len(groups)})</b>\n"]
     for grp in groups:
-        lines.append(f"- {esc(grp['title'])} {code(str(grp['chat_id']))}")
+        lines.append(f"— {esc(grp['title'])} {code(str(grp['chat_id']))}")
 
     await q.edit_message_text(
         "\n".join(lines), parse_mode="HTML",

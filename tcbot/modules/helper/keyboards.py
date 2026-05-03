@@ -234,7 +234,7 @@ def start_menu() -> InlineKeyboardMarkup:
 def back_to_start() -> InlineKeyboardMarkup:
     """Single Back button that returns the user to the start menu."""
     return InlineKeyboardMarkup([[
-        InlineKeyboardButton("Back", callback_data="menu_back_start"),
+        InlineKeyboardButton("« Back", callback_data="menu_back_start"),
     ]])
 
 
@@ -278,7 +278,7 @@ def help_modules(
         for row in rows
     ]
     if with_back_to_start:
-        kb_rows.append([InlineKeyboardButton("Back", callback_data="menu_back_start")])
+        kb_rows.append([InlineKeyboardButton("« Back", callback_data="menu_back_start")])
     return InlineKeyboardMarkup(kb_rows)
 
 

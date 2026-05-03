@@ -39,7 +39,7 @@ def test_start_menu_layout() -> None:
 
 def test_back_to_start_is_single_back_button() -> None:
     rows = _rows(keyboards.back_to_start())
-    assert rows == [[{"text": "Back", "callback_data": "menu_back_start", "url": None}]]
+    assert rows == [[{"text": "« Back", "callback_data": "menu_back_start", "url": None}]]
 
 
 def test_appeal_review_callback_data_includes_ban_id() -> None:
@@ -88,4 +88,5 @@ def test_help_modules_optional_back_to_start() -> None:
     rows_with_back = _rows(
         keyboards.help_modules(sample_rows, with_back_to_start=True)
     )
+    assert rows_with_back[-1][0]["text"] == "« Back"
     assert rows_with_back[-1][0]["callback_data"] == "menu_back_start"

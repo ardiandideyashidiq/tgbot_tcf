@@ -16,7 +16,12 @@ from telegram.ext import (
 )
 
 from tcbot import cfg, database as db
-from tcbot.modules.helper.workflows.connected_flow import on_bot_added, on_join_decision
+from tcbot.modules.helper.workflows.connected_flow import (
+    _check_bot_perms,
+    _complete_join,
+    on_bot_added,
+    on_join_decision,
+)
 from tcbot.utils.prefixes import build_prefixed_filters
 
 log = logging.getLogger(__name__)
@@ -70,11 +75,6 @@ async def cmd_tcconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    from tcbot.modules.helper.workflows.connected_flow import (
-        _REQUIRED_PERMS,
-        _check_bot_perms,
-    )
-
     try:
         bot_member = await ctx.bot.get_chat_member(chat.id, ctx.bot.id)
     except Exception:
@@ -88,7 +88,6 @@ async def cmd_tcconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    from tcbot.modules.helper.workflows.connected_flow import _complete_join
     await _complete_join(chat.id, chat.title or "", user.id, user.first_name, ctx.bot)
     await update.effective_message.reply_text(
         f"This group is now connected to {cfg.community_name}."

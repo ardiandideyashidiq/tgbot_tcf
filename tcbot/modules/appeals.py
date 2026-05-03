@@ -44,6 +44,3 @@ def reviewer_locked_out(
     return elapsed < _LOCK_WINDOW
 
 
-def now() -> datetime:
-    """Return the current UTC time (thin wrapper so callers can be patched in tests)."""
-    return utcnow()

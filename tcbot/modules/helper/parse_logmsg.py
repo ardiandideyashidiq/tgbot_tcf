@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from tcbot import cfg
+from tcbot.database.roles_db import ROLE_LABEL as _ROLE_LABELS
 from tcbot.modules.helper.formatter import BRAND, link, mention
 from tcbot.utils.timedate_format import fmt_dt, utc_now
 
@@ -459,13 +460,6 @@ def broadcast_log(
 ## ---------------------------------------------------------------------------
 ## Role management logs
 ## ---------------------------------------------------------------------------
-
-_ROLE_LABELS: dict[str, str] = {
-    "founder":   "Founder",
-    "admin":     "Admin",
-    "developer": "Developer",
-    "tester":    "Tester",
-}
 
 
 def role_assigned(

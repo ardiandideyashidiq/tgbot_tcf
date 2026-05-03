@@ -74,6 +74,32 @@ _HELP_INDEX_TEXT = (
 
 
 ## ---------------------------------------------------------------------------
+## Shared rendering helper
+## ---------------------------------------------------------------------------
+
+
+async def _render_help_index(
+    update: Update,
+    ctx: ContextTypes.DEFAULT_TYPE,
+    *,
+    with_back_to_start: bool,
+) -> None:
+    """Edit (or send) the help index message on the appropriate callback query."""
+    q: CallbackQuery = update.callback_query
+    await q.answer()
+    bot_name = ctx.bot.first_name or "TC Bot"
+    if with_back_to_start:
+        kb = keyboards.help_topics_menu_kb(HELP_TOPICS_MENU)
+    else:
+        kb = keyboards.help_topics_kb(HELP_TOPICS_CMD)
+    await q.edit_message_text(
+        _HELP_INDEX_TEXT.format(bot_name=bot_name, community=cfg.community_name),
+        parse_mode="HTML",
+        reply_markup=kb,
+    )
+
+
+## ---------------------------------------------------------------------------
 ## /help command handler  (PM or group — no back-to-start)
 ## ---------------------------------------------------------------------------
 
@@ -93,14 +119,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def on_menu_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    await q.answer()
-    bot_name = ctx.bot.first_name or "TC Bot"
-    await q.edit_message_text(
-        _HELP_INDEX_TEXT.format(bot_name=bot_name, community=cfg.community_name),
-        parse_mode="HTML",
-        reply_markup=keyboards.help_topics_menu_kb(HELP_TOPICS_MENU),
-    )
+    await _render_help_index(update, ctx, with_back_to_start=True)
 
 
 ## ---------------------------------------------------------------------------
@@ -111,9 +130,8 @@ async def on_menu_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 async def on_menu_help_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """Help tapped from group /start inline — answer with alert, no edit."""
     q: CallbackQuery = update.callback_query
-    bot_name = ctx.bot.first_name or "TC Bot"
     await q.answer(
-        f"Use /help in this group to browse all commands.",
+        "Use /help in this group to browse all commands.",
         show_alert=True,
     )
 
@@ -124,14 +142,7 @@ async def on_menu_help_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
 
 
 async def on_helpcmd_idx(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    await q.answer()
-    bot_name = ctx.bot.first_name or "TC Bot"
-    await q.edit_message_text(
-        _HELP_INDEX_TEXT.format(bot_name=bot_name, community=cfg.community_name),
-        parse_mode="HTML",
-        reply_markup=keyboards.help_topics_kb(HELP_TOPICS_CMD),
-    )
+    await _render_help_index(update, ctx, with_back_to_start=False)
 
 
 ## ---------------------------------------------------------------------------

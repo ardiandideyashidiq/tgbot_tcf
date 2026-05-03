@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+from tcbot.database.roles_db import ROLE_LABEL as _ROLE_LABELS
+
 
 ## ---------------------------------------------------------------------------
 ## Ban flow
@@ -82,12 +84,6 @@ def appeal_review_kb(ban_id: str) -> InlineKeyboardMarkup:
 ## ---------------------------------------------------------------------------
 ## Admin promotion
 ## ---------------------------------------------------------------------------
-
-_ROLE_LABELS: dict[str, str] = {
-    "admin":     "Admin",
-    "developer": "Developer",
-    "tester":    "Tester",
-}
 
 
 def promote_role_kb(target_id: int, available_roles: list[str]) -> InlineKeyboardMarkup:
@@ -236,37 +232,30 @@ def help_modules(
     return InlineKeyboardMarkup(kb_rows)
 
 
-def help_topics_menu_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:
-    """Help index when reached via the start menu — includes « Back to start."""
-    rows: list[list] = []
+def _build_topic_rows(topics: list[tuple[str, str]]) -> list[list[InlineKeyboardButton]]:
+    """Pair topics into two-column rows, with any odd item on its own row."""
+    rows: list[list[InlineKeyboardButton]] = []
     it = iter(topics)
     for a, b in zip(it, it):
-        rows.append(
-            [
-                InlineKeyboardButton(a[0], callback_data=a[1]),
-                InlineKeyboardButton(b[0], callback_data=b[1]),
-            ]
-        )
+        rows.append([
+            InlineKeyboardButton(a[0], callback_data=a[1]),
+            InlineKeyboardButton(b[0], callback_data=b[1]),
+        ])
     for item in list(it):
         rows.append([InlineKeyboardButton(item[0], callback_data=item[1])])
+    return rows
+
+
+def help_topics_menu_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:
+    """Help index when reached via the start menu — includes « Back to start."""
+    rows = _build_topic_rows(topics)
     rows.append([InlineKeyboardButton("« Back", callback_data="menu_back_start")])
     return InlineKeyboardMarkup(rows)
 
 
 def help_topics_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:
     """Help index when reached via /help command (PM or group) — no back to start."""
-    rows: list[list] = []
-    it = iter(topics)
-    for a, b in zip(it, it):
-        rows.append(
-            [
-                InlineKeyboardButton(a[0], callback_data=a[1]),
-                InlineKeyboardButton(b[0], callback_data=b[1]),
-            ]
-        )
-    for item in list(it):
-        rows.append([InlineKeyboardButton(item[0], callback_data=item[1])])
-    return InlineKeyboardMarkup(rows)
+    return InlineKeyboardMarkup(_build_topic_rows(topics))
 
 
 def mute_reason_kb() -> InlineKeyboardMarkup:

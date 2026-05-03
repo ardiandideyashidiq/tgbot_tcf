@@ -4,13 +4,9 @@
 """Bans collection helpers."""
 from __future__ import annotations
 
-import secrets
-import string
 from datetime import datetime, timezone
 
-from tcbot.database.mongos import col
-
-_ALPHABET = string.ascii_lowercase + string.digits
+from tcbot.database.mongos import col, make_short_id
 
 
 def _bans():
@@ -22,7 +18,7 @@ def _now() -> datetime:
 
 
 def make_ban_id() -> str:
-    return "".join(secrets.choice(_ALPHABET) for _ in range(10))
+    return make_short_id()
 
 
 async def get_active_ban(user_id: int) -> dict | None:

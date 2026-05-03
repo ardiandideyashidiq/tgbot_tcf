@@ -5,12 +5,23 @@
 from __future__ import annotations
 
 import logging
+import secrets
+import string
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+
+from tcbot import cfg
 
 log = logging.getLogger(__name__)
 
 _db: AsyncIOMotorDatabase | None = None
+
+_ID_ALPHABET: str = string.ascii_lowercase + string.digits
+
+
+def make_short_id(length: int = 10) -> str:
+    """Generate a random URL-safe lowercase alphanumeric ID."""
+    return "".join(secrets.choice(_ID_ALPHABET) for _ in range(length))
 
 
 def db() -> AsyncIOMotorDatabase:
@@ -21,14 +32,11 @@ def db() -> AsyncIOMotorDatabase:
 
 async def connect() -> None:
     global _db
-    from tcbot import cfg
-
     client = AsyncIOMotorClient(cfg.mongodb_uri, serverSelectionTimeoutMS=10_000)
     _db = client[cfg.db_name]
     await _db.command("ping")
     log.info("MongoDB connected → %s", cfg.db_name)
 
 
-## Collection accessors
 def col(name: str):
     return db()[name]

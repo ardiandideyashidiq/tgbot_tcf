@@ -11,15 +11,29 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 - **Database:** MongoDB (via motor, async)
 - **Web server:** Flask (keep-alive / health-check on port 5000)
 - **Entry point:** `python3 -m tcbot`
+- **Dependency management:** `uv` (lock file: `uv.lock`; `requirements.txt` is legacy and git-ignored)
 
 ## Key Modules
 
-- `tcbot/__init__.py` — Config singleton (`cfg` and `configs`), loaded from environment variables (with config.env as fallback)
-- `tcbot/__main__.py` — Entry point: sets up logging, starts Flask keepalive, discovers handlers, starts polling
-- `tcbot/alive.py` — Flask keep-alive server running on port 5000
-- `tcbot/database/` — MongoDB helpers (admins, bans, groups, users, warns, etc.)
-- `tcbot/modules/` — Auto-discovered bot command modules (ban, appeal, connect, etc.)
-- `tcbot/utils/` — Logging formatter, prefix builder, time utilities
+| Path | Purpose |
+|---|---|
+| `tcbot/__init__.py` | Config singleton (`cfg` / `configs`), loaded from env vars |
+| `tcbot/__main__.py` | Entry point: logging, Flask keepalive, handler discovery, polling |
+| `tcbot/alive.py` | Flask keep-alive server on port 5000 |
+| `tcbot/database/mongos.py` | MongoDB client, `connect()`, `col()`, `make_short_id()` |
+| `tcbot/database/admins_db.py` | Owners and TC admins collection |
+| `tcbot/database/bans_db.py` | Federation bans collection |
+| `tcbot/database/queues_db.py` | Promotion-request queue collection |
+| `tcbot/database/users_db.py` | Member-cache collection |
+| `tcbot/modules/keyboards.py` | Public inline-keyboard factory functions |
+| `tcbot/modules/messages.py` | Central `M` namespace for all user-facing strings |
+| `tcbot/modules/appeals.py` | Pure functions for appeal business logic |
+| `tcbot/modules/admins_mod.py` | Admin service layer (promote, demote, transfer ownership) |
+| `tcbot/utils/format.py` | `utcnow()`, `fmt_dt()`, `user_link()`, `topic_link()`, `safe_first_name()` |
+| `tcbot/utils/targets.py` | `ResolvedTarget` dataclass and `get_reason()` |
+| `tcbot/utils/users.py` | `UserIdentity`, `resolve_identity()`, `members_repo` |
+| `tcbot/utils/prefixes.py` | Prefix filter builder + alt-prefix dispatcher (`_REGISTRY`) |
+| `tcbot/utils/logger.py` | `BotLogFormatter` and `setup()` |
 
 ## Configuration
 
@@ -33,6 +47,33 @@ Secrets are stored in Replit Secrets (environment variables). Non-sensitive conf
 - `PORT` — Web server port, set to 5000 for Replit (env var)
 
 The `config.env` file is kept as a local fallback only and is excluded from version control via `.gitignore`.
+
+## Test Suite
+
+Run with: `python3 -m pytest`
+
+61 tests across 8 files — all pass offline (no real bot token or MongoDB needed).
+Test dependencies are installed via `pip install pytest pytest-asyncio` (Replit) or `uv sync --extra test` (local).
+
+| File | What it tests |
+|---|---|
+| `tests/test_format.py` | `tcbot.utils.format` helpers |
+| `tests/test_targets.py` | `ResolvedTarget` and `get_reason` |
+| `tests/test_users_resolver.py` | `resolve_identity` with mocked repos |
+| `tests/test_prefix.py` | Alt-prefix dispatcher and registry |
+| `tests/test_keyboards.py` | Inline-keyboard factory shapes |
+| `tests/test_messages.py` | `M` string constants |
+| `tests/test_appeals_pure.py` | Pure appeal logic functions |
+| `tests/test_admins_mod.py` | Admin service layer with mocked DB |
+
+## Docker
+
+```
+docker-compose up --build
+```
+
+- `Dockerfile` — multi-stage build using `uv` (`--from=ghcr.io/astral-sh/uv:latest`) with `uv sync --frozen --no-dev`
+- `docker-compose.yml` — `bot` + `mongo:7` services; bot waits for MongoDB health-check
 
 ## Deployment
 

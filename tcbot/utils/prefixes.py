@@ -1,14 +1,63 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-"""Build command filters that match all configured prefixes (/, !, .)."""
+"""Build command filters that match all configured prefixes (/, !, .) and
+provide a lightweight dispatcher for alternative-prefix commands.
+"""
 from __future__ import annotations
 
 import ast
+import logging
 import os
 import re
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from telegram.ext import filters
+
+log = logging.getLogger(__name__)
+
+_ALT_RE = re.compile(r"^[.!]([a-z][a-z0-9]*)(?:@\w+)?(?:\s|$)", re.IGNORECASE)
+
+_REGISTRY: dict[str, Callable[..., Coroutine[Any, Any, None]]] = {}
+
+
+def register_command(name: str, callback: Callable[..., Coroutine[Any, Any, None]]) -> None:
+    """Register an async callback for a given command name (case-insensitive)."""
+    _REGISTRY[name.lower()] = callback
+
+
+async def dispatch_alt_prefix(update: object, context: object) -> None:
+    """Dispatch an update to a registered alt-prefix command handler.
+
+    Parses the ``effective_message.text`` against :data:`_ALT_RE`, looks up
+    the command in :data:`_REGISTRY`, injects ``context.args``, and calls the
+    handler.  Any exception raised by the handler is swallowed (logged at
+    WARNING level) to keep the dispatcher robust.
+    """
+    msg = getattr(update, "effective_message", None)
+    if not msg:
+        return
+    text: str | None = getattr(msg, "text", None)
+    if not text:
+        return
+
+    m = _ALT_RE.match(text)
+    if not m:
+        return
+
+    cmd = m.group(1).lower()
+    callback = _REGISTRY.get(cmd)
+    if callback is None:
+        return
+
+    parts = text.strip().split(None, 1)
+    context.args = parts[1].split() if len(parts) > 1 else []  # type: ignore[attr-defined]
+
+    try:
+        await callback(update, context)
+    except Exception as exc:
+        log.warning("dispatch_alt_prefix: handler %r raised %s", cmd, exc)
 
 
 def _get_prefixes() -> list[str]:
@@ -17,7 +66,6 @@ def _get_prefixes() -> list[str]:
     if not raw:
         return ["/", "!", "."]
 
-    ## Try Python list literal: ["/", "!", "."]
     try:
         parsed = ast.literal_eval(raw)
         if isinstance(parsed, list):
@@ -25,7 +73,6 @@ def _get_prefixes() -> list[str]:
     except Exception:
         pass
 
-    ## Fall back to treating each character as a prefix
     return list(raw)
 
 

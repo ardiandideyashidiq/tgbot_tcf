@@ -1,9 +1,13 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
+"""Logging setup for the TCF bot – custom formatter with project-name branding."""
+from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+
+from tcbot import cfg
 
 
 class BotLogFormatter(logging.Formatter):
@@ -38,7 +42,6 @@ class BotLogFormatter(logging.Formatter):
 
 
 def setup(level: int = logging.INFO) -> None:
-    from tcbot import cfg
     formatter = BotLogFormatter(cfg.community_name)
     handler   = logging.StreamHandler()
     handler.setFormatter(formatter)

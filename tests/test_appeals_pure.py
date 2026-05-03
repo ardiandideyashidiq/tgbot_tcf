@@ -73,5 +73,5 @@ def test_reviewer_locked_out_handles_missing_metadata() -> None:
 
 def test_now_returns_current_utc() -> None:
     sentinel = utcnow()
-    with patch("tgbot_tcf.modules.appeals.utcnow", return_value=sentinel):
+    with patch("tcbot.modules.appeals.utcnow", return_value=sentinel):
         assert appeals.now() is sentinel

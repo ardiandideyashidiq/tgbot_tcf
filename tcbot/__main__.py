@@ -50,7 +50,7 @@ async def _post_init(app: Application) -> None:
 
 
 def main() -> None:
-    setup_logging()
+    setup_logging(level=cfg.log_level)
     log.info("Starting %s bot...", cfg.community_name)
 
     from tcbot.alive import start_keepalive

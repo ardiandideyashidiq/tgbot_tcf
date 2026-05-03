@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import ast
+import logging
 import os
 import sys
 from dataclasses import dataclass
@@ -64,6 +65,15 @@ def _env_list(key: str) -> list[str]:
     return [name.strip() for name in raw.split(",") if name.strip()]
 
 
+def _parse_log_level(raw: str) -> int:
+    """Resolve a log-level string like 'DEBUG' or 'INFO' to a logging int."""
+    level = getattr(logging, raw.strip().upper(), None)
+    if isinstance(level, int):
+        return level
+    print(f"Invalid LOG_LEVEL '{raw}', defaulting to INFO.", file=sys.stderr)
+    return logging.INFO
+
+
 @dataclass(frozen=True)
 class Configs:
     """Immutable container for all bot configuration values."""
@@ -83,8 +93,10 @@ class Configs:
     appeals: str
     proof_timeout_seconds: int
     appeal_timeout_seconds: int
+    appeal_discussion_topic: int
     extend_group: str
     album_debounce_seconds: int
+    log_level: int
     modules_load: list[str]
     modules_no_load: list[str]
 
@@ -152,8 +164,10 @@ class Configs:
             appeals=os.getenv("APPEALS", "").strip(),
             proof_timeout_seconds=_int_from_env("PROOF_TIMEOUT_SECONDS", 100),
             appeal_timeout_seconds=_int_from_env("APPEAL_TIMEOUT_SECONDS", 600),
+            appeal_discussion_topic=_int_from_env("APPEAL_DISCUSSION_TOPIC", 0),
             extend_group=os.getenv("EXTEND_GROUP", "").strip(),
             album_debounce_seconds=_int_from_env("ALBUM_DEBOUNCE_SECONDS", 2),
+            log_level=_parse_log_level(os.getenv("LOG_LEVEL", "INFO")),
             modules_load=_env_list("MODULES_LOAD"),
             modules_no_load=_env_list("MODULES_NO_LOAD"),
         )
@@ -233,8 +247,16 @@ class _CfgAdapter:
         return self._c.appeal_timeout_seconds
 
     @property
+    def appeal_discussion_topic(self) -> int:
+        return self._c.appeal_discussion_topic
+
+    @property
     def album_debounce(self) -> int:
         return self._c.album_debounce_seconds
+
+    @property
+    def log_level(self) -> int:
+        return self._c.log_level
 
     @property
     def modules_load(self) -> list[str]:

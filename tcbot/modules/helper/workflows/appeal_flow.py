@@ -26,7 +26,6 @@ from tcbot.modules.helper.parse_link import message_link
 log = logging.getLogger(__name__)
 
 WAITING_APPEAL = 0
-APPEAL_DISCUSSION_TOPIC = 11
 
 _ID_RE = re.compile(r"^/start\s+appeal([a-z0-9]{10})$")
 
@@ -134,7 +133,7 @@ async def on_appeal_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
             cfg.main_group,
             review_text,
             parse_mode="HTML",
-            message_thread_id=APPEAL_DISCUSSION_TOPIC,
+            message_thread_id=cfg.appeal_discussion_topic or None,
             reply_markup=keyboards.appeal_review_kb(ban_id),
         )
         review_msg_id = rv.message_id

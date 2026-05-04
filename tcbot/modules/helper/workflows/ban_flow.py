@@ -67,11 +67,11 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     if target_id == ctx.bot.id:
-        await msg.reply_text("Hey, that's me — I run the bans around here, not receive them. 😄")
+        await msg.reply_text("That's me — I run the bans around here, not receive them.")
         return ConversationHandler.END
 
     if target_id == admin.id:
-        await msg.reply_text("Hey, you can't ban yourself. 😅")
+        await msg.reply_text("You can't ban yourself.")
         return ConversationHandler.END
 
     target_role = await get_effective_role(target_id)

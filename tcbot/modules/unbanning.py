@@ -55,7 +55,7 @@ async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         bot_info = await ctx.bot.get_me()
         await msg.reply_text(
             f"That's {mention(ctx.bot.id, bot_info.first_name or 'me')} — "
-            "I run the bans around here, not receive them. Nothing to undo. 😄",
+            "I run the bans around here, not receive them. Nothing to undo.",
             parse_mode="HTML",
         )
         return

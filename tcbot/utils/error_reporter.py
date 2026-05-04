@@ -44,39 +44,39 @@ def attach(bot: "Bot", chat_id: int, thread_id: int | None) -> None:
 def _classify(exc: BaseException | None) -> tuple[str, str]:
     """Return (display_label, slug) describing the error source."""
     if exc is None:
-        return "⚠️ Unknown", "unknown"
+        return "[?] Unknown", "unknown"
 
     mod = type(exc).__module__ or ""
 
     try:
         import telegram.error as _te
         if isinstance(exc, _te.RetryAfter):
-            return "⏳ Rate Limit — Flood Wait", "rate_limit"
+            return "[~] Rate Limit — Flood Wait", "rate_limit"
         if isinstance(exc, _te.TimedOut):
-            return "⏳ Rate Limit — Timed Out", "rate_limit"
+            return "[~] Rate Limit — Timed Out", "rate_limit"
         if isinstance(exc, _te.NetworkError):
-            return "🌐 Telegram Network Error", "network"
+            return "[~] Telegram Network Error", "network"
         if isinstance(exc, _te.TelegramError):
-            return "📡 Telegram API Error", "telegram_api"
+            return "[!] Telegram API Error", "telegram_api"
     except ImportError:
         pass
 
     if any(x in mod for x in ("motor", "pymongo", "mongo")):
-        return "🗄️ Database Error", "database"
+        return "[DB] Database Error", "database"
 
     if (
         isinstance(exc, (ConnectionError, TimeoutError, OSError))
         or any(x in mod for x in ("httpx", "aiohttp", "urllib3", "ssl"))
     ):
-        return "🌐 Network / Server Error", "network"
+        return "[~] Network / Server Error", "network"
 
     if isinstance(exc, asyncio.TimeoutError):
-        return "⏳ Async Timeout", "async_timeout"
+        return "[~] Async Timeout", "async_timeout"
 
     if isinstance(exc, asyncio.CancelledError):
-        return "🚫 Task Cancelled", "cancelled"
+        return "[-] Task Cancelled", "cancelled"
 
-    return "🐛 Code Bug", "code_bug"
+    return "[!] Code Bug", "code_bug"
 
 
 ## ── message formatter ────────────────────────────────────────────────────────
@@ -139,32 +139,32 @@ def build_error_message(
         tb_str = traceback.format_exc()
         if len(tb_str) > _MAX_TB:
             tb_str = "…(trimmed)\n" + tb_str[-_MAX_TB:]
-        tb_block = f"\n\n📋 <b>Traceback:</b>\n<pre>{_esc(tb_str)}</pre>"
+        tb_block = f"\n\n<b>Traceback:</b>\n<pre>{_esc(tb_str)}</pre>"
     elif record and record.exc_info and record.exc_info[0]:
         tb_str = "".join(traceback.format_exception(*record.exc_info))
         if len(tb_str) > _MAX_TB:
             tb_str = "…(trimmed)\n" + tb_str[-_MAX_TB:]
-        tb_block = f"\n\n📋 <b>Traceback:</b>\n<pre>{_esc(tb_str)}</pre>"
+        tb_block = f"\n\n<b>Traceback:</b>\n<pre>{_esc(tb_str)}</pre>"
 
     ## ── optional update / context block ──────────────────────────────────────
     ctx_block = ""
     if context:
-        ctx_block = f"\n\n🔗 <b>Context:</b>\n<code>{_esc(str(context)[:400])}</code>"
+        ctx_block = f"\n\n<b>Context:</b>\n<code>{_esc(str(context)[:400])}</code>"
 
     py_ver = sys.version.split()[0]
     host   = platform.node() or "?"
 
     return (
-        f"🔴 <b>ERROR REPORT</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🏷 <b>Type:</b> {label}\n"
-        f"📁 <b>File:</b> <code>{_esc(module_path)}</code>\n"
-        f"⚙️ <b>Function:</b> <code>{_esc(func_name)}</code>\n"
-        f"📍 <b>Line:</b> <code>{line_no}</code>\n"
-        f"🕐 <b>Time:</b> {time_str} | {date_str}\n"
-        f"🐍 <b>Python:</b> {py_ver} @ {_esc(host)}\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"💬 <b>Error:</b>\n<code>{_esc(raw_msg[:_MAX_MSG])}</code>"
+        f"<b>[ ERROR REPORT ]</b>\n"
+        f"&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;\n"
+        f"<b>Type:</b> {label}\n"
+        f"<b>File:</b> <code>{_esc(module_path)}</code>\n"
+        f"<b>Func:</b> <code>{_esc(func_name)}</code>\n"
+        f"<b>Line:</b> <code>{line_no}</code>\n"
+        f"<b>Time:</b> {time_str} | {date_str}\n"
+        f"<b>Python:</b> {py_ver} @ {_esc(host)}\n"
+        f"&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;\n"
+        f"<b>Error:</b>\n<code>{_esc(raw_msg[:_MAX_MSG])}</code>"
         f"{tb_block}"
         f"{ctx_block}"
     )

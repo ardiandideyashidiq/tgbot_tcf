@@ -77,11 +77,11 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     if target_id == ctx.bot.id:
-        await msg.reply_text("That's me — muting a bot doesn't quite work. 😄")
+        await msg.reply_text("That's me — muting a bot doesn't quite work.")
         return ConversationHandler.END
 
     if target_id == admin.id:
-        await msg.reply_text("Hey, you can't mute yourself. 😅")
+        await msg.reply_text("You can't mute yourself.")
         return ConversationHandler.END
 
     target_role = await get_effective_role(target_id)

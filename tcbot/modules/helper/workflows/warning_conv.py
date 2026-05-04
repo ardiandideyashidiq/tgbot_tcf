@@ -102,7 +102,7 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     if target_id == ctx.bot.id:
-        await msg.reply_text("That's me — bit hard to warn the one issuing them. 😄")
+        await msg.reply_text("That's me — bit hard to warn the one issuing them.")
         return ConversationHandler.END
 
     target_role = await get_effective_role(target_id)

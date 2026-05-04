@@ -92,28 +92,28 @@ async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     if user.id == owner_id:
         await msg.reply_text(
-            f"Bro, {mention(user.id, fname)}... seriously? 😭\n\n"
+            f"Bro, {mention(user.id, fname)}... seriously?\n\n"
             "You're the Founder. You literally built this place from scratch. "
             "There is no ban for you, you ARE the federation.\n"
-            "Go touch grass, you're perfectly fine. 😊",
+            "Go touch grass, you're perfectly fine.",
             parse_mode="HTML",
         )
         return
 
     if user_role == "admin":
         await msg.reply_text(
-            f"Hey {mention(user.id, fname)}, checking yourself? 😄\n\n"
+            f"Hey {mention(user.id, fname)}, checking yourself?\n\n"
             "You're part of the staff team, the ones who handle bans, not receive them. "
-            "No active ban on your end. You're good, now go back to work! 😊",
+            "No active ban on your end. You're good, now go back to work!",
             parse_mode="HTML",
         )
         return
     if user_role in ("developer", "tester"):
         role_label = ROLE_LABEL.get(user_role, user_role)
         await msg.reply_text(
-            f"Hey {mention(user.id, fname)}, all good! 😄\n\n"
+            f"Hey {mention(user.id, fname)}, all good!\n\n"
             f"You're a {cfg.community_name} {role_label} — you're on the team, not on the ban list. "
-            "Nothing to worry about here. 😊",
+            "Nothing to worry about here.",
             parse_mode="HTML",
         )
         return
@@ -204,7 +204,7 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if target_id == ctx.bot.id:
         bot_info = await ctx.bot.get_me()
         await msg.reply_text(
-            f"Hey, that's {mention(ctx.bot.id, bot_info.first_name or 'me')} — that's me. 😄\n\n"
+            f"Hey, that's {mention(ctx.bot.id, bot_info.first_name or 'me')} — that's me.\n\n"
             "I run things around here, so I'm definitely not on the receiving end of a ban. "
             "All clear.",
             parse_mode="HTML",
@@ -221,17 +221,17 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if target_id == owner_id:
         owner_fname = await db.users_db.get_first_name(owner_id, "the Founder")
         await msg.reply_text(
-            f"Bro... that's {mention(owner_id, owner_fname)}, our Founder 😭\n\n"
+            f"That's {mention(owner_id, owner_fname)}, our Founder.\n\n"
             "They built this whole federation, banning them would be like locking "
             "the landlord out of their own building. Not happening.\n"
-            "Definitely clean, obviously. Anything else?",
+            "Definitely clean. Anything else?",
             parse_mode="HTML",
         )
         return
 
     if target_role == "admin":
         await msg.reply_text(
-            f"Hold up — {mention(target_id, fname)} is part of our staff team! 😄\n\n"
+            f"Hold up — {mention(target_id, fname)} is part of our staff team.\n\n"
             "They're more likely to be the ones issuing bans, not receiving them. "
             "No active ban on record, they're all good.",
             parse_mode="HTML",
@@ -240,16 +240,16 @@ async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if target_role in ("developer", "tester"):
         role_label = ROLE_LABEL.get(target_role, target_role)
         await msg.reply_text(
-            f"Chill — {mention(target_id, fname)} is our {cfg.community_name} {role_label}! 😄\n\n"
-            f"They're part of the team behind the scenes. No active ban on record, all good.",
+            f"Noted — {mention(target_id, fname)} is our {cfg.community_name} {role_label}.\n\n"
+            "They're part of the team behind the scenes. No active ban on record, all good.",
             parse_mode="HTML",
         )
         return
 
     if not ban:
         await msg.reply_text(
-            f"All clear! {mention(target_id, fname)} has no active ban in {cfg.community_name}. "
-            "They're free to go, clean as a whistle. 😊",
+            f"All clear. {mention(target_id, fname)} has no active ban in {cfg.community_name}. "
+            "They're free to go.",
             parse_mode="HTML",
         )
         return

@@ -104,7 +104,7 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     if target_id == ctx.bot.id:
-        await msg.reply_text("That's me — can't exactly kick the bot out. 😄")
+        await msg.reply_text("That's me — can't exactly kick the bot out.")
         return ConversationHandler.END
 
     target_role = await get_effective_role(target_id)

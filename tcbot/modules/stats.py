@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.error import BadRequest
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
 from tcbot import cfg, database as db
@@ -81,7 +82,11 @@ async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 async def on_stats_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
     _, text = await asyncio.gather(q.answer(), _stats_text())
-    await q.edit_message_text(text, parse_mode="HTML", reply_markup=_stats_kb())
+    try:
+        await q.edit_message_text(text, parse_mode="HTML", reply_markup=_stats_kb())
+    except BadRequest as e:
+        if "not modified" not in str(e).lower():
+            raise
 
 
 async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:

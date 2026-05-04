@@ -149,7 +149,7 @@ async def on_stats_bans_search(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
 
 
 async def on_bans_search_input(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    if not ctx.user_data.get(_SEARCH_KEY):
+    if ctx.user_data is None or not ctx.user_data.get(_SEARCH_KEY):
         return
     ctx.user_data.pop(_SEARCH_KEY, None)
 

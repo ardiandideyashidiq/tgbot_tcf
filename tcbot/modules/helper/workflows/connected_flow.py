@@ -37,14 +37,13 @@ async def _complete_join(chat_id: int, chat_title: str, owner_id: int, owner_fna
     await db.groups_db.add_group(chat_id, chat_title, owner_id)
     await db.groups_db.remove_pending(chat_id)
 
-    bans = await db.bans_db.active_bans()
-    applied = 0
-    for ban in bans:
-        try:
-            await bot.ban_chat_member(chat_id, ban["banned_user_id"])
-            applied += 1
-        except Exception:
-            pass
+    ## Apply all existing federation bans concurrently — semaphore-bounded
+    from tcbot.utils.dispatch import fan_out
+    bans    = await db.bans_db.active_bans()
+    results = await fan_out(
+        [bot.ban_chat_member(chat_id, ban["banned_user_id"]) for ban in bans]
+    )
+    applied = sum(1 for r in results if not isinstance(r, BaseException))
 
     lc, lt = cfg.logs
     log_text = parse_logmsg.group_connected_log(

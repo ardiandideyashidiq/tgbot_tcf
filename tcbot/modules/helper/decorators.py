@@ -62,7 +62,9 @@ async def global_rate_limit_handler(update: Update, ctx: ContextTypes.DEFAULT_TY
     if update.callback_query:
         if not _allow(uid, "cbq", _CBQ_MAX, _CBQ_WIN):
             try:
-                await update.callback_query.answer()
+                await update.callback_query.answer(
+                    "Upss, slow down.", show_alert=True
+                )
             except Exception:
                 pass
             raise ApplicationHandlerStop
@@ -78,6 +80,13 @@ async def global_rate_limit_handler(update: Update, ctx: ContextTypes.DEFAULT_TY
         return  ## plain message — do not rate limit
 
     if not _allow(uid, "cmd", _CMD_MAX, _CMD_WIN):
+        if msg:
+            try:
+                await msg.reply_text(
+                    "Slow down — please wait a moment before running another command."
+                )
+            except Exception:
+                pass
         raise ApplicationHandlerStop
 
 

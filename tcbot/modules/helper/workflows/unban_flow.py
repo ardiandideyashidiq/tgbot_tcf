@@ -43,10 +43,11 @@ async def execute_unban(
         db.groups_db.active_groups(),
     )
 
-    ## unban from all groups simultaneously
-    results = await asyncio.gather(
-        *[ctx.bot.unban_chat_member(grp["chat_id"], target_id, only_if_banned=True) for grp in groups],
-        return_exceptions=True,
+    ## unban from all groups — semaphore-bounded for rate safety
+    from tcbot.utils.dispatch import fan_out
+    results = await fan_out(
+        [ctx.bot.unban_chat_member(grp["chat_id"], target_id, only_if_banned=True)
+         for grp in groups]
     )
     failed = sum(1 for r in results if isinstance(r, BaseException))
 

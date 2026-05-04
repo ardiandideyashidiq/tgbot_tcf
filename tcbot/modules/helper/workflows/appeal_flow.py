@@ -235,11 +235,11 @@ async def on_appeal_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
             db.groups_db.active_groups(),
         )
 
-        ## Unban from all groups simultaneously
-        await asyncio.gather(
-            *[ctx.bot.unban_chat_member(grp["chat_id"], target_id, only_if_banned=True)
-              for grp in groups],
-            return_exceptions=True,
+        ## Unban from all groups — semaphore-bounded for rate safety
+        from tcbot.utils.dispatch import fan_out
+        await fan_out(
+            [ctx.bot.unban_chat_member(grp["chat_id"], target_id, only_if_banned=True)
+             for grp in groups]
         )
 
         ## Notify user + edit review message in parallel

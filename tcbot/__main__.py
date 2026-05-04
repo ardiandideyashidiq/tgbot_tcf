@@ -134,6 +134,13 @@ def main() -> None:
         ApplicationBuilder()
         .token(cfg.bot_token)
         .post_init(_post_init)
+        ## Process independent updates in parallel (big latency win)
+        .concurrent_updates(True)
+        ## HTTP timeouts — generous but bounded so hangs never block the loop
+        .read_timeout(15)
+        .write_timeout(15)
+        .connect_timeout(10)
+        .pool_timeout(5)
         .build()
     )
 

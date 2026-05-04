@@ -59,19 +59,23 @@ async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     status = await msg.reply_text(f"Broadcasting to {len(groups)} group(s)...")
-    success, failed = 0, 0
 
-    for grp in groups:
-        try:
-            if has_reply and msg.reply_to_message:
-                await msg.reply_to_message.forward(grp["chat_id"])
-            elif broadcast_text:
-                await ctx.bot.send_message(grp["chat_id"], broadcast_text)
-            success += 1
-        except Exception as exc:
-            log.warning("Broadcast failed for %d: %s", grp["chat_id"], exc)
-            failed += 1
-        await asyncio.sleep(0.05)
+    ## Build per-group send coroutines, then fan out with semaphore limiting
+    from tcbot.utils.dispatch import fan_out
+
+    async def _send_one(grp: dict) -> None:
+        if has_reply and msg.reply_to_message:
+            await msg.reply_to_message.forward(grp["chat_id"])
+        elif broadcast_text:
+            await ctx.bot.send_message(grp["chat_id"], broadcast_text)
+
+    results = await fan_out([_send_one(grp) for grp in groups])
+    success = sum(1 for r in results if not isinstance(r, BaseException))
+    failed  = len(results) - success
+
+    for i, (grp, r) in enumerate(zip(groups, results)):
+        if isinstance(r, BaseException):
+            log.warning("Broadcast failed for %d: %s", grp["chat_id"], r)
 
     preview = broadcast_text or (msg.reply_to_message.text or "media") if msg.reply_to_message else ""
     lc, lt  = cfg.logs

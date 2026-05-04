@@ -311,10 +311,10 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict) -> None:
     else:
         groups = await db.groups_db.active_groups()
 
-    ## Enforce across all affiliated groups simultaneously
-    results = await asyncio.gather(
-        *[bot.ban_chat_member(grp["chat_id"], target_id) for grp in groups],
-        return_exceptions=True,
+    ## Enforce across all affiliated groups — semaphore-bounded for rate safety
+    from tcbot.utils.dispatch import fan_out
+    results = await fan_out(
+        [bot.ban_chat_member(grp["chat_id"], target_id) for grp in groups]
     )
     failed = sum(1 for r in results if isinstance(r, BaseException))
 

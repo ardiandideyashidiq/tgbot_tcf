@@ -57,17 +57,18 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     msg   = update.effective_message
     admin = update.effective_user
 
-    executor_role = await get_effective_role(admin.id)
-    if role_rank(executor_role) < role_rank("tester"):
-        await msg.reply_text("You need at least a Tester role to mute — not your call. 🚫")
-        return ConversationHandler.END
-
     raw_args = parse_cmd_args(msg.text)
-
     has_explicit_target = bool(raw_args) and (
         raw_args[0].lstrip("-").isdigit() or raw_args[0].startswith("@")
     )
-    target_id, target_fname = await extraction.extract_target(update, raw_args, ctx.bot)
+    ## Role check and target resolution run in parallel
+    executor_role, (target_id, target_fname) = await asyncio.gather(
+        get_effective_role(admin.id),
+        extraction.extract_target(update, raw_args, ctx.bot),
+    )
+    if role_rank(executor_role) < role_rank("tester"):
+        await msg.reply_text("You need at least a Tester role to mute — not your call. 🚫")
+        return ConversationHandler.END
     remaining_args = list(raw_args[1:] if has_explicit_target else raw_args)
 
     if not target_id:
@@ -177,15 +178,13 @@ async def on_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     target_fname = ctx.user_data["mute_target_fname"]
     duration     = ctx.user_data["mute_duration"]
     dur_str      = fmt_duration(duration)
+    await q.answer()
     try:
-        await asyncio.gather(
-            q.answer(),
-            q.edit_message_text(
-                f"Muting {mention(target_id, target_fname)} {code(str(target_id))} {dur_str}.\n\n"
-                f"Send proof (photo / video) or press <b>Skip</b>.",
-                parse_mode="HTML",
-                reply_markup=keyboards.mute_proof_kb(),
-            ),
+        await q.edit_message_text(
+            f"Muting {mention(target_id, target_fname)} {code(str(target_id))} {dur_str}.\n\n"
+            f"Send proof (photo / video) or press <b>Skip</b>.",
+            parse_mode="HTML",
+            reply_markup=keyboards.mute_proof_kb(),
         )
     except Exception:
         pass
@@ -208,7 +207,8 @@ async def on_proof_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
 
 async def on_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await asyncio.gather(q.answer(), _execute_mute(ctx.bot, update, ctx.user_data))
+    await q.answer()
+    await _execute_mute(ctx.bot, update, ctx.user_data)
     return ConversationHandler.END
 
 
@@ -218,10 +218,8 @@ async def on_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def on_mute_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text("Got it, mute cancelled. No action was taken."),
-    )
+    await q.answer()
+    await q.edit_message_text("Got it, mute cancelled. No action was taken.")
     return ConversationHandler.END
 
 

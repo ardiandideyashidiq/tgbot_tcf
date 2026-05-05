@@ -202,22 +202,24 @@ async def _execute_promote(
 ## ---------------------------------------------------------------------------
 
 async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    admin         = update.effective_user
-    msg           = update.effective_message
-    executor_role = await get_effective_role(admin.id)
-
-    if executor_role not in ("founder", "admin"):
-        await msg.reply_text("Only Founder and Admin can promote users — not your call. 🚫")
-        return
-
-    args = parse_cmd_args(msg.text)
+    admin = update.effective_user
+    msg   = update.effective_message
+    args  = parse_cmd_args(msg.text)
 
     has_explicit_target = bool(args) and (
         args[0].lstrip("-").isdigit() or args[0].startswith("@")
     )
-    target_id, target_fname = await extraction.extract_target(update, args, ctx.bot)
+    ## Role check and target resolution run in parallel
+    executor_role, (target_id, target_fname) = await asyncio.gather(
+        get_effective_role(admin.id),
+        extraction.extract_target(update, args, ctx.bot),
+    )
     remaining_args = args[1:] if has_explicit_target else args
-    role_arg = remaining_args[0].lower() if remaining_args else ""
+    role_arg       = remaining_args[0].lower() if remaining_args else ""
+
+    if executor_role not in ("founder", "admin"):
+        await msg.reply_text("Only Founder and Admin can promote users — not your call. 🚫")
+        return
 
     if not target_id:
         await msg.reply_text(
@@ -259,7 +261,7 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q             = update.callback_query
     admin         = update.effective_user
-    _, executor_role = await asyncio.gather(q.answer(), get_effective_role(admin.id))
+    executor_role = await get_effective_role(admin.id)
 
     if executor_role not in ("founder", "admin"):
         await q.answer("You no longer have permission to do this.", show_alert=True)
@@ -268,6 +270,8 @@ async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
         except Exception:
             pass
         return
+
+    await q.answer()
 
     parts = q.data.split(":", 2)
     if len(parts) != 3:
@@ -294,10 +298,8 @@ async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 
 async def on_promote_role_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text("Promotion cancelled. No changes were made.", reply_markup=None),
-    )
+    await q.answer()
+    await q.edit_message_text("Promotion cancelled. No changes were made.", reply_markup=None)
 
 
 ## ---------------------------------------------------------------------------
@@ -305,16 +307,18 @@ async def on_promote_role_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
 ## ---------------------------------------------------------------------------
 
 async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    admin         = update.effective_user
-    msg           = update.effective_message
-    executor_role = await get_effective_role(admin.id)
+    admin = update.effective_user
+    msg   = update.effective_message
+    args  = parse_cmd_args(msg.text)
 
+    ## Role check and target resolution run in parallel
+    executor_role, (target_id, target_fname) = await asyncio.gather(
+        get_effective_role(admin.id),
+        extraction.extract_target(update, args, ctx.bot),
+    )
     if executor_role not in ("founder", "admin"):
         await msg.reply_text("Only Founder and Admin can demote users — not your call. 🚫")
         return
-
-    args = parse_cmd_args(msg.text)
-    target_id, target_fname = await extraction.extract_target(update, args, ctx.bot)
 
     if not target_id:
         await msg.reply_text(
@@ -348,8 +352,8 @@ async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q             = update.callback_query
     admin         = update.effective_user
-    _, executor_role = await asyncio.gather(q.answer(), get_effective_role(admin.id))
     target_id     = int(q.data.split(":", 1)[1])
+    executor_role = await get_effective_role(admin.id)
 
     if executor_role not in ("founder", "admin"):
         await q.answer("You no longer have permission to do this.", show_alert=True)
@@ -359,7 +363,13 @@ async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
             pass
         return
 
-    target_role = await get_effective_role(target_id)
+    await q.answer()
+
+    ## target role + name fetched in parallel
+    target_role, target_fname = await asyncio.gather(
+        get_effective_role(target_id),
+        db.users_db.get_first_name(target_id, str(target_id)),
+    )
     if not target_role or target_role == "founder":
         await q.edit_message_text(
             "That user no longer holds a removable role.", reply_markup=None
@@ -371,8 +381,6 @@ async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
             "Only the Founder can demote an Admin.", reply_markup=None
         )
         return
-
-    target_fname = await db.users_db.get_first_name(target_id, str(target_id))
 
     if target_role == "admin":
         removed = await db.admins_db.remove_admin(target_id)
@@ -409,10 +417,8 @@ async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
 
 async def on_demote_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text("Cancelled. No changes were made.", reply_markup=None),
-    )
+    await q.answer()
+    await q.edit_message_text("Cancelled. No changes were made.", reply_markup=None)
 
 
 ## ---------------------------------------------------------------------------
@@ -522,12 +528,13 @@ async def cmd_promote_list(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
 ## ---------------------------------------------------------------------------
 
 async def on_promo_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q     = update.callback_query
-    admin = update.effective_user
-    _, is_owner = await asyncio.gather(q.answer(), db.admins_db.is_owner(admin.id))
+    q        = update.callback_query
+    admin    = update.effective_user
+    is_owner = await db.admins_db.is_owner(admin.id)
     if not is_owner:
         await q.answer("Founder only.", show_alert=True)
         return
+    await q.answer()
     action, request_id = q.data.split(":", 1)
     req = await db.queues_db.get_request_by_id(request_id)
     if not req:

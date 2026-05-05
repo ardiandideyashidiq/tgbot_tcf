@@ -82,17 +82,18 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     msg   = update.effective_message
     admin = update.effective_user
 
-    executor_role = await get_effective_role(admin.id)
-    if role_rank(executor_role) < role_rank("tester"):
-        await msg.reply_text("You need at least a Tester role to kick — not your call. 🚫")
-        return ConversationHandler.END
-
     args = parse_cmd_args(msg.text)
-
     has_explicit_target = bool(args) and (
         args[0].lstrip("-").isdigit() or args[0].startswith("@")
     )
-    target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
+    ## Role check and target resolution run in parallel
+    executor_role, (target_id, target_name) = await asyncio.gather(
+        get_effective_role(admin.id),
+        extraction.extract_target(update, args, ctx.bot),
+    )
+    if role_rank(executor_role) < role_rank("tester"):
+        await msg.reply_text("You need at least a Tester role to kick — not your call. 🚫")
+        return ConversationHandler.END
     inline_reason = " ".join(args[1:] if has_explicit_target else args).strip()
 
     if not target_id:
@@ -172,14 +173,12 @@ async def on_kick_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 async def on_kick_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
     ctx.user_data["kick_reason"] = "No reason provided"
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text(
-            "No reason — send proof (photo or video) if any, "
-            "or tap <b>Skip</b> to proceed.",
-            parse_mode="HTML",
-            reply_markup=_KB_PROOF,
-        ),
+    await q.answer()
+    await q.edit_message_text(
+        "No reason — send proof (photo or video) if any, "
+        "or tap <b>Skip</b> to proceed.",
+        parse_mode="HTML",
+        reply_markup=_KB_PROOF,
     )
     return WAITING_PROOF
 
@@ -205,10 +204,8 @@ async def on_kick_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
 async def on_kick_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
     _clear(ctx)
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text("Got it, kick cancelled. No action was taken."),
-    )
+    await q.answer()
+    await q.edit_message_text("Got it, kick cancelled. No action was taken.")
     return ConversationHandler.END
 
 

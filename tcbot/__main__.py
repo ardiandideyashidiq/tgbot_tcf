@@ -136,6 +136,9 @@ def main() -> None:
         .post_init(_post_init)
         ## Process independent updates in parallel (big latency win)
         .concurrent_updates(True)
+        ## Connection pools — 8 for API calls, 4 dedicated for getUpdates polling
+        .connection_pool_size(8)
+        .get_updates_connection_pool_size(4)
         ## HTTP timeouts — generous but bounded so hangs never block the loop
         .read_timeout(15)
         .write_timeout(15)

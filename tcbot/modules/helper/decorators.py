@@ -103,8 +103,8 @@ async def global_rate_limit_handler(update: Update, ctx: ContextTypes.DEFAULT_TY
                     f"⏳ Upss, slow down.. try again in {wait:.0f} seconds.",
                     show_alert=True,
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                log.debug("CBQ rate-limit answer failed: %s", exc)
             raise ApplicationHandlerStop
         return
 

@@ -42,20 +42,21 @@ _album_meta: dict[str, dict[str, Any]] = {}
 ## ---------------------------------------------------------------------------
 
 async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    msg   = update.effective_message
-    admin = update.effective_user
-
-    executor_role = await get_effective_role(admin.id)
-    if role_rank(executor_role) < role_rank("developer"):
-        await msg.reply_text("You need Developer rank or above to issue bans. Not your call. 🚫")
-        return ConversationHandler.END
-
+    msg      = update.effective_message
+    admin    = update.effective_user
     raw_args = parse_cmd_args(msg.text)
 
+    ## Role check and target resolution run in parallel
+    executor_role, (target_id, target_fname) = await asyncio.gather(
+        get_effective_role(admin.id),
+        extraction.extract_target(update, raw_args, ctx.bot),
+    )
     has_explicit_target = bool(raw_args) and (
         raw_args[0].lstrip("-").isdigit() or raw_args[0].startswith("@")
     )
-    target_id, target_fname = await extraction.extract_target(update, raw_args, ctx.bot)
+    if role_rank(executor_role) < role_rank("developer"):
+        await msg.reply_text("You need Developer rank or above to issue bans. Not your call. 🚫")
+        return ConversationHandler.END
     reason = " ".join(raw_args[1:] if has_explicit_target else raw_args).strip()
 
     if not target_id:
@@ -156,10 +157,8 @@ async def _flush_album(mgid: str, bot: Bot) -> None:
 
 async def on_cancel_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text("Cancelled. No ban was issued."),
-    )
+    await q.answer()
+    await q.edit_message_text("Cancelled. No ban was issued.")
     return ConversationHandler.END
 
 

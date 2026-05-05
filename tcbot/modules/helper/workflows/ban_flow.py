@@ -19,13 +19,12 @@ from telegram.ext import (
 
 from tcbot import database as db
 from tcbot import cfg
-from tcbot.database.roles_db import get_effective_role, role_rank, ROLE_LABEL
-from tcbot.modules.helper import extraction, keyboards, parse_logmsg
+from tcbot.database.roles_db import get_effective_role, role_rank
+from tcbot.modules.helper import keyboards, parse_logmsg
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.parse_link import appeal_deep_link, message_link
-from tcbot.modules.helper.role_guard import auto_demote
 from tcbot.utils.dispatch import fan_out
-from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, ANY_CMD_FILTER, build_prefixed_filters, parse_cmd_args
+from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
 from tcbot.utils.timedate_format import utc_now
 
 log = logging.getLogger(__name__)
@@ -35,86 +34,6 @@ WAITING_PROOF = 0
 ## Module-level album accumulators
 _albums: dict[str, list[Message]] = {}
 _album_meta: dict[str, dict[str, Any]] = {}
-
-
-## ---------------------------------------------------------------------------
-## Entry point
-## ---------------------------------------------------------------------------
-
-async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    msg      = update.effective_message
-    admin    = update.effective_user
-    raw_args = parse_cmd_args(msg.text)
-
-    ## Role check and target resolution run in parallel
-    executor_role, (target_id, target_fname) = await asyncio.gather(
-        get_effective_role(admin.id),
-        extraction.extract_target(update, raw_args, ctx.bot),
-    )
-    has_explicit_target = bool(raw_args) and (
-        raw_args[0].lstrip("-").isdigit() or raw_args[0].startswith("@")
-    )
-    if role_rank(executor_role) < role_rank("developer"):
-        await msg.reply_text("You need Developer rank or above to issue bans. Not your call. 🚫")
-        return ConversationHandler.END
-    reason = " ".join(raw_args[1:] if has_explicit_target else raw_args).strip()
-
-    if not target_id:
-        await msg.reply_text("Cannot resolve target. Reply to a message or provide a user ID.")
-        return ConversationHandler.END
-
-    if not reason:
-        await msg.reply_text("A reason is required — /tcban <target> <reason>.")
-        return ConversationHandler.END
-
-    if target_id == ctx.bot.id:
-        await msg.reply_text(
-            "That's me you're trying to ban 😐 — I keep this federation running. Nice try."
-        )
-        return ConversationHandler.END
-
-    if target_id == admin.id:
-        await msg.reply_text(
-            "Can't ban yourself — that's not how moderation works. 🙃"
-        )
-        return ConversationHandler.END
-
-    target_role = await get_effective_role(target_id)
-    if target_role:
-        if role_rank(executor_role) <= role_rank(target_role):
-            if target_role == "founder":
-                await msg.reply_text(
-                    f"That's {mention(target_id, target_fname or 'the Founder')}, our Founder — "
-                    "banning them is simply not on the table. 👑",
-                    parse_mode="HTML",
-                )
-            else:
-                label = ROLE_LABEL.get(target_role, target_role.capitalize())
-                await msg.reply_text(
-                    f"That's a {cfg.community_name} {label} — they outrank you here, can't ban them."
-                )
-            return ConversationHandler.END
-        await auto_demote(
-            ctx.bot,
-            target_id, target_fname or str(target_id), target_role,
-            admin.id, admin.first_name, "ban",
-        )
-
-    ctx.user_data["ban_target_id"]    = target_id
-    ctx.user_data["ban_target_fname"] = target_fname or str(target_id)
-    ctx.user_data["ban_reason"]       = reason
-    ctx.user_data["ban_admin_id"]     = admin.id
-    ctx.user_data["ban_admin_fname"]  = admin.first_name
-
-    prompt = await msg.reply_text(
-        "Proof required. Send a photo or video — multiple files allowed. "
-        f"You have {cfg.proof_timeout} seconds.",
-        reply_markup=keyboards.cancel_proof_kb(),
-    )
-    ctx.user_data["ban_prompt_msg_id"]  = prompt.message_id
-    ctx.user_data["ban_prompt_chat_id"] = msg.chat.id
-
-    return WAITING_PROOF
 
 
 ## ---------------------------------------------------------------------------
@@ -367,13 +286,13 @@ async def on_ban_timeout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 ## Handler factory
 ## ---------------------------------------------------------------------------
 
-def build_handler() -> ConversationHandler:
+def build_handler(entry_fn) -> ConversationHandler:
     entry = (
         build_prefixed_filters("tcban")
         | build_prefixed_filters("tcb")
     )
     return ConversationHandler(
-        entry_points=[MessageHandler(entry, cmd_ban_start)],
+        entry_points=[MessageHandler(entry, entry_fn)],
         states={
             WAITING_PROOF: [
                 CallbackQueryHandler(on_cancel_proof, pattern=r"^cancel_proof$"),

@@ -38,7 +38,7 @@ from tcbot.modules.helper import extraction
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
 from tcbot.modules.helper.workflows.kicking_flow import execute_kick
-from tcbot.utils.prefixes import ANY_CMD_FILTER, build_prefixed_filters, parse_cmd_args
+from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, ANY_CMD_FILTER, build_prefixed_filters, parse_cmd_args
 
 log = logging.getLogger(__name__)
 
@@ -226,7 +226,7 @@ def kick_conversation() -> ConversationHandler:
         entry_points=[MessageHandler(_KICK_FILTER, cmd_kick_entry)],
         states={
             WAITING_REASON: [
-                MessageHandler(filters.TEXT & ~ANY_CMD_FILTER, on_kick_reason),
+                MessageHandler(filters.TEXT & ~ALL_PREFIXES_CMD_FILTER, on_kick_reason),
                 CallbackQueryHandler(on_kick_skip_reason, pattern=r"^kick_skip_reason$"),
                 CallbackQueryHandler(on_kick_cancel,      pattern=r"^kick_cancel$"),
             ],
@@ -236,7 +236,10 @@ def kick_conversation() -> ConversationHandler:
                 CallbackQueryHandler(on_kick_cancel,     pattern=r"^kick_cancel$"),
             ],
         },
-        fallbacks=[CallbackQueryHandler(on_kick_cancel, pattern=r"^kick_cancel$")],
+        fallbacks=[
+            CallbackQueryHandler(on_kick_cancel, pattern=r"^kick_cancel$"),
+            MessageHandler(ALL_PREFIXES_CMD_FILTER, lambda u, c: ConversationHandler.END),
+        ],
         per_user=True,
         per_chat=True,
         conversation_timeout=cfg.proof_timeout,

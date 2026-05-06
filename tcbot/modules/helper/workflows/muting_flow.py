@@ -14,6 +14,7 @@ from telegram.ext import ContextTypes
 
 from tcbot import database as db
 from tcbot.modules.helper.formatter import code, mention
+from tcbot.utils.dispatch import fan_out
 
 log = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def fmt_duration(td: timedelta | None) -> str:
 ## ── Core execution ─────────────────────────────────────────────────────────
 
 async def _execute_mute(bot, update: Update, meta: dict) -> None:
-    """Apply the mute and edit the conversation prompt to a summary."""
+    """Apply a federation-wide mute across all connected groups and edit the prompt to a summary."""
     target_id    = meta["mute_target_id"]
     target_fname = meta["mute_target_fname"]
     reason       = meta.get("mute_reason") or "No reason provided"
@@ -76,36 +77,32 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
     prompt_id    = meta.get("mute_prompt_id")
     dur_str      = fmt_duration(duration)
 
-    chat_id = update.effective_chat.id
-    until   = datetime.now(timezone.utc) + duration if duration else None
+    until = datetime.now(timezone.utc) + duration if duration else None
+    perms = ChatPermissions(can_send_messages=False)
 
-    try:
-        await bot.restrict_chat_member(
-            chat_id, target_id,
-            permissions=ChatPermissions(can_send_messages=False),
+    ## Apply across all connected groups — semaphore-bounded for rate safety
+    groups  = await db.groups_db.active_groups()
+    results = await fan_out(
+        [bot.restrict_chat_member(
+            grp["chat_id"], target_id,
+            permissions=perms,
             until_date=until,
-        )
-    except Exception as exc:
-        log.error("Mute failed for %s in %s: %s", target_id, chat_id, exc)
-        try:
-            await bot.edit_message_text(
-                f"Couldn't mute {mention(target_id, target_fname)}: {exc}",
-                chat_id=prompt_chat, message_id=prompt_id, parse_mode="HTML",
-            )
-        except Exception:
-            pass
-        return
+        ) for grp in groups]
+    )
+    failed = sum(1 for r in results if isinstance(r, BaseException))
 
     proof_line = f"\nProof: {proof_desc}" if proof_desc else ""
     summary = (
         f"{mention(target_id, target_fname)} {code(str(target_id))} "
         f"has been muted <b>{dur_str}</b>.\n"
         f"Reason: {reason}"
-        f"{proof_line}"
+        f"{proof_line}\n"
+        f"Applied to {len(groups) - failed}/{len(groups)} groups."
     )
 
-    ## Log and edit summary in parallel — mute already succeeded
-    results = await asyncio.gather(
+    ## Log and edit summary in parallel — mute already applied
+    chat_id  = update.effective_chat.id
+    results2 = await asyncio.gather(
         db.mutes_db.log_mute(target_id, chat_id, reason, admin_id),
         bot.edit_message_text(
             summary,
@@ -114,7 +111,7 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
         ),
         return_exceptions=True,
     )
-    if isinstance(results[1], Exception):
+    if isinstance(results2[1], Exception):
         msg = update.effective_message
         if msg:
             await msg.reply_text(summary, parse_mode="HTML")
@@ -128,28 +125,30 @@ async def execute_unmute(
     target_id: int,
     target_name: str,
 ) -> None:
-    msg     = update.effective_message
-    chat_id = update.effective_chat.id
-    try:
-        await ctx.bot.restrict_chat_member(
-            chat_id, target_id,
-            permissions=ChatPermissions(
-                can_send_messages=True,
-                can_send_polls=True,
-                can_send_other_messages=True,
-                can_add_web_page_previews=True,
-                can_change_info=False,
-                can_invite_users=True,
-                can_pin_messages=False,
-            ),
-        )
-        await msg.reply_text(
-            f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted.",
-            parse_mode="HTML",
-        )
-    except Exception as exc:
-        log.error("Unmute failed for %s in %s: %s", target_id, chat_id, exc)
-        await msg.reply_text(
-            f"Couldn't unmute {mention(target_id, target_name)}: {exc}",
-            parse_mode="HTML",
-        )
+    """Restore full send permissions across all connected groups."""
+    msg        = update.effective_message
+    full_perms = ChatPermissions(
+        can_send_messages=True,
+        can_send_polls=True,
+        can_send_other_messages=True,
+        can_add_web_page_previews=True,
+        can_change_info=False,
+        can_invite_users=True,
+        can_pin_messages=False,
+    )
+
+    ## Unrestrict across all connected groups — semaphore-bounded for rate safety
+    groups  = await db.groups_db.active_groups()
+    results = await fan_out(
+        [ctx.bot.restrict_chat_member(
+            grp["chat_id"], target_id,
+            permissions=full_perms,
+        ) for grp in groups]
+    )
+    failed = sum(1 for r in results if isinstance(r, BaseException))
+
+    await msg.reply_text(
+        f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted — "
+        f"restored in {len(groups) - failed}/{len(groups)} groups.",
+        parse_mode="HTML",
+    )

@@ -28,10 +28,10 @@ __help_text__ = (
     "Inside any connected group.\n\n"
 
     "<b>What it does</b>\n"
-    "<code>/tcmute</code>: restricts a user from sending messages in the current group. "
+    "<code>/tcmute</code>: restricts a user from sending messages across all connected groups. "
     "After the command, the bot will ask for a reason and optionally a proof (photo/video). "
     "You can also skip both steps. If the user is already muted, this resets the duration.\n\n"
-    "<code>/tcunmute</code>: restores the user's full send permissions.\n\n"
+    "<code>/tcunmute</code>: restores the user's full send permissions across all connected groups.\n\n"
 
     "<b>Duration tokens</b> (optional, place before the reason):\n"
     "<code>3s</code> seconds · <code>5m</code> minutes · <code>2h</code> hours\n"

@@ -97,16 +97,27 @@ async def execute_unwarn(
         )
         return
 
-    new_count = max(count - 1, 0)
-    ## remove warn and send reply in parallel
-    await asyncio.gather(
+    new_count   = max(count - 1, 0)
+    chat_title  = update.effective_chat.title or str(chat_id)
+    admin       = update.effective_user
+    lc, lt      = cfg.logs
+    log_text    = parse_logmsg.unwarn_log(
+        target_id, target_name, admin.id, admin.first_name,
+        new_count, WARN_LIMIT, chat_id, chat_title,
+    )
+    ## remove warn + send log + reply in parallel
+    results = await asyncio.gather(
         db.warns_db.remove_last_warn(target_id, chat_id),
+        ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
         msg.reply_text(
             f"One warning removed from {mention(target_id, target_name)}. "
             f"They're now at {new_count}/{WARN_LIMIT}.",
             parse_mode="HTML",
         ),
+        return_exceptions=True,
     )
+    if isinstance(results[1], BaseException):
+        log.error("Unwarn log send failed: %s", results[1])
 
 
 async def execute_warnlist(

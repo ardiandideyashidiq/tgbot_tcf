@@ -198,6 +198,31 @@ def warn_log(
     )
 
 
+## ── Unwarn log ─────────────────────────────────────────────────────────────
+
+def unwarn_log(
+    target_id: int,
+    target_fname: str,
+    admin_id: int,
+    admin_fname: str,
+    new_count: int,
+    warn_limit: int,
+    chat_id: int,
+    chat_title: str,
+) -> str:
+    dt = fmt_dt(utc_now())
+    return (
+        f"{cfg.community_name} Unwarn\n"
+        f"{BRAND}\n\n"
+        f"Admin: {mention(admin_id, admin_fname)}\n\n"
+        f"User: {mention(target_id, target_fname)}\n"
+        f"User ID: {target_id}\n"
+        f"Warnings now: {new_count}/{warn_limit}\n"
+        f"Group: {chat_title} (<code>{chat_id}</code>)\n\n"
+        f"Date: {dt}"
+    )
+
+
 ## ── Unban log ──────────────────────────────────────────────────────────────
 
 def unban_log(

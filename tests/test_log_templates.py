@@ -254,6 +254,44 @@ def test_warn_log_at_limit_shows_correct_count() -> None:
 
 
 ## ---------------------------------------------------------------------------
+## Unwarn log
+## ---------------------------------------------------------------------------
+
+
+def test_unwarn_log_contains_brand_and_new_count() -> None:
+    out = parse_logmsg.unwarn_log(
+        target_id=2,
+        target_fname="Citra",
+        admin_id=1,
+        admin_fname="Andi",
+        new_count=1,
+        warn_limit=3,
+        chat_id=-1001234567890,
+        chat_title="Infinix Indonesia",
+    )
+    assert _brand_present(out)
+    assert "Citra" in out
+    assert "Andi" in out
+    assert "1/3" in out
+    assert "Infinix Indonesia" in out
+
+
+def test_unwarn_log_at_zero_shows_zero_count() -> None:
+    out = parse_logmsg.unwarn_log(
+        target_id=2,
+        target_fname="Citra",
+        admin_id=1,
+        admin_fname="Andi",
+        new_count=0,
+        warn_limit=3,
+        chat_id=-100,
+        chat_title="G",
+    )
+    assert "0/3" in out
+    assert "User ID: 2" in out
+
+
+## ---------------------------------------------------------------------------
 ## Mute / unmute logs
 ## ---------------------------------------------------------------------------
 

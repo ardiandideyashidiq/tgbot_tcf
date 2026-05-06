@@ -10,7 +10,8 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from tcbot import database as db
+from tcbot import cfg, database as db
+from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import code, mention
 
 log = logging.getLogger(__name__)
@@ -31,15 +32,25 @@ async def execute_warn(
     admin_id = update.effective_user.id
 
     count = await db.warns_db.add_warn(target_id, reason, admin_id, chat_id)
-    proof_line = f"\nProof: {proof_desc}" if proof_desc else ""
+    proof_line  = f"\nProof: {proof_desc}" if proof_desc else ""
+    chat_title  = update.effective_chat.title or str(chat_id)
+    admin_fname = update.effective_user.first_name
+    lc, lt      = cfg.logs
+    log_text    = parse_logmsg.warn_log(
+        target_id, target_name, admin_id, admin_fname,
+        reason, count, WARN_LIMIT, chat_id, chat_title,
+    )
 
     if count >= WARN_LIMIT:
-        ## clear warns + ban run in parallel
+        ## clear warns + ban + federation log — all in parallel
         results = await asyncio.gather(
             db.warns_db.clear_warns(target_id, chat_id),
             ctx.bot.ban_chat_member(chat_id, target_id),
+            ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
             return_exceptions=True,
         )
+        if isinstance(results[2], BaseException):
+            log.error("Warn log send failed: %s", results[2])
         ban_result = results[1]
         if not isinstance(ban_result, BaseException):
             await msg.reply_text(
@@ -55,11 +66,18 @@ async def execute_warn(
                 parse_mode="HTML",
             )
     else:
-        await msg.reply_text(
-            f"{mention(target_id, target_name)} has been warned "
-            f"({count}/{WARN_LIMIT}) — {reason}{proof_line}",
-            parse_mode="HTML",
+        ## federation log + reply in parallel
+        results2 = await asyncio.gather(
+            ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
+            msg.reply_text(
+                f"{mention(target_id, target_name)} has been warned "
+                f"({count}/{WARN_LIMIT}) — {reason}{proof_line}",
+                parse_mode="HTML",
+            ),
+            return_exceptions=True,
         )
+        if isinstance(results2[0], BaseException):
+            log.error("Warn log send failed: %s", results2[0])
 
 
 async def execute_unwarn(

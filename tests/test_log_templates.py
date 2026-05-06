@@ -179,6 +179,81 @@ def test_broadcast_log_truncates_preview_at_100_chars() -> None:
 
 
 ## ---------------------------------------------------------------------------
+## Kick log
+## ---------------------------------------------------------------------------
+
+
+def test_kick_log_contains_brand_and_key_fields() -> None:
+    out = parse_logmsg.kick_log(
+        target_id=2,
+        target_fname="Citra",
+        admin_id=1,
+        admin_fname="Andi",
+        reason="Raid participant",
+        chat_id=-1001234567890,
+        chat_title="Infinix Indonesia",
+    )
+    assert _brand_present(out)
+    assert "Citra" in out
+    assert "Andi" in out
+    assert "Raid participant" in out
+    assert "Infinix Indonesia" in out
+    assert "-1001234567890" in out
+
+
+def test_kick_log_shows_user_id() -> None:
+    out = parse_logmsg.kick_log(
+        target_id=99,
+        target_fname="X",
+        admin_id=1,
+        admin_fname="Y",
+        reason="R",
+        chat_id=-100,
+        chat_title="G",
+    )
+    assert "User ID: 99" in out
+
+
+## ---------------------------------------------------------------------------
+## Warn log
+## ---------------------------------------------------------------------------
+
+
+def test_warn_log_contains_brand_and_count() -> None:
+    out = parse_logmsg.warn_log(
+        target_id=2,
+        target_fname="Citra",
+        admin_id=1,
+        admin_fname="Andi",
+        reason="Off-topic",
+        count=2,
+        warn_limit=3,
+        chat_id=-1001234567890,
+        chat_title="Infinix Indonesia",
+    )
+    assert _brand_present(out)
+    assert "Citra" in out
+    assert "Off-topic" in out
+    assert "2/3" in out
+    assert "Infinix Indonesia" in out
+
+
+def test_warn_log_at_limit_shows_correct_count() -> None:
+    out = parse_logmsg.warn_log(
+        target_id=2,
+        target_fname="Citra",
+        admin_id=1,
+        admin_fname="Andi",
+        reason="Final warning",
+        count=3,
+        warn_limit=3,
+        chat_id=-100,
+        chat_title="G",
+    )
+    assert "3/3" in out
+
+
+## ---------------------------------------------------------------------------
 ## Mute / unmute logs
 ## ---------------------------------------------------------------------------
 

@@ -107,6 +107,46 @@ def proof_caption_update(
     )
 
 
+## ── Mute logs ──────────────────────────────────────────────────────────────
+
+def mute_log(
+    target_id: int,
+    target_fname: str,
+    admin_id: int,
+    admin_fname: str,
+    reason: str,
+    duration_str: str,
+) -> str:
+    dt = fmt_dt(utc_now())
+    return (
+        f"{cfg.community_name} Federation Mute\n"
+        f"{BRAND}\n\n"
+        f"Admin: {mention(admin_id, admin_fname)}\n\n"
+        f"User: {mention(target_id, target_fname)}\n"
+        f"User ID: {target_id}\n"
+        f"Reason: {reason}\n"
+        f"Duration: {duration_str}\n\n"
+        f"Date: {dt}"
+    )
+
+
+def unmute_log(
+    target_id: int,
+    target_fname: str,
+    admin_id: int,
+    admin_fname: str,
+) -> str:
+    dt = fmt_dt(utc_now())
+    return (
+        f"{cfg.community_name} Federation Unmute\n"
+        f"{BRAND}\n\n"
+        f"Admin: {mention(admin_id, admin_fname)}\n\n"
+        f"User: {mention(target_id, target_fname)}\n"
+        f"User ID: {target_id}\n\n"
+        f"Date: {dt}"
+    )
+
+
 ## ── Unban log ──────────────────────────────────────────────────────────────
 
 def unban_log(

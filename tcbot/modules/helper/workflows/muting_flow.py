@@ -12,7 +12,8 @@ from datetime import datetime, timedelta, timezone
 from telegram import ChatPermissions, Update
 from telegram.ext import ContextTypes
 
-from tcbot import database as db
+from tcbot import cfg, database as db
+from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import code, mention
 from tcbot.utils.dispatch import fan_out
 
@@ -100,10 +101,18 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
         f"Applied to {len(groups) - failed}/{len(groups)} groups."
     )
 
-    ## Log and edit summary in parallel — mute already applied
+    ## Build federation log entry
+    admin_fname = meta.get("mute_admin_fname", "Admin")
+    lc, lt      = cfg.logs
+    log_text    = parse_logmsg.mute_log(
+        target_id, target_fname, admin_id, admin_fname, reason, dur_str,
+    )
+
+    ## Log to DB, post to log channel, and edit summary — all in parallel
     chat_id  = update.effective_chat.id
     results2 = await asyncio.gather(
         db.mutes_db.log_mute(target_id, chat_id, reason, admin_id),
+        bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
         bot.edit_message_text(
             summary,
             chat_id=prompt_chat, message_id=prompt_id,
@@ -111,7 +120,9 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
         ),
         return_exceptions=True,
     )
-    if isinstance(results2[1], Exception):
+    if isinstance(results2[1], BaseException):
+        log.error("Mute log send failed: %s", results2[1])
+    if isinstance(results2[2], BaseException):
         msg = update.effective_message
         if msg:
             await msg.reply_text(summary, parse_mode="HTML")
@@ -147,8 +158,22 @@ async def execute_unmute(
     )
     failed = sum(1 for r in results if isinstance(r, BaseException))
 
-    await msg.reply_text(
-        f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted — "
-        f"restored in {len(groups) - failed}/{len(groups)} groups.",
-        parse_mode="HTML",
+    ## Build federation log entry
+    admin    = update.effective_user
+    lc, lt   = cfg.logs
+    log_text = parse_logmsg.unmute_log(
+        target_id, target_name, admin.id, admin.first_name,
     )
+
+    ## Send log to channel and reply — in parallel
+    results2 = await asyncio.gather(
+        ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
+        msg.reply_text(
+            f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted — "
+            f"restored in {len(groups) - failed}/{len(groups)} groups.",
+            parse_mode="HTML",
+        ),
+        return_exceptions=True,
+    )
+    if isinstance(results2[0], BaseException):
+        log.error("Unmute log send failed: %s", results2[0])

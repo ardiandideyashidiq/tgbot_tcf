@@ -179,6 +179,53 @@ def test_broadcast_log_truncates_preview_at_100_chars() -> None:
 
 
 ## ---------------------------------------------------------------------------
+## Mute / unmute logs
+## ---------------------------------------------------------------------------
+
+
+def test_mute_log_contains_brand_and_key_fields() -> None:
+    out = parse_logmsg.mute_log(
+        target_id=2,
+        target_fname="Citra",
+        admin_id=1,
+        admin_fname="Andi",
+        reason="Spamming stickers",
+        duration_str="3d",
+    )
+    assert _brand_present(out)
+    assert "Citra" in out
+    assert "Andi" in out
+    assert "Spamming stickers" in out
+    assert "3d" in out
+    assert "2" in out
+
+
+def test_mute_log_permanent_duration() -> None:
+    out = parse_logmsg.mute_log(
+        target_id=3,
+        target_fname="Budi",
+        admin_id=1,
+        admin_fname="Andi",
+        reason="Harassment",
+        duration_str="permanently",
+    )
+    assert "permanently" in out
+
+
+def test_unmute_log_contains_brand_and_both_users() -> None:
+    out = parse_logmsg.unmute_log(
+        target_id=2,
+        target_fname="Citra",
+        admin_id=1,
+        admin_fname="Andi",
+    )
+    assert _brand_present(out)
+    assert "Citra" in out
+    assert "Andi" in out
+    assert "User ID: 2" in out
+
+
+## ---------------------------------------------------------------------------
 ## Group logs
 ## ---------------------------------------------------------------------------
 

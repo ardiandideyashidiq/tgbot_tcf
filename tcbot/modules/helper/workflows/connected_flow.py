@@ -87,8 +87,8 @@ async def on_bot_added(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                     parse_mode="HTML",
                     message_thread_id=lt,
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                log.error("Bot removed log failed for %d: %s", chat.id, exc)
         log.info("Bot removed from %d – group deactivated", chat.id)
         return
 

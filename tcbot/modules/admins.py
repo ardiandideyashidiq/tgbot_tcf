@@ -156,8 +156,8 @@ async def _execute_promote(
                     reply_markup=keyboards.promo_decision_kb(request_id),
                 )
                 notified = True
-            except Exception:
-                pass
+            except Exception as exc:
+                log.warning("Owner DM failed, falling back to log channel: %s", exc)
         if not notified:
             try:
                 await bot.send_message(
@@ -485,8 +485,8 @@ async def cmd_promote_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
                 reply_markup=keyboards.promo_decision_kb(request_id),
             )
             notified = True
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("Owner DM failed, falling back to log channel: %s", exc)
     if not notified:
         try:
             await ctx.bot.send_message(

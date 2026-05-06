@@ -162,8 +162,8 @@ async def on_reason_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
             parse_mode="HTML",
             reply_markup=keyboards.mute_proof_kb(),
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        log.error("Mute prompt edit failed (reason step): %s", exc)
     return WAITING_PROOF
 
 
@@ -184,8 +184,8 @@ async def on_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
                 reply_markup=keyboards.mute_proof_kb(),
             ),
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        log.error("Mute prompt edit failed (skip-reason step): %s", exc)
     return WAITING_PROOF
 
 

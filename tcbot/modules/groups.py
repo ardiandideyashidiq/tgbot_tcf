@@ -20,15 +20,16 @@ __help_text__ = (
     "<code>/tcfgroups</code> (alias: <code>/tcg</code>)\n\n"
 
     "<b>Who can use it</b>\n"
-    "Anyone, no special permissions needed.\n\n"
+    "Anyone — no special permissions needed.\n\n"
 
     "<b>Where to use it</b>\n"
     "Bot PM, exec group, or any connected group.\n\n"
 
     "<b>What it does</b>\n"
-    f"Shows all groups currently connected to {cfg.community_name}. "
-    "Default view shows group names only. "
-    "Tap <b>Details</b> to also see each group's chat ID.\n\n"
+    f"Lists all groups currently connected to {cfg.community_name}, along with the total count. "
+    "The default view shows group names only.\n"
+    "Tap <b>Details</b> to expand the list and show each group's chat ID alongside its name. "
+    "Tap <b>Simple</b> to collapse back to names only.\n\n"
 
     "<b>Example</b>\n"
     "<code>/tcfgroups</code> or <code>/tcg</code>"

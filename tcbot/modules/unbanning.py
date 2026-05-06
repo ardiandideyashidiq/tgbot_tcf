@@ -23,15 +23,17 @@ __help_text__ = (
     "Developer and above (Founder / Admin / Developer).\n\n"
 
     "<b>Where to use it</b>\n"
-    "Exec group, connected groups, or bot PM.\n\n"
+    "Exec group, any connected group, or bot PM.\n\n"
 
     "<b>What it does</b>\n"
     "Lifts an active federation ban on the target user. The unban is applied across "
-    "all connected groups automatically, and a log entry is posted to the logs channel.\n"
-    "If the user has no active ban, the bot will let you know.\n\n"
+    "<b>all connected groups</b> simultaneously — the user's Telegram ban is removed in "
+    "every group so they can rejoin freely. A log entry is posted to the federation logs channel.\n\n"
+    "If the user has no active federation ban, the bot will let you know and take no action.\n"
+    "If the target's ban was under appeal, the appeal is also resolved as approved.\n\n"
 
     "<b>How to specify the target</b>\n"
-    "Reply to a message, or provide a user ID / @username.\n\n"
+    "Reply to a message, or provide a user ID / @username after the command.\n\n"
 
     "<b>Examples</b>\n"
     "<code>/tcunban @username</code>\n"

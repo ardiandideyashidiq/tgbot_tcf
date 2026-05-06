@@ -25,22 +25,25 @@ __help_text__ = (
     "<code>/cleanup</code> — aliases: <code>/tcclean</code>, <code>/tcc</code>\n\n"
 
     "<b>Who can use it</b>\n"
-    "<code>/leaveall</code> — Owner only.\n"
-    "<code>/cleanup</code> — TC Staff (admins & owner).\n\n"
+    "<code>/leaveall</code>: Founder only.\n"
+    "<code>/cleanup</code>: TC Staff (Admin and above).\n\n"
 
     "<b>Where to use it</b>\n"
     "Exec group or bot PM.\n\n"
 
     "<b>What it does</b>\n"
-    "<code>/leaveall</code> — makes the bot leave every connected group and marks them all "
-    "as disconnected. A log entry is posted for each group. Use with care — this is irreversible "
-    "without re-connecting each group manually.\n\n"
-    "<code>/cleanup</code> — scans all connected groups and removes any that the bot was "
-    "kicked from or can no longer access. Keeps the database clean and the group list accurate.\n\n"
+    "<code>/leaveall</code>: makes the bot leave every connected group simultaneously, marks "
+    "them all as disconnected in the database, and posts a log entry for each group. "
+    "This is irreversible — each group must be manually reconnected with <code>/tcconnect</code>. "
+    "Use only in emergencies.\n\n"
+    "<code>/cleanup</code>: scans all groups in the database and attempts to verify the bot "
+    "still has access. Any group where the bot was kicked, removed, or can no longer reach is "
+    "marked as disconnected and removed from the active list. "
+    "Run this periodically to keep the group list accurate.\n\n"
 
     "<b>Examples</b>\n"
-    "<code>/cleanup</code> — run this periodically to remove stale groups.\n"
-    "<code>/leaveall</code> — emergency exit from all groups."
+    "<code>/cleanup</code> — remove stale or inaccessible groups from the federation.\n"
+    "<code>/leaveall</code> — emergency withdrawal from all connected groups."
 )
 
 

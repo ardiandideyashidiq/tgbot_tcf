@@ -24,19 +24,28 @@ __help_text__ = (
     "<b>Commands & Aliases</b>\n"
     "<code>/checkme</code> (alias: <code>/cme</code>)\n"
     "<code>/checkban</code> (alias: <code>/cban</code>)\n\n"
+
     "<b>Who can use it</b>\n"
-    "Anyone, no special permissions needed.\n\n"
+    "Anyone — no special permissions needed.\n\n"
+
     "<b>Where to use it</b>\n"
     "Bot PM, exec group, or any connected group.\n\n"
-    "<b>What it does</b>\n"
-    "<code>/checkme</code>: checks your own federation ban status. "
-    "If you're banned, the bot will show the reason, who banned you, and give you a button "
-    "to submit an appeal.\n\n"
-    "<code>/checkban</code>: looks up the ban status of any user. "
-    "Shows full details including the reason, ban date, and who issued it. "
-    "If proof exists, you'll get a button to view it.\n\n"
-    "<b>How to specify the target (checkban)</b>\n"
-    "Reply to a message, or provide a user ID / @username.\n\n"
+
+    "<b>/checkme</b>\n"
+    "Checks your own federation ban status.\n"
+    "— If you are <b>not banned</b>: the bot confirms your account is in good standing.\n"
+    "— If you are <b>banned</b>: the bot shows the reason, the admin who issued the ban, "
+    "the ban date, and gives you a <b>Submit Appeal</b> button to start the appeal process.\n\n"
+
+    "<b>/checkban</b>\n"
+    "Looks up the ban status of any user by user ID or @username.\n"
+    "— If banned: shows the full record — reason, ban date, banning admin, and a "
+    "<b>View Proof</b> button if evidence was submitted.\n"
+    "— If not banned: confirms the user has no active federation ban.\n\n"
+
+    "<b>How to specify the target (/checkban)</b>\n"
+    "Reply to a message, or provide a user ID / @username after the command.\n\n"
+
     "<b>Examples</b>\n"
     "<code>/checkme</code>\n"
     "<code>/checkban @username</code>\n"

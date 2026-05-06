@@ -30,21 +30,26 @@ __help_text__ = (
     "Developer and above (Founder / Admin / Developer).\n\n"
 
     "<b>Where to use it</b>\n"
-    "Exec group, connected groups, or bot PM.\n\n"
+    "Exec group, any connected group, or bot PM.\n\n"
 
     "<b>What it does</b>\n"
-    "Issues a <b>federation-wide ban</b> on the target. After the command, the bot will ask "
-    "you to submit proof (photo or video). Once proof is uploaded, the ban is logged and "
-    "enforced across all connected groups automatically.\n"
-    "If the user is already banned, the existing record gets updated with the new reason and proof.\n\n"
+    "Issues a <b>federation-wide ban</b> on the target, applied across all connected groups "
+    "automatically. A reason is required — provide it directly after the target in the command.\n\n"
+    "After the command, the bot walks you through the proof step: send one or more photos or "
+    "videos as evidence, then tap <b>Done</b>. Tap <b>Skip</b> if you have no proof. "
+    "The ban record and proof are logged to the federation log channel.\n\n"
+    "If the user already has an active ban, the existing record is updated with the new reason "
+    "and proof rather than creating a duplicate.\n"
+    "If the target holds a federation role (Tester / Developer / Admin), that role is "
+    "automatically removed and they are notified by DM before the ban is enforced.\n\n"
 
     "<b>How to specify the target</b>\n"
-    "Reply to a message, or provide a user ID / @username.\n\n"
+    "Reply to a message, or provide a user ID / @username after the command.\n\n"
 
     "<b>Examples</b>\n"
     "<code>/tcban @username spamming in connected groups</code>\n"
     "<code>/tcban 123456789 scamming members</code>\n"
-    "Or reply to a message, then: <code>/tcb reason here</code>"
+    "Or reply to a message and run <code>/tcb reason here</code>."
 )
 
 

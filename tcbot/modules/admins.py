@@ -28,38 +28,43 @@ __help_text__ = (
     "<code>/tcpromotelist</code>\n\n"
 
     "<b>Role Hierarchy</b>\n"
-    "Founder › Admin › Developer › Tester\n\n"
+    "Founder (rank 4) › Admin (rank 3) › Developer (rank 2) › Tester (rank 1)\n\n"
 
     "<b>/tcpromote</b>\n"
-    "Assign a role to a user.\n"
+    "Assigns a role to a user. Omit the role argument to get an inline button menu.\n"
     "Usage: <code>/tcpromote @user [admin|developer|tester]</code>\n"
-    "Omit the role to get an inline selection menu.\n"
     "— Founder can promote to any role directly.\n"
-    "— Admin can promote to Developer or Tester directly; promoting to Admin "
-    "sends a request to the Founder for approval.\n\n"
+    "— Admin can promote to Developer or Tester directly; promoting someone to Admin "
+    "sends a pending request to the Founder for approval.\n"
+    "— You cannot promote a user to a rank equal to or above your own.\n\n"
 
     "<b>/tcdemote</b>\n"
-    "Remove a user's role (shows a confirmation button).\n"
+    "Removes a user's role. A confirmation button is shown before the action executes.\n"
+    "Usage: <code>/tcdemote @user</code>\n"
     "— Founder can demote any role.\n"
-    "— Admin can demote Developer or Tester only.\n\n"
+    "— Admin can demote Developer or Tester only.\n"
+    "— When a user with a role is banned or kicked, their role is automatically removed "
+    "and they are notified by DM.\n\n"
 
     "<b>/transferowner</b>\n"
-    "Transfer federation ownership to another user. The current Founder becomes "
-    "an Admin. Founder only.\n\n"
+    "Transfers federation ownership to another user. The current Founder steps down to Admin. "
+    "Founder only.\n"
+    "Usage: <code>/transferowner @user</code>\n\n"
 
     "<b>/tcpromoterequests</b>\n"
-    "Submit a request to become an Admin. The Founder will be notified and can "
-    "approve or reject.\n\n"
+    "Submits a request to the Founder to be promoted to Admin. The Founder receives a "
+    "notification with Approve / Reject buttons.\n\n"
 
     "<b>/tcpromotelist</b>\n"
-    "List all pending Admin promotion requests. Admin and above only.\n\n"
+    "Lists all pending Admin promotion requests. Admin and above only.\n\n"
 
     "<b>How to specify the target</b>\n"
-    "Reply to a message, or provide a user ID / @username.\n\n"
+    "Reply to a message, or provide a user ID / @username after the command.\n\n"
 
     "<b>Examples</b>\n"
     "<code>/tcpromote @username developer</code>\n"
-    "<code>/tcdemote 123456789</code>\n"
+    "<code>/tcpromote 123456789</code> — shows role selection menu\n"
+    "<code>/tcdemote @username</code>\n"
     "<code>/transferowner @newowner</code>"
 )
 

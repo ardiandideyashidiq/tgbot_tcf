@@ -22,16 +22,21 @@ __help_text__ = (
     "<code>/tcstats</code>\n\n"
 
     "<b>Who can use it</b>\n"
-    "Anyone, no special permissions needed.\n\n"
+    "Anyone — no special permissions needed.\n\n"
 
     "<b>Where to use it</b>\n"
     "Bot PM, exec group, or any connected group.\n\n"
 
     "<b>What it does</b>\n"
-    "Shows a quick overview of the federation: who the founder is, "
-    "how many staff members are active across all roles, "
-    "how many bans are in effect, and how many groups are connected.\n"
-    "Tap <b>Staff Roster</b> to see the full breakdown by role.\n\n"
+    "Shows a live overview of the federation: the Founder, total staff count, number of "
+    "active federation bans, and number of connected groups.\n\n"
+    "Three drill-down buttons are available below the summary:\n"
+    "— <b>Staff Roster</b>: full breakdown of all staff by role "
+    "(Founder, Admins, Developers, Testers).\n"
+    "— <b>Connected Chats</b>: paginated list of all currently connected groups.\n"
+    "— <b>User Bans</b>: paginated list of all active federation bans, with a "
+    "<b>Search</b> option to look up a specific user by name or ID.\n"
+    "Each view has a <b>Back</b> button to return to the main summary.\n\n"
 
     "<b>Example</b>\n"
     "<code>/tcstats</code>"

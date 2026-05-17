@@ -23,4 +23,4 @@ def fmt_dt(dt: datetime) -> str:
 
 
 def utc_now_str() -> str:
-    return fmt_dt(datetime.now(timezone.utc))
+    return fmt_dt(utc_now())

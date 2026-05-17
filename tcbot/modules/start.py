@@ -93,8 +93,8 @@ def _groups_menu_kb(detailed: bool) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([[toggle], [back]])
 
 
-async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
+async def _show_groups(q: CallbackQuery, detailed: bool) -> None:
+    """Shared renderer for all group-menu callbacks."""
     _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
     if not groups:
         await q.edit_message_text(
@@ -103,27 +103,21 @@ async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
         )
         return
     await q.edit_message_text(
-        _render(groups, False), parse_mode="HTML",
-        reply_markup=_groups_menu_kb(False),
+        _render(groups, detailed), parse_mode="HTML",
+        reply_markup=_groups_menu_kb(detailed),
     )
+
+
+async def on_menu_groups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    await _show_groups(update.callback_query, False)
 
 
 async def on_menu_groups_details(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
-    await q.edit_message_text(
-        _render(groups, True), parse_mode="HTML",
-        reply_markup=_groups_menu_kb(True),
-    )
+    await _show_groups(update.callback_query, True)
 
 
 async def on_menu_groups_simple(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    _, groups = await asyncio.gather(q.answer(), db.groups_db.active_groups())
-    await q.edit_message_text(
-        _render(groups, False), parse_mode="HTML",
-        reply_markup=_groups_menu_kb(False),
-    )
+    await _show_groups(update.callback_query, False)
 
 
 ## ── Handler list ───────────────────────────────────────────────────────────

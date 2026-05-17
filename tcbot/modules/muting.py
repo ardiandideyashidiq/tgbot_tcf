@@ -19,7 +19,7 @@ __module_name__ = "Mute"
 __help_text__ = (
     "<b>Commands & Aliases</b>\n"
     "<code>/tcmute</code> (alias: <code>/tcm</code>)\n"
-    "<code>/tcunmute</code> (alias: <code>/tcunm</code>)\n\n"
+    "<code>/tcunmute</code> (aliases: <code>/tcunm</code>, <code>/tcum</code>)\n\n"
 
     "<b>Who can use it</b>\n"
     "Tester and above (Founder / Admin / Developer / Tester).\n\n"
@@ -96,6 +96,7 @@ async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 _UNMUTE_FILTER = (
     build_prefixed_filters("tcunmute")
     | build_prefixed_filters("tcunm")
+    | build_prefixed_filters("tcum")
 )
 
 __handlers__ = [

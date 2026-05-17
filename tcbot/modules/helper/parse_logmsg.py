@@ -420,7 +420,8 @@ def promo_approved_log(
     target_id: int,
     target_fname: str,
     admin_id: int,
-    admin_fname: str
+    admin_fname: str,
+    request_id: str,
 ) -> str:
     dt = fmt_dt(utc_now())
     return (
@@ -429,6 +430,7 @@ def promo_approved_log(
         f"ID: {target_id}\n\n"
         f"Promoted by Owner: {mention(admin_id, admin_fname)}\n"
         f"ID: {admin_id}\n\n"
+        f"Request ID: {request_id}\n"
         f"Date: {dt}"
     )
 

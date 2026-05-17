@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from telegram import ChatPermissions, Update
 from telegram.ext import ContextTypes
@@ -20,6 +20,7 @@ from tcbot import cfg, database as db
 from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import code, mention
 from tcbot.utils.dispatch import fan_out
+from tcbot.utils.timedate_format import utc_now
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
     prompt_id    = meta.get("mute_prompt_id")
     dur_str      = fmt_duration(duration)
 
-    until = datetime.now(timezone.utc) + duration if duration else None
+    until = utc_now() + duration if duration else None
     perms = ChatPermissions(can_send_messages=False)
 
     ## Apply across all connected groups - semaphore-bounded for rate safety
@@ -169,23 +170,20 @@ async def execute_unmute(
         target_id, target_name, admin.id, admin.first_name,
     )
 
+    reply = (
+        f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted - "
+        f"restored in {len(groups) - failed}/{len(groups)} groups."
+    )
+
     ## Send log to channel and reply - in parallel
     if lc:
         results2 = await asyncio.gather(
             ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
-            msg.reply_text(
-                f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted - "
-                f"restored in {len(groups) - failed}/{len(groups)} groups.",
-                parse_mode="HTML",
-            ),
+            msg.reply_text(reply, parse_mode="HTML"),
             return_exceptions=True,
         )
         if isinstance(results2[0], BaseException):
             log.error("Unmute log send failed: %s", results2[0])
     else:
-        # No log channel configured; reply locally so the admin sees the summary.
-        await msg.reply_text(
-            f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted - "
-            f"restored in {len(groups) - failed}/{len(groups)} groups.",
-            parse_mode="HTML",
-        )
+        ## No log channel configured; reply locally so the admin sees the summary
+        await msg.reply_text(reply, parse_mode="HTML")

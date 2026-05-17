@@ -90,6 +90,13 @@ def _esc(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def _trim_tb(tb_str: str) -> str:
+    """Trim a traceback string to _MAX_TB characters, prepending an ellipsis marker."""
+    if len(tb_str) > _MAX_TB:
+        return "…(trimmed)\n" + tb_str[-_MAX_TB:]
+    return tb_str
+
+
 def build_error_message(
     *,
     exc:     BaseException | None      = None,
@@ -137,15 +144,9 @@ def build_error_message(
     ## ── traceback block ───────────────────────────────────────────────────────
     tb_block = ""
     if exc and exc.__traceback__:
-        tb_str = traceback.format_exc()
-        if len(tb_str) > _MAX_TB:
-            tb_str = "…(trimmed)\n" + tb_str[-_MAX_TB:]
-        tb_block = f"\n\n<b>Traceback:</b>\n<pre>{_esc(tb_str)}</pre>"
+        tb_block = f"\n\n<b>Traceback:</b>\n<pre>{_esc(_trim_tb(traceback.format_exc()))}</pre>"
     elif record and record.exc_info and record.exc_info[0]:
-        tb_str = "".join(traceback.format_exception(*record.exc_info))
-        if len(tb_str) > _MAX_TB:
-            tb_str = "…(trimmed)\n" + tb_str[-_MAX_TB:]
-        tb_block = f"\n\n<b>Traceback:</b>\n<pre>{_esc(tb_str)}</pre>"
+        tb_block = f"\n\n<b>Traceback:</b>\n<pre>{_esc(_trim_tb(''.join(traceback.format_exception(*record.exc_info))))}</pre>"
 
     ## ── optional update / context block ──────────────────────────────────────
     ctx_block = ""

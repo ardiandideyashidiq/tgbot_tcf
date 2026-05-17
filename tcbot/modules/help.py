@@ -134,38 +134,14 @@ async def on_helpc_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await _render_help_index(update, ctx, with_back_to_start=False)
 
 
-## ── Help topic - menu path ─────────────────────────────────────────────────
+## ── Shared topic renderer ──────────────────────────────────────────────────
 
-async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    topic = q.data
-    if topic not in HELP_CONTENT:
-        await asyncio.gather(
-            q.answer(),
-            q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_kb()),
-        )
-        return
-    name, text = HELP_CONTENT[topic]
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text(
-            f"<b>Help for {name}</b>\n\n{text}\n{_prefix_note()}",
-            parse_mode="HTML",
-            reply_markup=keyboards.back_to_help_kb(),
-        ),
-    )
-
-
-## ── Help topic - command path ──────────────────────────────────────────────
-
-async def on_help_topic_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    ## "helpc_banning" → "help_banning"
-    menu_key = "help_" + q.data[6:]
+async def _show_topic(q: CallbackQuery, menu_key: str, back_kb) -> None:
+    """Render a help topic and edit the current message in place."""
     if menu_key not in HELP_CONTENT:
         await asyncio.gather(
             q.answer(),
-            q.edit_message_text("Topic not found.", reply_markup=keyboards.back_to_help_cmd_kb()),
+            q.edit_message_text("Topic not found.", reply_markup=back_kb),
         )
         return
     name, text = HELP_CONTENT[menu_key]
@@ -174,9 +150,24 @@ async def on_help_topic_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
         q.edit_message_text(
             f"<b>Help for {name}</b>\n\n{text}\n{_prefix_note()}",
             parse_mode="HTML",
-            reply_markup=keyboards.back_to_help_cmd_kb(),
+            reply_markup=back_kb,
         ),
     )
+
+
+## ── Help topic - menu path ─────────────────────────────────────────────────
+
+async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    q: CallbackQuery = update.callback_query
+    await _show_topic(q, q.data, keyboards.back_to_help_kb())
+
+
+## ── Help topic - command path ──────────────────────────────────────────────
+
+async def on_help_topic_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    q: CallbackQuery = update.callback_query
+    ## "helpc_banning" → "help_banning"
+    await _show_topic(q, "help_" + q.data[6:], keyboards.back_to_help_cmd_kb())
 
 
 ## ── Handler list ───────────────────────────────────────────────────────────

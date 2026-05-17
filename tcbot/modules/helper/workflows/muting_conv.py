@@ -236,6 +236,7 @@ async def on_mute_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 _UNMUTE_ESCAPE = (
     build_prefixed_filters("tcunmute")
     | build_prefixed_filters("tcunm")
+    | build_prefixed_filters("tcum")
 )
 
 

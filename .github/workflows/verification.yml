@@ -70,6 +70,9 @@ jobs:
           total_failed  = 0
           total_skipped = 0
           any_failure   = False
+          failed_cases  = []
+          errored_cases = []
+          skipped_cases = []
 
           for xml_path in xml_files:
               try:
@@ -95,11 +98,56 @@ jobs:
                   if failed:
                       any_failure = True
 
-          verdict = (
-              "**All checks passed.**"
-              if not any_failure
-              else "**Some checks FAILED.** The AI patch job may have already committed a fix."
-          )
+                  for case in s:
+                      case_name = f"{case.classname or xml_path.stem}.{case.name}"
+                      if case.skipped:
+                          skipped_cases.append(case_name)
+                          continue
+                      result = (case.result or [None])[0]
+                      if result is None:
+                          continue
+                      result_tag = getattr(result, "tag", "failure")
+                      message = (getattr(result, "message", "") or "").strip().splitlines()[0]
+                      reason = message or result_tag
+                      if result_tag == "failure":
+                          failed_cases.append((case_name, reason))
+                      else:
+                          errored_cases.append((case_name, reason))
+
+          detail_lines = [
+              "## Failure categories",
+              "",
+              f"- Assertion failures: {len(failed_cases)}",
+              f"- Exceptions / runtime errors: {len(errored_cases)}",
+              f"- Skipped tests: {len(skipped_cases)}",
+              f"- Test result artifacts processed: {len(xml_files)}",
+              "",
+              "## Failure details",
+              "",
+          ]
+
+          if failed_cases or errored_cases:
+              for case_name, reason in (failed_cases + errored_cases)[:50]:
+                  severity = "FAIL" if (case_name, reason) in failed_cases else "ERROR"
+                  detail_lines.append(f"- `{case_name}` — {severity}: {reason}")
+              remaining = len(failed_cases) + len(errored_cases) - 50
+              if remaining > 0:
+                  detail_lines.append(f"- ...and {remaining} more failing tests not shown here.")
+          else:
+              detail_lines.append(
+                  "- No individual failing test cases were extracted from the JUnit artifacts. "
+                  "This usually means the failure occurred during test discovery, import/setup, or the artifacts are incomplete."
+              )
+
+          detail_lines.extend([
+              "",
+              "## Recommended diagnostics",
+              "",
+              "- Open the workflow run and review the full pytest output for the first failing assertion or exception.",
+              "- Download the artifacts and inspect the associated XML/log files for detailed traceback text.",
+              "- Start debugging from the earliest listed failure, as later failures are often caused by the same issue.",
+              "- If no individual failure is visible, look for environment/setup problems such as missing imports, broken dependencies, or Python version incompatibility.",
+          ])
 
           summary = "\n".join([
               "## TCF Bot — TDD Verification",
@@ -114,10 +162,11 @@ jobs:
               "|---------|--------|--------|--------|---------|",
               *rows,
               "",
-              verdict,
+              "**All checks passed.**" if not any_failure else "**Some checks FAILED.**",
           ])
 
           pathlib.Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text(summary)
+          pathlib.Path("failure_body.txt").write_text("\n".join(detail_lines))
           print(summary)
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -138,10 +187,24 @@ jobs:
           SHORT="${SHA:0:7}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
+          cat > issue_body.txt <<EOF
+          Test suite failed on \`${SHORT}\`.
+
+          ## Overview
+          - Total passed: **${{ steps.parse.outputs.total_passed }}**
+          - Total failed: **${{ steps.parse.outputs.total_failed }}**
+          - Workflow run: ${RUN_URL}
+
+          $(cat failure_body.txt)
+
+          ## Notes
+          - The full test log and diagnostics are available in the workflow run artifacts.
+          - Use the failure categories and first failing tests above to prioritize debugging.
+          EOF
+
           gh issue create \
             --title "TDD failure on ${SHORT}" \
-            --body "$(printf 'Test suite failed on \`%s\`.\n\nFailed: **${{ steps.parse.outputs.total_failed }}** | Passed: **${{ steps.parse.outputs.total_passed }}**\n\n[View run](%s)\n\nThe AI patch job in \`run-tdd.yml\` may have already committed a fix — check the latest commits.' \
-              "$SHORT" "$RUN_URL")" \
+            --body-file issue_body.txt \
             --label "bug" \
           2>/dev/null || echo "Issue creation skipped (no label or permission issue — check repo settings)"
 

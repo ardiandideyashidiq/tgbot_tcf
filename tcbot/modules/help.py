@@ -68,7 +68,7 @@ def _prefix_note() -> str:
 ## ── Shared text ────────────────────────────────────────────────────────────
 
 _HELP_INDEX_TEXT = (
-    "<b>{bot_name} Help</b>\n\n"
+    "<b>{botname} Help</b>\n\n"
     f"I manages groups connected on {cfg.community_name}. "
     "Select a topic below."
 )
@@ -86,12 +86,12 @@ async def _render_help_index(
     Edit (or send) the help index message on the appropriate callback query.
     """
     q: CallbackQuery = update.callback_query
-    bot_name = ctx.bot.first_name
+    botname = ctx.bot.first_name
     kb = keyboards.help_topics_menu_kb(HELP_TOPICS_MENU) if with_back_to_start else keyboards.help_topics_kb(HELP_TOPICS_CMD)
     await asyncio.gather(
         q.answer(),
         q.edit_message_text(
-            _HELP_INDEX_TEXT.format(bot_name=bot_name),
+            _HELP_INDEX_TEXT.format(botname=botname),
             parse_mode="HTML",
             reply_markup=kb,
         ),
@@ -101,9 +101,9 @@ async def _render_help_index(
 ## ── /help command ──────────────────────────────────────────────────────────
 
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    bot_name = ctx.bot.first_name
+    botname = ctx.bot.first_name
     await update.effective_message.reply_text(
-        _HELP_INDEX_TEXT.format(bot_name=bot_name),
+        _HELP_INDEX_TEXT.format(botname=botname),
         parse_mode="HTML",
         reply_markup=keyboards.help_topics_kb(HELP_TOPICS_CMD),
     )
@@ -111,13 +111,13 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 ## ── Help from menu ─────────────────────────────────────────────────────────
 
-async def on_menu_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_help_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await _render_help_index(update, ctx, with_back_to_start=True)
 
 
 ## ── Help in group ──────────────────────────────────────────────────────────
 
-async def on_menu_help_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_help_menu_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Help tapped from group /start inline — answer with alert, no edit.
     """
@@ -130,7 +130,7 @@ async def on_menu_help_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
 
 ## ── Help index callback ────────────────────────────────────────────────────
 
-async def on_helpcmd_idx(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_helpc_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await _render_help_index(update, ctx, with_back_to_start=False)
 
 
@@ -185,9 +185,9 @@ _HELP_FILTER = build_prefixed_filters("help") | build_prefixed_filters("commands
 
 __handlers__ = [
     MessageHandler(_HELP_FILTER, cmd_help),
-    CallbackQueryHandler(on_menu_help,        pattern=r"^menu_help$"),
-    CallbackQueryHandler(on_menu_help_group,  pattern=r"^menu_help_group$"),
-    CallbackQueryHandler(on_helpcmd_idx,      pattern=r"^helpcmd_idx$"),
+    CallbackQueryHandler(on_help_menu,        pattern=r"^help_menu$"),
+    CallbackQueryHandler(on_help_menu_group,  pattern=r"^help_menu_group$"),
+    CallbackQueryHandler(on_helpc_main,      pattern=r"^helpc_main$"),
     CallbackQueryHandler(on_help_topic,       pattern=r"^help_\w+$"),
     CallbackQueryHandler(on_help_topic_cmd,   pattern=r"^helpc_\w+$"),
 ]

@@ -16,7 +16,7 @@ __module_name__ = None
 
 _PRIVACY_MSG = (
     "<b>Privacy & Data</b>\n\n"
-    "We keep things simple. Here's what {bot_name} stores about you:\n\n"
+    "We keep things simple. Here's what {botname} stores about you:\n\n"
     "- <b>User ID & first name</b> - cached when you interact with the bot or a connected group.\n"
     "- <b>Ban records</b> - if you receive a federation ban, the reason and proof are stored alongside it.\n"
     "- <b>Warn & mute records</b> - logged per group for moderation tracking.\n"
@@ -28,11 +28,11 @@ _PRIVACY_MSG = (
 )
 
 _PRIVACY_POLICY_MSG = (
-    "{bot_name}\n"
-    "<b>Privacy Policy</b>\n\n"
+    "<b>Privacy Policy</b>\n"
+    "{botname}\n"
 
     "<b>1. What we collect</b>\n"
-    "Your Telegram user ID, first name, and username are cached when you interact with {bot_name} "
+    "Your Telegram user ID, first name, and username are cached when you interact with {botname} "
     "or any connected group. We also store ban records, appeal submissions, warn records, "
     "mute records, and kick logs.\n\n"
 
@@ -58,31 +58,31 @@ _PRIVACY_POLICY_MSG = (
 )
 
 
-async def on_menu_privacy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_privacy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    bot_name = ctx.bot.first_name or "This bot"
+    botname = ctx.bot.first_name or "This bot"
     await asyncio.gather(
         q.answer(),
         q.edit_message_text(
-            _PRIVACY_MSG.format(bot_name=bot_name), parse_mode="HTML",
+            _PRIVACY_MSG.format(botname=botname), parse_mode="HTML",
             reply_markup=keyboards.privacy_kb(),
         ),
     )
 
 
-async def on_menu_privacy_policy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_privacy_policy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    bot_name = ctx.bot.first_name or "This bot"
+    botname = ctx.bot.first_name or "This bot"
     await asyncio.gather(
         q.answer(),
         q.edit_message_text(
-            _PRIVACY_POLICY_MSG.format(bot_name=bot_name), parse_mode="HTML",
+            _PRIVACY_POLICY_MSG.format(botname=botname), parse_mode="HTML",
             reply_markup=keyboards.back_to_privacy_kb(),
         ),
     )
 
 
 __handlers__ = [
-    CallbackQueryHandler(on_menu_privacy,        pattern=r"^menu_privacy$"),
-    CallbackQueryHandler(on_menu_privacy_policy, pattern=r"^menu_privacy_policy$"),
+    CallbackQueryHandler(on_privacy_menu,        pattern=r"^privacy_menu$"),
+    CallbackQueryHandler(on_privacy_policy_menu, pattern=r"^privacy_policy_menu$"),
 ]

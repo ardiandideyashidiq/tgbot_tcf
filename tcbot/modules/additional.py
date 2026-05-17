@@ -34,11 +34,11 @@ def _additional_kb() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton("TRAVEL - Transsion Development (Community)", url="http://t.me/+S2C_ppFvHlAwMzNl"),
         ],
-        [InlineKeyboardButton("« Back", callback_data="menu_back_start")],
+        [InlineKeyboardButton("« Back", callback_data="back_to_start")],
     ])
 
 
-async def on_menu_additional(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_additional_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     await asyncio.gather(
         q.answer(),
@@ -51,5 +51,5 @@ async def on_menu_additional(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
 
 
 __handlers__ = [
-    CallbackQueryHandler(on_menu_additional, pattern=r"^menu_additional$"),
+    CallbackQueryHandler(on_additional_menu, pattern=r"^additional_menu$"),
 ]

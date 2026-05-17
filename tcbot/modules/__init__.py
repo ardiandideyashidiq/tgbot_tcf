@@ -58,12 +58,6 @@ __all__ = ALL_MODULES + ["ALL_MODULES"]
 
 ## ── Handler discovery ──────────────────────────────────────────────────────
 
-## ConversationHandlers and connection handlers must be registered first
-_PRIORITY_FIRST = ["connecting", "admins", "appeals", "banning", "muting", "kicking", "warnings"]
-## Greeting and start last to avoid filter shadowing
-_PRIORITY_LAST = ["about", "privacy", "start", "greeting"]
-
-
 def get_handlers() -> list[Any]:
     """
     Import all active modules and collect their __handlers__ lists,
@@ -79,13 +73,8 @@ def get_handlers() -> list[Any]:
         except Exception as exc:
             log.error("Failed to import tcbot.modules.%s: %s", mod_name, exc)
 
-    ordered = (
-        [n for n in _PRIORITY_FIRST if n in mods_found]
-        + [n for n in mods_found if n not in _PRIORITY_FIRST and n not in _PRIORITY_LAST]
-        + [n for n in _PRIORITY_LAST if n in mods_found]
-    )
 
-    for mod_name in ordered:
+    for mod_name in ALL_MODULES:
         mod = mods_found[mod_name]
         mod_handlers = getattr(mod, "__handlers__", [])
         if mod_handlers:

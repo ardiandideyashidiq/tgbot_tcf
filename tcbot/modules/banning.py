@@ -122,7 +122,7 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     ctx.user_data["ban_admin_fname"]  = admin.first_name
 
     prompt = await msg.reply_text(
-        "Proof required. Send a photo or video — multiple files allowed. "
+        "Proof required. Send a photo or video (multiple files allowed).\n"
         f"You have {cfg.proof_timeout} seconds.",
         reply_markup=keyboards.cancel_proof_kb(),
     )

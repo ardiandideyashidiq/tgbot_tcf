@@ -28,16 +28,16 @@ def test_main_menu_kb_has_three_rows() -> None:
     rows = _rows(keyboards.main_menu_kb())
     assert len(rows) == 3
     assert [b["text"] for b in rows[0]] == ["About", "Help"]
-    assert rows[0][0]["cb"] == "menu_about"
-    assert rows[0][1]["cb"] == "menu_help"
-    assert rows[1][0]["cb"] == "menu_additional"
-    assert rows[2][0]["cb"] == "menu_privacy"
+    assert rows[0][0]["cb"] == "about_menu"
+    assert rows[0][1]["cb"] == "help_menu"
+    assert rows[1][0]["cb"] == "additional_menu"
+    assert rows[2][0]["cb"] == "privacy_menu"
 
 
 def test_back_to_start_kb_single_back_button() -> None:
     rows = _rows(keyboards.back_to_start_kb())
     assert len(rows) == 1 and len(rows[0]) == 1
-    assert rows[0][0]["cb"] == "menu_back_start"
+    assert rows[0][0]["cb"] == "back_to_start"
 
 
 ## ── Appeal flow ─────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ def test_help_modules_optional_back_to_start() -> None:
     assert len(rows_no_back) == 1
 
     rows_with_back = _rows(keyboards.help_modules(sample, with_back_to_start=True))
-    assert rows_with_back[-1][0]["cb"] == "menu_back_start"
+    assert rows_with_back[-1][0]["cb"] == "back_to_start"
     assert "Back" in rows_with_back[-1][0]["text"]
 
 
@@ -116,5 +116,5 @@ def test_cancel_proof_kb_single_button() -> None:
 
 def test_privacy_kb_has_two_rows() -> None:
     rows = _rows(keyboards.privacy_kb())
-    assert rows[0][0]["cb"] == "menu_privacy_policy"
-    assert rows[1][0]["cb"] == "menu_back_start"
+    assert rows[0][0]["cb"] == "privacy_policy_menu"
+    assert rows[1][0]["cb"] == "back_to_start"

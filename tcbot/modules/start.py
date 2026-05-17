@@ -21,13 +21,13 @@ log = logging.getLogger(__name__)
 __module_name__ = None
 
 _PRIVATE_START_TEXT = (
-    f"<b>Hey! I'm {cfg.community_name}. 👋</b>\n\n"
+    "<b>Hey! I'm {botname}. 👋</b>\n\n"
     f"I am an assistant of {cfg.community_name} to manage the groups connected to me centrally\n"
     "Use the buttons below to explore."
 )
 
 _GROUP_START_TEXT = (
-    f"<b>Hey! I'm {cfg.community_name}. 👋</b>\n\n"
+    "<b>Hey! I'm {botname}. 👋</b>\n\n"
     f"I am an assistant of {cfg.community_name} to manage the groups connected to me centrally\n"
     "Use /help for all help menu, or open me in PM for the full menu."
 )
@@ -41,13 +41,13 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     text     = (msg.text or "").strip()
     parts    = text.split(None, 1)
     arg      = parts[1].strip() if len(parts) > 1 else ""
-    bot_name = ctx.bot.first_name
+    botname = ctx.bot.first_name
 
     ## Group / supergroup context — send a minimal message with PM link
     if chat.type in ("group", "supergroup"):
         bot_username = ctx.bot.username or ""
         await msg.reply_text(
-            _GROUP_START_TEXT.format(bot_name=bot_name),
+            _GROUP_START_TEXT.format(botname=botname),
             parse_mode="HTML",
             reply_markup=keyboards.group_start_kb(bot_username),
         )
@@ -63,7 +63,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     ## appeal<ban_id> deep links are handled by the ConversationHandler in appeals.py
     await msg.reply_text(
-        _PRIVATE_START_TEXT.format(bot_name=bot_name),
+        _PRIVATE_START_TEXT.format(botname=botname),
         parse_mode="HTML",
         reply_markup=keyboards.main_menu_kb(),
     )
@@ -71,13 +71,13 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 ## ── Menu callbacks ─────────────────────────────────────────────────────────
 
-async def on_menu_back_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_back_to_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
-    bot_name = ctx.bot.first_name
+    botname = ctx.bot.first_name
     await asyncio.gather(
         q.answer(),
         q.edit_message_text(
-            _PRIVATE_START_TEXT.format(bot_name=bot_name),
+            _PRIVATE_START_TEXT.format(botname=botname),
             parse_mode="HTML",
             reply_markup=keyboards.main_menu_kb(),
         ),
@@ -89,7 +89,7 @@ def _groups_menu_kb(detailed: bool) -> InlineKeyboardMarkup:
         "Simple" if detailed else "Details",
         callback_data="menu_groups_simple" if detailed else "menu_groups_details",
     )
-    back = InlineKeyboardButton("« Back", callback_data="menu_back_start")
+    back = InlineKeyboardButton("« Back", callback_data="back_to_start")
     return InlineKeyboardMarkup([[toggle], [back]])
 
 
@@ -132,7 +132,7 @@ _START_FILTER = build_prefixed_filters("start")
 
 __handlers__ = [
     MessageHandler(_START_FILTER, cmd_start),
-    CallbackQueryHandler(on_menu_back_start,     pattern=r"^menu_back_start$"),
+    CallbackQueryHandler(on_back_to_start,     pattern=r"^back_to_start$"),
     CallbackQueryHandler(on_menu_groups,         pattern=r"^menu_groups$"),
     CallbackQueryHandler(on_menu_groups_details, pattern=r"^menu_groups_details$"),
     CallbackQueryHandler(on_menu_groups_simple,  pattern=r"^menu_groups_simple$"),

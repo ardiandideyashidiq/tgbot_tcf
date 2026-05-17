@@ -173,11 +173,11 @@ def main_menu_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("About", callback_data="menu_about"),
-                InlineKeyboardButton("Help",  callback_data="menu_help"),
+                InlineKeyboardButton("About", callback_data="about_menu"),
+                InlineKeyboardButton("Help",  callback_data="help_menu"),
             ],
-            [InlineKeyboardButton("Additional", callback_data="menu_additional")],
-            [InlineKeyboardButton("Privacy",    callback_data="menu_privacy")],
+            [InlineKeyboardButton("Additional", callback_data="additional_menu")],
+            [InlineKeyboardButton("Privacy",    callback_data="privacy_menu")],
         ]
     )
 
@@ -188,7 +188,7 @@ def group_start_kb(bot_username: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Open in PM ↗", url=pm_url)],
-            [InlineKeyboardButton("Help",          callback_data="menu_help_group")],
+            [InlineKeyboardButton("Help",          callback_data="help_menu_group")],
         ]
     )
 
@@ -209,7 +209,7 @@ def help_modules(
         for row in rows
     ]
     if with_back_to_start:
-        kb_rows.append([InlineKeyboardButton("« Back", callback_data="menu_back_start")])
+        kb_rows.append([InlineKeyboardButton("« Back", callback_data="back_to_start")])
     return InlineKeyboardMarkup(kb_rows)
 
 
@@ -230,7 +230,7 @@ def _build_topic_rows(topics: list[tuple[str, str]]) -> list[list[InlineKeyboard
 def help_topics_menu_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:
     """Help index when reached via the start menu — includes « Back to start."""
     rows = _build_topic_rows(topics)
-    rows.append([InlineKeyboardButton("« Back", callback_data="menu_back_start")])
+    rows.append([InlineKeyboardButton("« Back", callback_data="back_to_start")])
     return InlineKeyboardMarkup(rows)
 
 
@@ -265,29 +265,29 @@ def back_to_start_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("« Back", callback_data="menu_back_start"),
+                InlineKeyboardButton("« Back", callback_data="back_to_start"),
             ]
         ]
     )
 
 
 def back_to_help_kb() -> InlineKeyboardMarkup:
-    """Back to help index — used from menu-path topics (goes to menu_help)."""
+    """Back to help index — used from menu-path topics (goes to help_menu)."""
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("« Back", callback_data="menu_help"),
+                InlineKeyboardButton("« Back", callback_data="help_menu"),
             ]
         ]
     )
 
 
 def back_to_help_cmd_kb() -> InlineKeyboardMarkup:
-    """Back to help index — used from command-path topics (goes to helpcmd_idx)."""
+    """Back to help index — used from command-path topics (goes to helpc_main)."""
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("« Back", callback_data="helpcmd_idx"),
+                InlineKeyboardButton("« Back", callback_data="helpc_main"),
             ]
         ]
     )
@@ -298,10 +298,10 @@ def privacy_kb() -> InlineKeyboardMarkup:
         [
             [
                 InlineKeyboardButton(
-                    "Privacy Policy", callback_data="menu_privacy_policy"
+                    "Privacy Policy", callback_data="privacy_policy_menu"
                 )
             ],
-            [InlineKeyboardButton("« Back", callback_data="menu_back_start")],
+            [InlineKeyboardButton("« Back", callback_data="back_to_start")],
         ]
     )
 
@@ -310,7 +310,7 @@ def back_to_privacy_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("« Back", callback_data="menu_privacy"),
+                InlineKeyboardButton("« Back", callback_data="privacy_menu"),
             ]
         ]
     )

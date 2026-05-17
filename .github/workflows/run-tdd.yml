@@ -12,7 +12,7 @@ on:
       python_versions:
         description: "Python versions to test (comma-separated, e.g: 3.11,3.12,3.13,3.14,3.15)"
         required: false
-        default: "3.11,3.12,3.13,3.14,3.15"
+        default: "3.11,3.12,3.13,3.14"
         type: string
       use_latest_packages:
         description: "Upgrade all packages to latest? (uncheck = use pinned requirements.txt)"

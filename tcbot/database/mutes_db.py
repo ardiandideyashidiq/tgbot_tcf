@@ -9,9 +9,13 @@ from datetime import datetime, timezone
 from tcbot.database.mongos import col
 
 
+## ── Collection helper ───────────────────────────────────────────────────────
+
 def _mutes():
     return col("mutes")
 
+
+## ── Mutations ───────────────────────────────────────────────────────────────
 
 async def log_mute(user_id: int, chat_id: int, reason: str, admin_id: int) -> None:
     await _mutes().insert_one({

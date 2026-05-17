@@ -9,9 +9,13 @@ from datetime import datetime, timezone
 from tcbot.database.mongos import col
 
 
+## ── Collection helper ───────────────────────────────────────────────────────
+
 def _kicks():
     return col("kicks")
 
+
+## ── Mutations ───────────────────────────────────────────────────────────────
 
 async def log_kick(user_id: int, chat_id: int, reason: str, admin_id: int) -> None:
     await _kicks().insert_one({

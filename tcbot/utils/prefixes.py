@@ -25,6 +25,8 @@ _ALT_RE = re.compile(r"^[.!]([a-z][a-z0-9]*)(?:@\w+)?(?:\s|$)", re.IGNORECASE)
 _REGISTRY: dict[str, Callable[..., Coroutine[Any, Any, None]]] = {}
 
 
+## ── Alt-prefix registry ─────────────────────────────────────────────────────
+
 def register_command(name: str, callback: Callable[..., Coroutine[Any, Any, None]]) -> None:
     """Register an async callback for a given command name (case-insensitive)."""
     _REGISTRY[name.lower()] = callback
@@ -64,6 +66,8 @@ async def dispatch_alt_prefix(update: object, context: object) -> None:
         log.warning("dispatch_alt_prefix: handler %r raised %s", cmd, exc)
 
 
+## ── Prefix resolution ───────────────────────────────────────────────────────
+
 def _get_prefixes() -> list[str]:
     """
     Parse PREFIXES env var – handles both list format and plain string.
@@ -86,6 +90,8 @@ def _get_custom_prefixes() -> list[str]:
     """Return configured prefixes excluding the native Telegram slash (/)."""
     return [p for p in _get_prefixes() if p != "/"]
 
+
+## ── Filter builders ─────────────────────────────────────────────────────────
 
 def build_prefixed_filters(command: str) -> filters.BaseFilter:
     """Return a filter matching <prefix><command> for all configured prefixes."""
@@ -115,6 +121,8 @@ ALL_PREFIXES_CMD_FILTER: filters.BaseFilter = filters.Regex(
     )
 )
 
+
+## ── Argument parsing ────────────────────────────────────────────────────────
 
 def parse_cmd_args(text: str | None) -> list[str]:
     """Extract arguments from a prefixed command message text."""

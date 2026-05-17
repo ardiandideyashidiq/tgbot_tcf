@@ -4,22 +4,23 @@
 ## Bans collection helpers
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from tcbot.database.mongos import col, make_short_id
+from tcbot.utils.timedate_format import utc_now
 
+
+## ── Collection helper ───────────────────────────────────────────────────────
 
 def _bans():
     return col("bans")
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
 def make_ban_id() -> str:
     return make_short_id()
 
+
+## ── Retrieval ───────────────────────────────────────────────────────────────
 
 async def get_active_ban(user_id: int) -> dict | None:
     return await _bans().find_one({"banned_user_id": user_id, "is_active": True})
@@ -28,6 +29,8 @@ async def get_active_ban(user_id: int) -> dict | None:
 async def get_ban(ban_id: str) -> dict | None:
     return await _bans().find_one({"ban_id": ban_id})
 
+
+## ── Mutations ───────────────────────────────────────────────────────────────
 
 async def create_ban(
     target_id: int,
@@ -48,7 +51,7 @@ async def create_ban(
         "log_message_id": log_msg_id,
         "previous_proof_message_id": None,
         "previous_log_message_id": None,
-        "timestamp": _now(),
+        "timestamp": utc_now(),
         "updated_timestamp": None,
         "is_active": True,
         "update_count": 0,
@@ -78,7 +81,7 @@ async def update_ban(
                 "log_message_id": new_log_id,
                 "previous_proof_message_id": old_proof_id,
                 "previous_log_message_id": old_log_id,
-                "updated_timestamp": _now(),
+                "updated_timestamp": utc_now(),
             },
             "$inc": {"update_count": 1},
         },
@@ -101,7 +104,7 @@ async def deactivate_ban(ban_id: str) -> bool:
 async def set_review(ban_id: str, msg_id: int) -> None:
     await _bans().update_one(
         {"ban_id": ban_id},
-        {"$set": {"review_message_id": msg_id, "review_timestamp": _now()}},
+        {"$set": {"review_message_id": msg_id, "review_timestamp": utc_now()}},
     )
 
 
@@ -115,11 +118,13 @@ async def set_appeal_log_msg(
         {"ban_id": ban_id},
         {"$set": {
             "appeal_log_msg_id": msg_id,
-            "appeal_submitted_at": submitted_at or _now(),
+            "appeal_submitted_at": submitted_at or utc_now(),
             "appeal_link": appeal_link,
         }},
     )
 
+
+## ── Statistics ──────────────────────────────────────────────────────────────
 
 async def active_ban_count() -> int:
     return await _bans().count_documents({"is_active": True})

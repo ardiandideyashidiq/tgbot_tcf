@@ -15,6 +15,8 @@ from tcbot.database.cache import (
 from tcbot.database.mongos import col
 
 
+## ── Collection helpers ──────────────────────────────────────────────────────
+
 def _groups():
     return col("federated_groups")
 
@@ -22,6 +24,8 @@ def _groups():
 def _pending():
     return col("pending_joins")
 
+
+## ── Group queries ───────────────────────────────────────────────────────────
 
 async def get_group(chat_id: int) -> dict | None:
     return await _groups().find_one({"chat_id": chat_id})

@@ -259,6 +259,8 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+## ── Promote role selection callback ────────────────────────────────────────
+
 async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q             = update.callback_query
     admin         = update.effective_user
@@ -272,8 +274,6 @@ async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
             pass
         return
 
-    await q.answer()
-
     parts = q.data.split(":", 2)
     if len(parts) != 3:
         return
@@ -284,8 +284,9 @@ async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
         await q.edit_message_text("Unknown role.", reply_markup=None)
         return
 
-    ## fetch name + current role in parallel
-    target_fname, current_role = await asyncio.gather(
+    ## answer + fetch name + current role in parallel
+    _, target_fname, current_role = await asyncio.gather(
+        q.answer(),
         db.users_db.get_first_name(target_id, str(target_id)),
         get_effective_role(target_id),
     )
@@ -296,6 +297,8 @@ async def on_promote_role_btn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
     )
     await q.edit_message_text(text, parse_mode="HTML", reply_markup=None)
 
+
+## ── Promote role cancel callback ────────────────────────────────────────────
 
 async def on_promote_role_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
@@ -350,6 +353,8 @@ async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+## ── Demote confirm callback ─────────────────────────────────────────────────
+
 async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q             = update.callback_query
     admin         = update.effective_user
@@ -364,10 +369,9 @@ async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
             pass
         return
 
-    await q.answer()
-
-    ## target role + name fetched in parallel
-    target_role, target_fname = await asyncio.gather(
+    ## answer + fetch target role + name in parallel
+    _, target_role, target_fname = await asyncio.gather(
+        q.answer(),
         get_effective_role(target_id),
         db.users_db.get_first_name(target_id, str(target_id)),
     )
@@ -415,6 +419,8 @@ async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
         return_exceptions=True,
     )
 
+
+## ── Demote cancel callback ──────────────────────────────────────────────────
 
 async def on_demote_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
@@ -529,9 +535,12 @@ async def on_promo_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
     if not is_owner:
         await q.answer("Founder only.", show_alert=True)
         return
-    await q.answer()
     action, request_id = q.data.split(":", 1)
-    req = await db.queues_db.get_request_by_id(request_id)
+    ## answer + fetch request in parallel
+    _, req = await asyncio.gather(
+        q.answer(),
+        db.queues_db.get_request_by_id(request_id),
+    )
     if not req:
         await q.edit_message_text("Request not found or already resolved.")
         return

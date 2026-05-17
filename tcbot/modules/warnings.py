@@ -74,6 +74,8 @@ async def _role_note(
     return fname, role_label
 
 
+## ── /tcunwarn ───────────────────────────────────────────────────────────────
+
 @decorators.basic_mod_only
 async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg  = update.effective_message
@@ -112,6 +114,8 @@ async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await execute_unwarn(update, ctx, target_id, target_name or str(target_id))
 
 
+## ── /warns ──────────────────────────────────────────────────────────────────
+
 async def cmd_warnlist(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     args = parse_cmd_args(update.effective_message.text)
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
@@ -122,6 +126,8 @@ async def cmd_warnlist(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         return
     await execute_warnlist(update, ctx, target_id, target_name or str(target_id))
 
+
+## ── /resetwarns ─────────────────────────────────────────────────────────────
 
 @decorators.basic_mod_only
 async def cmd_resetwarns(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:

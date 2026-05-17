@@ -56,6 +56,8 @@ def _kb(detailed: bool) -> InlineKeyboardMarkup:
     ]])
 
 
+## ── /tcfgroups command ──────────────────────────────────────────────────────
+
 async def cmd_tcfgroups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     groups = await db.groups_db.active_groups()
     if not groups:
@@ -66,6 +68,8 @@ async def cmd_tcfgroups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         _render(groups, False), parse_mode="HTML", reply_markup=_kb(False)
     )
 
+
+## ── Toggle detail / simple callbacks ───────────────────────────────────────
 
 async def _toggle(update: Update, ctx: ContextTypes.DEFAULT_TYPE, detailed: bool) -> None:
     q      = update.callback_query

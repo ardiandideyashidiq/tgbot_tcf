@@ -14,6 +14,8 @@ from tcbot.modules.helper import keyboards
 
 __module_name__ = None
 
+## ── About text ─────────────────────────────────────────────────────────────
+
 __about_msg__ = (
     f"<b>What is</b> {cfg.community_name}?\n"
     f"{cfg.community_name} is a community-driven federation for Infinix, Tecno, and Itel groups. "
@@ -24,6 +26,8 @@ __about_msg__ = (
     f"{cfg.community_name} <i>is not an official part of Transsion Holdings. This is strictly an independent community.</i>"
 )
 
+
+## ── Callback handler ────────────────────────────────────────────────────────
 
 async def on_about_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query

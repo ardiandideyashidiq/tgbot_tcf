@@ -29,6 +29,8 @@ log = logging.getLogger(__name__)
 _MAX_CONCURRENT: int = 10
 
 
+## ── Throttled multi-group dispatcher ───────────────────────────────────────
+
 async def fan_out(
     coros: list[Coroutine[Any, Any, Any]],
     *,

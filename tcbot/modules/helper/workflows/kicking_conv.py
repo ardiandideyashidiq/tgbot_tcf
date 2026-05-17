@@ -236,7 +236,7 @@ def kick_conversation() -> ConversationHandler:
         },
         fallbacks=[
             CallbackQueryHandler(on_kick_cancel, pattern=r"^kick_cancel$"),
-                MessageHandler(ALL_PREFIXES_CMD_FILTER, _end_conversation),
+            MessageHandler(ALL_PREFIXES_CMD_FILTER, _end_conversation),
         ],
         per_user=True,
         per_chat=True,

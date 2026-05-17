@@ -38,6 +38,8 @@ def _additional_kb() -> InlineKeyboardMarkup:
     ])
 
 
+## ── Callback handler ────────────────────────────────────────────────────────
+
 async def on_additional_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     await asyncio.gather(

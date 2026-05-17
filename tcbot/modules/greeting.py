@@ -17,6 +17,46 @@ from tcbot.modules.helper.formatter import mention
 log = logging.getLogger(__name__)
 
 
+async def _handle_member(
+    member,
+    msg,
+    chat,
+    bot,
+) -> None:
+    """Process a single new member: cache, ban-check, and greet or remove."""
+    if member.is_bot:
+        return
+
+    ## Cache member and check for active ban in parallel
+    _, ban = await asyncio.gather(
+        db.users_db.upsert_user(
+            member.id, member.username, member.first_name, member.last_name,
+        ),
+        db.bans_db.get_active_ban(member.id),
+    )
+
+    if ban:
+        try:
+            ## ban and notify in parallel
+            await asyncio.gather(
+                bot.ban_chat_member(chat.id, member.id),
+                msg.reply_text(
+                    f"{mention(member.id, member.first_name)} is federation-banned and was removed.",
+                    parse_mode="HTML",
+                ),
+            )
+        except Exception as exc:
+            log.error("Auto-ban on join failed: %s", exc)
+        return
+
+    await msg.reply_text(
+        f"Welcome, {mention(member.id, member.first_name)}! 👋 "
+        f"This is an official {cfg.community_name} group. "
+        "Please go through the group rules before participating.",
+        parse_mode="HTML",
+    )
+
+
 async def on_new_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg  = update.effective_message
     chat = update.effective_chat
@@ -25,38 +65,11 @@ async def on_new_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if chat.id not in (cfg.main_group, cfg.exec_group):
         return
 
-    for member in msg.new_chat_members:
-        if member.is_bot:
-            continue
-
-        ## Cache member and check for active ban in parallel
-        _, ban = await asyncio.gather(
-            db.users_db.upsert_user(
-                member.id, member.username, member.first_name, member.last_name,
-            ),
-            db.bans_db.get_active_ban(member.id),
-        )
-
-        if ban:
-            try:
-                ## ban and reply in parallel
-                await asyncio.gather(
-                    ctx.bot.ban_chat_member(chat.id, member.id),
-                    msg.reply_text(
-                        f"{mention(member.id, member.first_name)} is federation-banned and was removed.",
-                        parse_mode="HTML",
-                    ),
-                )
-            except Exception as exc:
-                log.error("Auto-ban on join failed: %s", exc)
-            continue
-
-        await msg.reply_text(
-            f"Welcome, {mention(member.id, member.first_name)}! 👋 "
-            f"This is an official {cfg.community_name} group. "
-            "Please go through the group rules before participating.",
-            parse_mode="HTML",
-        )
+    ## Process all new members concurrently - handles batch joins (e.g. invite links)
+    await asyncio.gather(*[
+        _handle_member(m, msg, chat, ctx.bot)
+        for m in msg.new_chat_members
+    ])
 
 
 async def on_left_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:

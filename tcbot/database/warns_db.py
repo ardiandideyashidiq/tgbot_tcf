@@ -9,9 +9,13 @@ from datetime import datetime, timezone
 from tcbot.database.mongos import col
 
 
+## ── Collection helper ───────────────────────────────────────────────────────
+
 def _warns():
     return col("warns")
 
+
+## ── Mutations ───────────────────────────────────────────────────────────────
 
 async def add_warn(user_id: int, reason: str, admin_id: int, chat_id: int) -> int:
     c = _warns()
@@ -24,6 +28,8 @@ async def add_warn(user_id: int, reason: str, admin_id: int, chat_id: int) -> in
     })
     return await c.count_documents({"user_id": user_id, "chat_id": chat_id})
 
+
+## ── Queries ─────────────────────────────────────────────────────────────────
 
 async def warn_count(user_id: int, chat_id: int) -> int:
     return await _warns().count_documents({"user_id": user_id, "chat_id": chat_id})

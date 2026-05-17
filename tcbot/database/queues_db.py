@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 from tcbot.database.mongos import col, make_short_id
 
 
+## ── Collection helper ───────────────────────────────────────────────────────
+
 def _requests():
     return col("promotion_requests")
 
@@ -16,6 +18,8 @@ def _requests():
 def _new_request_id() -> str:
     return make_short_id()
 
+
+## ── Mutations ───────────────────────────────────────────────────────────────
 
 async def enqueue(
     user_id: int,
@@ -37,6 +41,8 @@ async def enqueue(
     })
     return request_id
 
+
+## ── Queries ─────────────────────────────────────────────────────────────────
 
 async def get_request_by_id(request_id: str) -> dict | None:
     return await _requests().find_one({"request_id": request_id})

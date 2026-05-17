@@ -9,9 +9,13 @@ from datetime import datetime, timezone
 from tcbot.database.mongos import col
 
 
+## ── Collection helper ───────────────────────────────────────────────────────
+
 def _users():
     return col("member_cache")
 
+
+## ── Mutations ───────────────────────────────────────────────────────────────
 
 async def upsert_user(
     user_id: int,
@@ -37,6 +41,8 @@ async def upsert_user(
         upsert=True,
     )
 
+
+## ── Queries ─────────────────────────────────────────────────────────────────
 
 async def get_user(user_id: int) -> dict | None:
     return await _users().find_one({"user_id": user_id})

@@ -58,6 +58,8 @@ _PRIVACY_POLICY_MSG = (
 )
 
 
+## ── Callback handlers ───────────────────────────────────────────────────────
+
 async def on_privacy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     botname = ctx.bot.first_name or "This bot"
@@ -69,6 +71,8 @@ async def on_privacy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
         ),
     )
 
+
+## ── Privacy policy callback ─────────────────────────────────────────────────
 
 async def on_privacy_policy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query

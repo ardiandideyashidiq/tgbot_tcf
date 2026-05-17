@@ -11,6 +11,8 @@ from tcbot.database.cache import CACHE_MISS, _OWNER_KEY, effective_role_cache, o
 from tcbot.database.mongos import col
 
 
+## ── Collection helpers ──────────────────────────────────────────────────────
+
 def _owners():
     return col("tc_owners")
 
@@ -18,6 +20,8 @@ def _owners():
 def _admins():
     return col("tc_admins")
 
+
+## ── Owner queries ───────────────────────────────────────────────────────────
 
 async def get_owner_id() -> int | None:
     cached = owner_id_cache.get(_OWNER_KEY)
@@ -37,11 +41,15 @@ async def is_admin(user_id: int) -> bool:
     return await _admins().find_one({"user_id": user_id}, {"_id": 1}) is not None
 
 
+## ── Combined helpers ────────────────────────────────────────────────────────
+
 async def is_staff(user_id: int) -> bool:
     """True if owner or admin - both checks run in parallel."""
     owner, admin = await asyncio.gather(is_owner(user_id), is_admin(user_id))
     return owner or admin
 
+
+## ── Owner mutations ─────────────────────────────────────────────────────────
 
 async def ensure_initial_owner(initial_id: int) -> None:
     if await _owners().count_documents({}) == 0:
@@ -56,6 +64,8 @@ async def set_owner(user_id: int) -> None:
     ## Clear the entire role cache - we don't know the old owner's user_id
     effective_role_cache.clear()
 
+
+## ── Admin mutations ─────────────────────────────────────────────────────────
 
 async def add_admin(user_id: int, promoted_by: int) -> None:
     await _admins().update_one(
@@ -75,6 +85,8 @@ async def remove_admin(user_id: int) -> bool:
     effective_role_cache.invalidate(user_id)
     return r.deleted_count > 0
 
+
+## ── Admin queries ───────────────────────────────────────────────────────────
 
 async def all_admins() -> list[dict]:
     return await _admins().find({}, {"_id": 0, "user_id": 1}).to_list(None)

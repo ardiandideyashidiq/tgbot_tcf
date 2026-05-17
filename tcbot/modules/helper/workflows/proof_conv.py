@@ -24,9 +24,11 @@ log = logging.getLogger(__name__)
 WAITING_PROOF = 0
 
 ## Module-level album accumulators
-_albums:     dict[str, list[Message]]      = {}
-_album_meta: dict[str, dict[str, Any]]    = {}
+_albums:     dict[str, list[Message]]   = {}
+_album_meta: dict[str, dict[str, Any]] = {}
 
+
+## ── Proof received handler ──────────────────────────────────────────────────
 
 async def on_proof_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     msg = update.effective_message
@@ -49,6 +51,8 @@ async def on_proof_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
     return ConversationHandler.END
 
 
+## ── Album debounce flush ────────────────────────────────────────────────────
+
 async def _flush_album(mgid: str, bot: Bot) -> None:
     await asyncio.sleep(cfg.album_debounce)
     msgs = _albums.pop(mgid, [])
@@ -58,6 +62,8 @@ async def _flush_album(mgid: str, bot: Bot) -> None:
     await _execute_ban(bot, msgs, meta)
 
 
+## ── Cancel / timeout handlers ───────────────────────────────────────────────
+
 async def on_cancel_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     q = update.callback_query
     await asyncio.gather(
@@ -66,6 +72,8 @@ async def on_cancel_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int
     )
     return ConversationHandler.END
 
+
+## ── Timeout handler ─────────────────────────────────────────────────────────
 
 async def on_ban_timeout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if update.effective_message:

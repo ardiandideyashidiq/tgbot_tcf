@@ -8,7 +8,6 @@ import asyncio
 import logging
 
 from telegram import Update
-from telegram.constants import ChatMemberStatus
 from telegram.ext import (
     CallbackQueryHandler,
     ChatMemberHandler,

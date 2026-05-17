@@ -16,6 +16,9 @@ from tcbot import cfg
 
 _RESOLV_CONF = "/etc/resolv.conf"
 
+
+## ── DNS patch ───────────────────────────────────────────────────────────────
+
 def _patch_dns_if_needed() -> None:
     """On platforms without /etc/resolv.conf (e.g. Termux/Android),
     configure dnspython with a fallback public nameserver so that
@@ -36,16 +39,22 @@ _db: AsyncIOMotorDatabase | None = None
 _ID_ALPHABET: str = string.ascii_lowercase + string.digits
 
 
+## ── ID generator ────────────────────────────────────────────────────────────
+
 def make_short_id(length: int = 10) -> str:
     """Generate a random URL-safe lowercase alphanumeric ID."""
     return "".join(secrets.choice(_ID_ALPHABET) for _ in range(length))
 
+
+## ── Client accessors ────────────────────────────────────────────────────────
 
 def db() -> AsyncIOMotorDatabase:
     if _db is None:
         raise RuntimeError("DB not initialised – call connect() first.")
     return _db
 
+
+## ── Connection ──────────────────────────────────────────────────────────────
 
 async def connect() -> None:
     global _db
@@ -68,6 +77,8 @@ async def connect() -> None:
     log.info("MongoDB connected → %s", cfg.db_name)
 
 
+## ── Index setup ─────────────────────────────────────────────────────────────
+
 async def ensure_indexes() -> None:
     """Create all critical collection indexes in parallel. No-op if they already exist."""
     await asyncio.gather(
@@ -85,6 +96,8 @@ async def ensure_indexes() -> None:
     )
     log.info("MongoDB indexes ensured.")
 
+
+## ── Collection shortcut ─────────────────────────────────────────────────────
 
 def col(name: str) -> AsyncIOMotorCollection:
     return db()[name]

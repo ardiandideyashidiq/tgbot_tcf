@@ -28,7 +28,7 @@ from tcbot.modules.helper import keyboards, parse_logmsg
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.parse_link import message_link
 from tcbot.utils.dispatch import fan_out
-from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, ANY_CMD_FILTER
+from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER
 
 log = logging.getLogger(__name__)
 
@@ -123,6 +123,7 @@ async def on_appeal_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> in
         q.edit_message_text("Appeal cancelled. Nothing was submitted."),
     )
     return ConversationHandler.END
+
 
 async def _end_conversation(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     await update.effective_message.reply_text("Appeal session ended.")

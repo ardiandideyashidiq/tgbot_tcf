@@ -19,6 +19,8 @@ from tcbot.modules.helper.workflows.unban_flow import execute_unban
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
 
+## ── /tcunban command ────────────────────────────────────────────────────────
+
 @decorators.mod_only
 async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg  = update.effective_message

@@ -23,6 +23,8 @@ from tcbot.utils.dispatch import fan_out
 log = logging.getLogger(__name__)
 
 
+## ── Unban executor ──────────────────────────────────────────────────────────
+
 async def execute_unban(
     update: Update,
     ctx: ContextTypes.DEFAULT_TYPE,

@@ -365,7 +365,7 @@ def build_handler() -> ConversationHandler:
             MessageHandler(ALL_PREFIXES_CMD_FILTER, lambda u, c: ConversationHandler.END),
         ],
         conversation_timeout=cfg.appeal_timeout,
-        per_chat=False,
+        per_chat=True,
         per_user=True,
         per_message=False,
     )

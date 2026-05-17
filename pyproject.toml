@@ -20,3 +20,6 @@ test = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "-ra -q"
+filterwarnings = [
+    "ignore:If 'per_message=False', 'CallbackQueryHandler'.*:UserWarning",
+]

@@ -43,8 +43,8 @@ The ban workflow is split across four files for clarity:
 |---|---|
 | `proof_flow.py` | Uploads proof media to the proof channel; returns `proof_message_id` |
 | `proof_conv.py` | Album accumulators, `on_proof_received`, `_flush_album`, `on_cancel_proof`, `on_ban_timeout`, `WAITING_PROOF` constant |
-| `ban_flow.py` | `_execute_ban` — DB write, log dispatch, group enforcement |
-| `ban_conv.py` | `build_handler(entry_fn)` — ConversationHandler factory for the ban flow |
+| `ban_flow.py` | `_execute_ban` - DB write, log dispatch, group enforcement |
+| `ban_conv.py` | `build_handler(entry_fn)` - ConversationHandler factory for the ban flow |
 
 Import chain (no circularity): `ban_conv` → `proof_conv` → `ban_flow` → `proof_flow`
 
@@ -52,7 +52,7 @@ Import chain (no circularity): `ban_conv` → `proof_conv` → `ban_flow` → `p
 
 | File | Responsibility |
 |---|---|
-| `unban_flow.py` | `execute_unban` — DB deactivation, group unban, log dispatch |
+| `unban_flow.py` | `execute_unban` - DB deactivation, group unban, log dispatch |
 | `unban_conv.py` | `cmd_unban` handler, `_FILTER`, `build_handler()` |
 
 ## Timeouts

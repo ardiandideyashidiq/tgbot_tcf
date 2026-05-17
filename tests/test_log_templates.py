@@ -16,13 +16,13 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 from tcbot.modules.helper import parse_logmsg
-from tcbot.modules.helper.formatter import community
+from tcbot import cfg
 
 
 ## ── Helpers ───────────────────────────────────────────────────────────────
 
 def _community_present(text: str) -> bool:
-    return community in text
+    return cfg.community_name in text
 
 
 ## ── Ban logs ───────────────────────────────────────────────────────────────

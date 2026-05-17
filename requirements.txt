@@ -3,3 +3,8 @@ motor>=3.7.1
 flask>=3.1.0
 python-dotenv>=1.0.0
 pytest>=9.0.3
+email_validator
+flask
+flask-sqlalchemy
+gunicorn
+psycopg2-binary

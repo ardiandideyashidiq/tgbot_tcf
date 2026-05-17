@@ -7,7 +7,7 @@ from __future__ import annotations
 
 class M:
     ## Community name
-    COMMUNITY: str = "𝘛𝘊𝘍 - 𝘛𝘳𝘢𝘯𝘴𝘴𝘪𝘰𝘯 𝘊𝘰𝘳𝘦 𝘍𝘦𝘥𝘦𝘳𝘢𝘵𝘪𝘰𝘯"
+    COMMUNITY_NAME: str = "𝘛𝘊𝘍 - 𝘛𝘳𝘢𝘯𝘴𝘴𝘪𝘰𝘯 𝘊𝘰𝘳𝘦 𝘍𝘦𝘥𝘦𝘳𝘢𝘵𝘪𝘰𝘯"
 
     ## Generic errors
     NOT_AUTHORIZED: str = "You are not authorized."

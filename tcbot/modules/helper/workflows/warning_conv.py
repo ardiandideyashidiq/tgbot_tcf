@@ -13,7 +13,7 @@ Flow
 
 2. If reason was NOT given inline → WAITING_REASON
     • user sends plain text       → stored as reason, continue
-    • (no skip — a reason is required for a warning)
+    • (no skip - a reason is required for a warning)
 
 3. WAITING_PROOF (always reached)
     • user sends photo/video      → proof description noted, execute warn
@@ -90,13 +90,13 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         extraction.extract_target(update, args, ctx.bot),
     )
     if role_rank(executor_role) < role_rank("tester"):
-        await msg.reply_text("You need at least a Tester role to warn users — not your call. 🚫")
+        await msg.reply_text("You need at least a Tester role to warn users - not your call. 🚫")
         return ConversationHandler.END
     inline_reason = " ".join(args[1:] if has_explicit_target else args).strip()
 
     if not target_id:
         await msg.reply_text(
-            "Can't find that user — reply to their message or send me a user ID."
+            "Can't find that user - reply to their message or send me a user ID."
         )
         return ConversationHandler.END
 
@@ -109,14 +109,14 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         if role_rank(executor_role) <= role_rank(target_role):
             if target_role == "founder":
                 await msg.reply_text(
-                    f"That's {mention(target_id, target_name or 'the Founder')}, our Founder — "
+                    f"That's {mention(target_id, target_name or 'the Founder')}, our Founder - "
                     "warning them? That's a hard no. 👑",
                     parse_mode="HTML",
                 )
             else:
                 label = ROLE_LABEL.get(target_role, target_role.capitalize())
                 await msg.reply_text(
-                    f"That's a {cfg.community_name} {label} — they outrank you here, can't warn them."
+                    f"That's a {cfg.community_name} {label} - they outrank you here, can't warn them."
                 )
             return ConversationHandler.END
 
@@ -141,7 +141,7 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
     await msg.reply_text(
         f"About to warn {target_mention}.\n"
-        "A reason is required — type it below. Or tap <b>Cancel</b> to abort.",
+        "A reason is required - type it below. Or tap <b>Cancel</b> to abort.",
         parse_mode="HTML",
         reply_markup=_KB_REASON,
     )

@@ -83,7 +83,7 @@ __help_text__ = (
 
     "<b>What happens next</b>\n"
     "Your appeal is forwarded to TC admins for review. The admin who issued the original ban "
-    "has a <b>12-hour priority window</b> to respond — after that, any admin can act on it.\n\n"
+    "has a <b>12-hour priority window</b> to respond - after that, any admin can act on it.\n\n"
     "If approved → your ban is lifted immediately across all connected groups.\n"
     "If rejected → your ban remains in place.\n"
     "You will be notified by the bot either way."

@@ -31,7 +31,7 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 | `tcbot/modules/admins_ext.py` | Admin service layer (promote, demote, transfer ownership) |
 | `tcbot/modules/helper/parse_link.py` | Link builders, HTML helpers (`user_link`, `safe_first_name`), `utcnow()` |
 | `tcbot/modules/helper/keyboards.py` | All inline-keyboard factory functions (includes `promote_role_kb`, `demote_confirm_kb`) |
-| `tcbot/modules/helper/role_guard.py` | `resolve_and_check()` + `auto_demote()` — shared role-permission helpers for moderation flows |
+| `tcbot/modules/helper/role_guard.py` | `resolve_and_check()` + `auto_demote()` - shared role-permission helpers for moderation flows |
 | `tcbot/modules/helper/extraction.py` | `extract_target()`, `ResolvedTarget`, `resolve_identity()` |
 | `tcbot/utils/prefixes.py` | Prefix filter builder + alt-prefix dispatcher (`_REGISTRY`) |
 | `tcbot/utils/logger.py` | `BotLogFormatter` and `setup()` |
@@ -41,12 +41,12 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 
 **All configuration and secrets are stored exclusively in `config.env`.** Do NOT use Replit Secrets for this project. `config.env` is gitignored and must never be committed.
 
-- `BOT_TOKEN` — Telegram bot token
-- `MONGODB_URI` — MongoDB connection string
-- `OWNER_ID` — Initial owner Telegram user ID
-- `DB_NAME` — MongoDB database name (default: "tcbot")
-- `MAIN_GROUP` — Main Telegram group/forum chat ID
-- `PORT` — Web server port (5000)
+- `BOT_TOKEN` - Telegram bot token
+- `MONGODB_URI` - MongoDB connection string
+- `OWNER_ID` - Initial owner Telegram user ID
+- `DB_NAME` - MongoDB database name (default: "tcbot")
+- `MAIN_GROUP` - Main Telegram group/forum chat ID
+- `PORT` - Web server port (5000)
 
 See `config.env.example` for the full list of required keys.
 
@@ -74,14 +74,14 @@ Permission matrix:
 
 Auto-demote: when a user with any role is **banned or kicked**, their role is automatically removed and they are notified by DM. A log entry is posted to the log channel.
 
-`/tcpromote @user [role]` — omit the role to see an inline button menu.
-`/tcdemote @user` — shows a confirmation button before removing the role.
+`/tcpromote @user [role]` - omit the role to see an inline button menu.
+`/tcdemote @user` - shows a confirmation button before removing the role.
 
 ## Test Suite
 
 Run with: `python3 -m pytest`
 
-110 tests across 9 files — all pass offline (no real bot token or MongoDB needed).
+110 tests across 9 files - all pass offline (no real bot token or MongoDB needed).
 Test dependencies: `pip install pytest pytest-asyncio` (Replit) or `uv sync --extra test` (local).
 
 | File | What it tests |
@@ -102,18 +102,18 @@ Test dependencies: `pip install pytest pytest-asyncio` (Replit) or `uv sync --ex
 docker-compose up --build
 ```
 
-- `Dockerfile` — uses `uv` (`COPY --from=ghcr.io/astral-sh/uv:latest`) with `uv sync --frozen --no-dev`
-- `docker-compose.yml` — `bot` + `mongo:7` services; bot waits for MongoDB health-check
+- `Dockerfile` - uses `uv` (`COPY --from=ghcr.io/astral-sh/uv:latest`) with `uv sync --frozen --no-dev`
+- `docker-compose.yml` - `bot` + `mongo:7` services; bot waits for MongoDB health-check
 
 ## Agent Instructions
 
-Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+Before making any changes, **read all documentation files in the `agents/` directory** - specifically:
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 ## Related documentation
 

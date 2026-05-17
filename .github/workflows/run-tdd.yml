@@ -1,4 +1,4 @@
-name: TDD — Multi-Python Matrix
+name: TDD - Multi-Python Matrix
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: "0 3 * * 1"    # every Monday 03:00 UTC — full latest-package sweep
+    - cron: "0 3 * * 1"    # every Monday 03:00 UTC - full latest-package sweep
   workflow_dispatch:
     inputs:
       python_versions:

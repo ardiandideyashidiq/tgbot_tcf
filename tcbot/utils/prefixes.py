@@ -96,7 +96,7 @@ def build_prefixed_filters(command: str) -> filters.BaseFilter:
 
 
 ## Pre-computed filter: any text starting with a CUSTOM (non-slash) prefix followed by a letter.
-## Matches !, . etc. — does NOT match Telegram-native /commands.
+## Matches !, . etc. - does NOT match Telegram-native /commands.
 ## Used only in __main__.py member-cache guard (intentionally excludes /).
 ANY_CMD_FILTER: filters.BaseFilter = filters.Regex(
     re.compile(
@@ -107,7 +107,7 @@ ANY_CMD_FILTER: filters.BaseFilter = filters.Regex(
 
 ## Pre-computed filter: any text starting with ANY configured prefix (/, !, .) followed by a letter.
 ## Use this in ConversationHandler fallbacks and ~COMMAND text-input state guards so that
-## EVERY prefixed command — including native /commands — can escape or be blocked correctly.
+## EVERY prefixed command - including native /commands - can escape or be blocked correctly.
 ALL_PREFIXES_CMD_FILTER: filters.BaseFilter = filters.Regex(
     re.compile(
         rf"^[{re.escape(''.join(set(_get_prefixes())))}][a-zA-Z]",

@@ -89,7 +89,7 @@ def _ban_detail_kb(page: int, proof_link: str | None = None) -> InlineKeyboardMa
 ## ── Shared bans-page renderer ──────────────────────────────────────────────
 
 async def _render_bans_page(q, page: int) -> None:
-    """Fetch active bans and render the numbered page — answers q in parallel."""
+    """Fetch active bans and render the numbered page - answers q in parallel."""
     _, bans = await asyncio.gather(q.answer(), db.bans_db.active_bans())
     total       = len(bans)
     total_pages = max(1, (total + _PAGE_SIZE - 1) // _PAGE_SIZE)
@@ -103,7 +103,7 @@ async def _render_bans_page(q, page: int) -> None:
 
     lines = [f"<b>User Bans ({total})</b>\n"]
     for i, (ban, fname) in enumerate(zip(chunk, fnames), start=1):
-        lines.append(f"{page * _PAGE_SIZE + i}. {esc(fname)} — {code(str(ban['banned_user_id']))}")
+        lines.append(f"{page * _PAGE_SIZE + i}. {esc(fname)} - {code(str(ban['banned_user_id']))}")
 
     await q.edit_message_text(
         "\n".join(lines), parse_mode="HTML",
@@ -211,7 +211,7 @@ async def on_bans_search_input(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
     lines = [f"<b>Search: \"{esc(query)}\" ({len(results)} found)</b>\n"]
     for i, (ban, fname) in enumerate(zip(results, result_fnames), 1):
         uid = ban["banned_user_id"]
-        lines.append(f"{i}. {esc(fname)} — {code(str(uid))}")
+        lines.append(f"{i}. {esc(fname)} - {code(str(uid))}")
 
     await ctx.bot.edit_message_text(
         "\n".join(lines),
@@ -262,7 +262,7 @@ async def on_stats_search_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
     lines = [f"<b>Search Results ({len(results)} found)</b>\n"]
     for i, (ban, fname) in enumerate(zip(results, fnames), 1):
         uid = ban["banned_user_id"]
-        lines.append(f"{i}. {esc(fname)} — {code(str(uid))}")
+        lines.append(f"{i}. {esc(fname)} - {code(str(uid))}")
 
     await q.edit_message_text(
         "\n".join(lines), parse_mode="HTML",

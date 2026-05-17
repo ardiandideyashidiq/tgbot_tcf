@@ -1,13 +1,13 @@
-# Conversation Flows and Workflows — TCF Bot
+# Conversation Flows and Workflows - TCF Bot
 
 This document describes how conversation flows are implemented and organized.
 Before changing workflow code, consult the repository-level guidance in `agents/` for the correct conventions and approval expectations.
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 This document explains the project-specific conversation flow architecture used by the TCF bot.
 It covers the code in `tcbot/modules/helper/workflows/` and the conventions for building Telegram conversations.
@@ -16,8 +16,8 @@ It covers the code in `tcbot/modules/helper/workflows/` and the conventions for 
 
 The `workflows/` directory contains two kinds of files:
 
-- `*_flow.py` — business logic, state transition helpers, and execution functions
-- `*_conv.py` — `ConversationHandler` builders and state definitions
+- `*_flow.py` - business logic, state transition helpers, and execution functions
+- `*_conv.py` - `ConversationHandler` builders and state definitions
 
 This split keeps UI flow definitions separate from the underlying action logic.
 

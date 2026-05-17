@@ -1,16 +1,16 @@
-# Development Workflow — TCF Bot
+# Development Workflow - TCF Bot
 
-Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+Before making any changes, **read all documentation files in the `agents/` directory** - specifically:
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 ## Branching
 
-- `main` — production-ready code only
+- `main` - production-ready code only
 - Feature branches: `feat/<short-description>`
 - Bug fixes: `fix/<short-description>`
 - Refactors: `refactor/<short-description>`
@@ -44,8 +44,8 @@ When creating a new `tcbot/modules/*.py` file:
 
 All ConversationHandler flows live in `tcbot/modules/helper/workflows/`.
 Structure:
-- `*_flow.py` — executor functions (`execute_ban`, `execute_mute`, etc.)
-- `*_conv.py` — ConversationHandler builder (`build_handler()`)
+- `*_flow.py` - executor functions (`execute_ban`, `execute_mute`, etc.)
+- `*_conv.py` - ConversationHandler builder (`build_handler()`)
 
 Timeout always comes from `cfg.proof_timeout` (proof flows) or `cfg.appeal_timeout` (appeal flow).
 

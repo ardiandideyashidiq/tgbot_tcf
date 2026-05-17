@@ -1,13 +1,13 @@
-# AI / Agent Guidelines — TCF Bot
+# AI / Agent Guidelines - TCF Bot
 
 This page clarifies how AI agents and reviewers should interpret repository documentation.
 It is written to complement the `agents/` guidance, so read the project-specific agent docs before acting.
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 This document is intended to help AI agents and human reviewers understand the repository context.
 It describes the authoritative sources, the repository scope, and the code areas that matter most.
@@ -16,22 +16,22 @@ It describes the authoritative sources, the repository scope, and the code areas
 
 The primary codebase is:
 
-- `tcbot/` — bot runtime logic, command modules, helper utilities, and workflows
-- `tests/` — unit tests that verify helper logic and important behaviors
-- `agents/` — style, comment, workflow, and rule guidance for code contributions
-- `README.md` — project overview, quick start, and environment variables
+- `tcbot/` - bot runtime logic, command modules, helper utilities, and workflows
+- `tests/` - unit tests that verify helper logic and important behaviors
+- `agents/` - style, comment, workflow, and rule guidance for code contributions
+- `README.md` - project overview, quick start, and environment variables
 
 Do not treat `.github/` as the primary source for bot architecture. `.github/` contains CI workflow definitions, which are secondary to the actual application code.
 
 ## What an agent should use first
 
-1. `docs/index.md` — documentation hub and navigation
-2. `docs/architecture.md` — overall system architecture and runtime flow
-3. `docs/modules.md` — module discovery, boundaries, and helper packages
-4. `docs/workflows.md` — conversational workflow structure and conventions
-5. `docs/development.md` — repository workflow, configuration, and tests
-6. `agents/STYLE-CODE.md` and `agents/STYLE-COMMENTS.md` — coding and comment conventions
-7. `agents/WORKFLOW.md` and `agents/RULES.md` — project workflow expectations and constraints
+1. `docs/index.md` - documentation hub and navigation
+2. `docs/architecture.md` - overall system architecture and runtime flow
+3. `docs/modules.md` - module discovery, boundaries, and helper packages
+4. `docs/workflows.md` - conversational workflow structure and conventions
+5. `docs/development.md` - repository workflow, configuration, and tests
+6. `agents/STYLE-CODE.md` and `agents/STYLE-COMMENTS.md` - coding and comment conventions
+7. `agents/WORKFLOW.md` and `agents/RULES.md` - project workflow expectations and constraints
 
 ## Key repository focus
 

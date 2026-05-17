@@ -2,12 +2,12 @@
 
 This page is the entry point for repository-specific docs.
 Before editing code or docs, consult the agent guidance under `agents/`, especially the workflow and style rules.
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 This documentation set is specific to the TCF bot repository. It is built from the source code in:
 - `tcbot/`

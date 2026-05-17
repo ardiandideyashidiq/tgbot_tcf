@@ -2,7 +2,7 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 """
-Mute conversation workflow — reason + optional proof
+Mute conversation workflow - reason + optional proof
 
 Flow
 ────
@@ -67,7 +67,7 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         extraction.extract_target(update, raw_args, ctx.bot),
     )
     if role_rank(executor_role) < role_rank("tester"):
-        await msg.reply_text("You need at least a Tester role to mute — not your call. 🚫")
+        await msg.reply_text("You need at least a Tester role to mute - not your call. 🚫")
         return ConversationHandler.END
     remaining_args = list(raw_args[1:] if has_explicit_target else raw_args)
 
@@ -77,12 +77,12 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
     if target_id == ctx.bot.id:
         await msg.reply_text(
-            "Muting me won't do much — I don't send messages on my own anyway. 😄"
+            "Muting me won't do much - I don't send messages on my own anyway. 😄"
         )
         return ConversationHandler.END
 
     if target_id == admin.id:
-        await msg.reply_text("Can't mute yourself — that's not how this works. 🙃")
+        await msg.reply_text("Can't mute yourself - that's not how this works. 🙃")
         return ConversationHandler.END
 
     target_role = await get_effective_role(target_id)
@@ -90,14 +90,14 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         if role_rank(executor_role) <= role_rank(target_role):
             if target_role == "founder":
                 await msg.reply_text(
-                    f"That's {mention(target_id, target_fname or 'the Founder')}, our Founder — "
+                    f"That's {mention(target_id, target_fname or 'the Founder')}, our Founder - "
                     "muting them is not happening. 👑",
                     parse_mode="HTML",
                 )
             else:
                 label = ROLE_LABEL.get(target_role, target_role.capitalize())
                 await msg.reply_text(
-                    f"That's a {cfg.community_name} {label} — they outrank you here, can't mute them."
+                    f"That's a {cfg.community_name} {label} - they outrank you here, can't mute them."
                 )
             return ConversationHandler.END
 

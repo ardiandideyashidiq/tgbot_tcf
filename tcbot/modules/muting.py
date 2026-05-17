@@ -30,14 +30,14 @@ __help_text__ = (
     "<b>What it does</b>\n"
     "<code>/tcmute</code>: restricts a user from sending messages, media, stickers, and GIFs "
     "across <b>all connected groups</b> simultaneously. "
-    "After the command, the bot asks for a reason and optionally proof (photo/video) — "
+    "After the command, the bot asks for a reason and optionally proof (photo/video) - "
     "both steps can be skipped. If the user is already muted, the existing restriction is "
     "replaced with the new duration and reason. A summary shows how many groups the mute "
     "was applied in.\n\n"
     "<code>/tcunmute</code>: restores the user's full send permissions across all connected "
     "groups. A summary shows how many groups the unmute was applied in.\n\n"
 
-    "<b>Duration tokens</b> (optional — place before the reason):\n"
+    "<b>Duration tokens</b> (optional - place before the reason):\n"
     "<code>3s</code> seconds · <code>5m</code> minutes · <code>2h</code> hours\n"
     "<code>7d</code> days · <code>1w</code> weeks · <code>3mo</code> months · <code>2ye</code> years\n"
     "Omit a duration token to apply a permanent mute.\n\n"
@@ -46,10 +46,10 @@ __help_text__ = (
     "Reply to a message, or provide a user ID / @username after the command.\n\n"
 
     "<b>Examples</b>\n"
-    "<code>/tcmute @username 3d spamming</code> — 3-day mute, reason inline\n"
-    "<code>/tcm @username 1w</code> — 1-week mute, bot will ask for reason\n"
-    "<code>/tcm @username</code> — permanent mute, bot walks you through it\n"
-    "<code>/tcunmute @username</code> — lift mute immediately across all groups"
+    "<code>/tcmute @username 3d spamming</code> - 3-day mute, reason inline\n"
+    "<code>/tcm @username 1w</code> - 1-week mute, bot will ask for reason\n"
+    "<code>/tcm @username</code> - permanent mute, bot walks you through it\n"
+    "<code>/tcunmute @username</code> - lift mute immediately across all groups"
 )
 
 
@@ -60,13 +60,13 @@ async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await msg.reply_text(
-            "Specify a target — reply to a message or provide a user ID."
+            "Specify a target - reply to a message or provide a user ID."
         )
         return
 
     if target_id == ctx.bot.id:
         await msg.reply_text(
-            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} — "
+            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} - "
             "can't mute a bot anyway, so nothing to undo here. 😄",
             parse_mode="HTML",
         )
@@ -76,7 +76,7 @@ async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if target_role == "founder":
         fname = await db.users_db.get_first_name(target_id, "the Founder")
         await msg.reply_text(
-            f"That's {mention(target_id, fname)}, the Founder — "
+            f"That's {mention(target_id, fname)}, the Founder - "
             "definitely not muted. Nothing to undo. 👑",
             parse_mode="HTML",
         )

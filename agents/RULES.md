@@ -1,19 +1,19 @@
-# Project Rules — TCF Bot
+# Project Rules - TCF Bot
 
-Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+Before making any changes, **read all documentation files in the `agents/` directory** - specifically:
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 ## General
 
 1. This is a production federation bot. Every change must be backward-compatible with existing MongoDB data.
 2. Never delete or rename MongoDB collection fields without a migration plan.
 3. Bot responses must be in English. Log messages may use short technical English.
-4. User-facing responses use a friendly-formal tone — clear and direct, but warm. Use 1–3 emojis per message where it feels natural. No filler, no padding.
+4. User-facing responses use a friendly-formal tone - clear and direct, but warm. Use 1–3 emojis per message where it feels natural. No filler, no padding.
 
 ## Code Quality
 
@@ -33,7 +33,7 @@ Before making any changes, **read all documentation files in the `agents/` direc
 ## Telegram
 
 1. Always `await q.answer()` before any further action in a `CallbackQueryHandler`.
-2. Wrap every `bot.send_message` / `bot.ban_chat_member` / etc. in try/except when iterating over groups — one failure must not abort the loop.
+2. Wrap every `bot.send_message` / `bot.ban_chat_member` / etc. in try/except when iterating over groups - one failure must not abort the loop.
 3. Never store `Update` or `Message` objects beyond the lifetime of a handler call.
 4. Use `parse_mode="HTML"` consistently. Do not mix with Markdown.
 
@@ -60,7 +60,7 @@ Before making any changes, **read all documentation files in the `agents/` direc
 
 ## Roles
 
-1. The canonical role resolver is `roles_db.get_effective_role(user_id)` — always use this, never chain individual `is_owner` / `is_admin` / `get_role` calls.
+1. The canonical role resolver is `roles_db.get_effective_role(user_id)` - always use this, never chain individual `is_owner` / `is_admin` / `get_role` calls.
 2. `can_act_on(executor_id, target_id)` is the canonical check for whether one user may take action against another. Never compare ranks inline.
 3. Auto-demote (`role_guard.auto_demote`) must be called whenever a ban or kick is executed against a user who holds any role.
 4. Developer and Tester roles live in the `tc_roles` MongoDB collection. Admin promotion to Developer/Tester is direct; Admin promotion to Admin goes through the request queue.

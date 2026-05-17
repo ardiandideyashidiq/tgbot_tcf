@@ -37,7 +37,7 @@ async def fan_out(
     """
     Run *coros* concurrently, bounded by *max_concurrent*.
 
-    Returns a list parallel to *coros* — each element is either the coroutine's
+    Returns a list parallel to *coros* - each element is either the coroutine's
     return value or the captured exception.  Never raises itself.
 
     Usage::

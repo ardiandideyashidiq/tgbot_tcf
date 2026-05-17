@@ -22,7 +22,7 @@ __help_text__ = (
     "<code>/tcstats</code>\n\n"
 
     "<b>Who can use it</b>\n"
-    "Anyone — no special permissions needed.\n\n"
+    "Anyone - no special permissions needed.\n\n"
 
     "<b>Where to use it</b>\n"
     "Bot PM, exec group, or any connected group.\n\n"
@@ -31,10 +31,10 @@ __help_text__ = (
     "Shows a live overview of the federation: the Founder, total staff count, number of "
     "active federation bans, and number of connected groups.\n\n"
     "Three drill-down buttons are available below the summary:\n"
-    "— <b>Staff Roster</b>: full breakdown of all staff by role "
+    "- <b>Staff Roster</b>: full breakdown of all staff by role "
     "(Founder, Admins, Developers, Testers).\n"
-    "— <b>Connected Chats</b>: paginated list of all currently connected groups.\n"
-    "— <b>User Bans</b>: paginated list of all active federation bans, with a "
+    "- <b>Connected Chats</b>: paginated list of all currently connected groups.\n"
+    "- <b>User Bans</b>: paginated list of all active federation bans, with a "
     "<b>Search</b> option to look up a specific user by name or ID.\n"
     "Each view has a <b>Back</b> button to return to the main summary.\n\n"
 
@@ -71,7 +71,7 @@ async def _stats_text() -> str:
     owner_mention = mention(owner_id, owner_fname) if owner_id else "Unknown"
     staff_total   = 1 + admin_cnt + len(dev_list) + len(tester_list)
     return (
-        f"<b>Stats — {esc(cfg.community_name)}</b>\n\n"
+        f"<b>Stats - {esc(cfg.community_name)}</b>\n\n"
         f"Founder: {owner_mention}\n"
         f"Staff: {staff_total} total\n"
         f"Active bans: {bans}\n"
@@ -121,38 +121,38 @@ async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
 
     all_names = list(await asyncio.gather(*name_tasks)) if name_tasks else []
 
-    lines: list[str] = [f"<b>Staff Roster — {esc(cfg.community_name)}</b>\n"]
+    lines: list[str] = [f"<b>Staff Roster - {esc(cfg.community_name)}</b>\n"]
 
     ## Founder
     if owner_idx is not None:
         lines.append("<b>Founder</b>")
-        lines.append(f"— {mention(owner_id, all_names[owner_idx])}\n")
+        lines.append(f"- {mention(owner_id, all_names[owner_idx])}\n")
 
     ## Admins
     lines.append(f"<b>Admins ({len(admins)})</b>")
     if admins:
         for adm, fname in zip(admins, all_names[admin_start:admin_start + len(admins)]):
-            lines.append(f"— {mention(adm['user_id'], fname)}")
+            lines.append(f"- {mention(adm['user_id'], fname)}")
     else:
-        lines.append("— None assigned")
+        lines.append("- None assigned")
     lines.append("")
 
     ## Developers
     lines.append(f"<b>Developers ({len(developers)})</b>")
     if developers:
         for dev, fname in zip(developers, all_names[dev_start:dev_start + len(developers)]):
-            lines.append(f"— {mention(dev['user_id'], fname)}")
+            lines.append(f"- {mention(dev['user_id'], fname)}")
     else:
-        lines.append("— None assigned")
+        lines.append("- None assigned")
     lines.append("")
 
     ## Testers
     lines.append(f"<b>Testers ({len(testers)})</b>")
     if testers:
         for tst, fname in zip(testers, all_names[tester_start:tester_start + len(testers)]):
-            lines.append(f"— {mention(tst['user_id'], fname)}")
+            lines.append(f"- {mention(tst['user_id'], fname)}")
     else:
-        lines.append("— None assigned")
+        lines.append("- None assigned")
 
     await q.edit_message_text(
         "\n".join(lines), parse_mode="HTML",

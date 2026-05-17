@@ -92,7 +92,7 @@ def _make_asyncio_exc_handler(loop: asyncio.AbstractEventLoop):
         detail  = f"{msg} | Task: {future!r}" if future else msg
 
         ## Always mirror to stderr so nothing is silently swallowed
-        print(f"[asyncio] {detail}" + (f" — {exc}" if exc else ""), file=sys.stderr)
+        print(f"[asyncio] {detail}" + (f" - {exc}" if exc else ""), file=sys.stderr)
 
         ## Schedule async report on the running loop
         try:
@@ -137,10 +137,10 @@ def main() -> None:
         .post_init(_post_init)
         ## Process independent updates in parallel (big latency win)
         .concurrent_updates(True)
-        ## Connection pools — 8 for API calls, 4 dedicated for getUpdates polling
+        ## Connection pools - 8 for API calls, 4 dedicated for getUpdates polling
         .connection_pool_size(8)
         .get_updates_connection_pool_size(4)
-        ## HTTP timeouts — generous but bounded so hangs never block the loop
+        ## HTTP timeouts - generous but bounded so hangs never block the loop
         .read_timeout(15)
         .write_timeout(15)
         .connect_timeout(10)
@@ -148,7 +148,7 @@ def main() -> None:
         .build()
     )
 
-    ## Layer 1: Global per-user rate limiter — runs before every handler (group -1)
+    ## Layer 1: Global per-user rate limiter - runs before every handler (group -1)
     app.add_handler(TypeHandler(Update, global_rate_limit_handler), group=-1)
 
     ## Register all module handlers via tcbot.modules
@@ -156,7 +156,7 @@ def main() -> None:
         app.add_handler(handler)
 
     ## Low-priority handler: update member cache on every group message.
-    ## ~ANY_CMD_FILTER excludes custom-prefix commands (!, .) — /commands pass through.
+    ## ~ANY_CMD_FILTER excludes custom-prefix commands (!, .) - /commands pass through.
     app.add_handler(
         MessageHandler(
             filters.ChatType.GROUPS & filters.TEXT & ~ANY_CMD_FILTER,
@@ -165,7 +165,7 @@ def main() -> None:
         group=10,
     )
 
-    ## Layer 2: PTB global error handler — catches all unhandled handler exceptions
+    ## Layer 2: PTB global error handler - catches all unhandled handler exceptions
     app.add_error_handler(_error_handler)
 
     log.info("Handlers registered. Starting polling...")

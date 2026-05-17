@@ -101,7 +101,7 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict) -> None:
     existing  = await db.bans_db.get_active_ban(target_id)
     is_update = existing is not None
 
-    ## Start old-admin name fetch immediately — runs during proof upload I/O below
+    ## Start old-admin name fetch immediately - runs during proof upload I/O below
     _old_admin_fname_task = (
         asyncio.create_task(
             db.users_db.get_first_name(existing.get("admin_user_id", admin_id), "Admin")
@@ -167,7 +167,7 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict) -> None:
         ban_id        = existing["ban_id"]
         old_admin_id  = existing.get("admin_user_id", admin_id)
         bot_username    = bot.username
-        ## Name fetch already running since before proof upload — just await the result
+        ## Name fetch already running since before proof upload - just await the result
         old_admin_fname = await _old_admin_fname_task
 
         log_text = parse_logmsg.ban_update_log(
@@ -240,7 +240,7 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict) -> None:
     else:
         groups = await db.groups_db.active_groups()
 
-    ## Enforce across all connected groups — semaphore-bounded for rate safety
+    ## Enforce across all connected groups - semaphore-bounded for rate safety
     results = await fan_out(
         [bot.ban_chat_member(grp["chat_id"], target_id) for grp in groups]
     )

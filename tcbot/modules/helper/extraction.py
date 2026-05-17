@@ -56,8 +56,8 @@ async def extract_target(
     """Return (user_id, first_name) resolved from args, reply, entity, or mention.
 
     Resolution order (explicit args always win over reply):
-    1. Numeric ID or @username in args[0] — highest priority.
-    2. Reply-to-message sender — only when no explicit arg was given.
+    1. Numeric ID or @username in args[0] - highest priority.
+    2. Reply-to-message sender - only when no explicit arg was given.
     3. text_mention entity in the message.
     4. @mention entity resolved via bot.get_chat().
     Returns (None, None) if no valid target can be resolved.

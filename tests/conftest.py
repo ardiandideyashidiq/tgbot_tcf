@@ -3,7 +3,7 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Pytest bootstrap — stub all required env vars before tcbot imports fire.
+Pytest bootstrap - stub all required env vars before tcbot imports fire.
 """
 
 from __future__ import annotations

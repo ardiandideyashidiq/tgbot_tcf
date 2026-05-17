@@ -1,4 +1,4 @@
-# Replit Environment — TCF Bot
+# Replit Environment - TCF Bot
 
 ## Workflow
 
@@ -9,11 +9,11 @@
 ## Port
 
 Flask keepalive runs on port `5000` (configurable via `PORT` in `config.env`).
-The bot itself uses long polling — no webhook, no extra port needed.
+The bot itself uses long polling - no webhook, no extra port needed.
 
 ## Environment Variables
 
-**All configuration — including secrets — is stored exclusively in `config.env`.**
+**All configuration - including secrets - is stored exclusively in `config.env`.**
 Do NOT use Replit Secrets for this project. Do NOT commit `config.env` (it is gitignored).
 See `config.env.example` for the full list of required keys.
 

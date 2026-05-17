@@ -287,7 +287,7 @@ def appeal_approved_edit(
     appeal_link: str = "",
     submitted_at=None,
 ) -> str:
-    """Edited version of the submitted log — shown when appeal is approved."""
+    """Edited version of the submitted log - shown when appeal is approved."""
     submitted_str = fmt_dt(submitted_at) if submitted_at else "N/A"
     approved_str = fmt_dt(utc_now())
     return (
@@ -311,7 +311,7 @@ def appeal_rejected_edit(
     appeal_link: str = "",
     submitted_at=None,
 ) -> str:
-    """Edited version of the submitted log — shown when appeal is rejected."""
+    """Edited version of the submitted log - shown when appeal is rejected."""
     submitted_str = fmt_dt(submitted_at) if submitted_at else "N/A"
     rejected_str = fmt_dt(utc_now())
     return (

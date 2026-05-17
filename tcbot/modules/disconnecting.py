@@ -41,7 +41,7 @@ __help_text__ = (
 
     "<b>Examples</b>\n"
     "Run <code>/tcdisconnect</code> inside the group to disconnect it.\n"
-    "<code>/rmtc -1001234567890</code> — force-remove a group by chat ID."
+    "<code>/rmtc -1001234567890</code> - force-remove a group by chat ID."
 )
 
 

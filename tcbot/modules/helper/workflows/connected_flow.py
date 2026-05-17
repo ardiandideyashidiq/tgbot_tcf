@@ -32,7 +32,7 @@ def _check_bot_perms(member) -> bool:
 
 async def _complete_join(chat_id: int, chat_title: str, owner_id: int, owner_fname: str, bot) -> None:
     """Connect the group, apply all active bans, and notify LOG_CHANNEL."""
-    ## Fetch chat info + active ban IDs + register group + clear pending — all in parallel
+    ## Fetch chat info + active ban IDs + register group + clear pending - all in parallel
     chat_result, ban_uids, *_ = await asyncio.gather(
         bot.get_chat(chat_id),
         db.bans_db.active_ban_user_ids(),
@@ -47,7 +47,7 @@ async def _complete_join(chat_id: int, chat_title: str, owner_id: int, owner_fna
     if isinstance(ban_uids, BaseException):
         ban_uids = []
 
-    ## Apply all existing federation bans concurrently — semaphore-bounded
+    ## Apply all existing federation bans concurrently - semaphore-bounded
     results = await fan_out([bot.ban_chat_member(chat_id, uid) for uid in ban_uids])
     applied = sum(1 for r in results if not isinstance(r, BaseException))
 
@@ -174,7 +174,7 @@ async def on_join_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
                 chat.id, chat.title or "", user.id, q.message.message_id,
             )
             await q.edit_message_text(
-                "I need admin permissions first — delete messages, ban users, and invite users. "
+                "I need admin permissions first - delete messages, ban users, and invite users. "
                 "Grant those and try again.",
                 reply_markup=None,
             )

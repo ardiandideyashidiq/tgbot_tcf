@@ -33,14 +33,14 @@ __help_text__ = (
     "<b>What it does</b>\n"
     f"Sends a message to every group currently connected to {cfg.community_name}. "
     "You can compose the message in two ways:\n"
-    "— Type the message directly after the command (HTML formatting is supported).\n"
-    "— Reply to an existing message with <code>/bc</code> to forward that message to all groups.\n\n"
+    "- Type the message directly after the command (HTML formatting is supported).\n"
+    "- Reply to an existing message with <code>/bc</code> to forward that message to all groups.\n\n"
     "When the broadcast is complete, the bot shows a summary of how many groups received the "
     "message and how many deliveries failed, and posts a log entry to the federation logs channel.\n\n"
 
     "<b>Examples</b>\n"
     "<code>/tcbroadcast Reminder: please review the community rules before posting.</code>\n"
-    "<code>/bc <b>Event tonight</b> — join us in the main group at 8 PM UTC.</code>\n"
+    "<code>/bc <b>Event tonight</b> - join us in the main group at 8 PM UTC.</code>\n"
     "Or reply to any message and run <code>/bc</code> to forward it to all groups."
 )
 

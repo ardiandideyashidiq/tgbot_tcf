@@ -1,12 +1,12 @@
-# Code Style — TCF Bot
+# Code Style - TCF Bot
 
-Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+Before making any changes, **read all documentation files in the `agents/` directory** - specifically:
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 ## Language and Runtime
 
@@ -68,7 +68,7 @@ Do not add comments that explain what the next line obviously does:
 # Get the user ID
 uid = update.effective_user.id
 
-# Good — no comment needed, the code is self-evident
+# Good - no comment needed, the code is self-evident
 uid = update.effective_user.id
 ```
 
@@ -90,7 +90,7 @@ text = (
 
 - Use `try/except Exception` only at I/O boundaries (Telegram API calls, DB writes)
 - Always log errors: `log.error("Context: %s", exc)` or `log.warning(...)`
-- Do not raise exceptions inside handlers — handle gracefully and reply to the user
+- Do not raise exceptions inside handlers - handle gracefully and reply to the user
 
 ## Dataclasses
 

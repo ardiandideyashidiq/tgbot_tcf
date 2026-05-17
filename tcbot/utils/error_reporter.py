@@ -3,7 +3,7 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Centralized error reporter — classifies, formats, and ships errors to LOG_ERRORS
+Centralized error reporter - classifies, formats, and ships errors to LOG_ERRORS
 
 Three automatic coverage layers (no per-file changes needed):
     1. TelegramErrorHandler on the root logger  → catches every log.error() / log.critical()
@@ -54,9 +54,9 @@ def _classify(exc: BaseException | None) -> tuple[str, str]:
     mod = type(exc).__module__ or ""
 
     if isinstance(exc, _te.RetryAfter):
-        return "[~] Rate Limit — Flood Wait", "rate_limit"
+        return "[~] Rate Limit - Flood Wait", "rate_limit"
     if isinstance(exc, _te.TimedOut):
-        return "[~] Rate Limit — Timed Out", "rate_limit"
+        return "[~] Rate Limit - Timed Out", "rate_limit"
     if isinstance(exc, _te.NetworkError):
         return "[~] Telegram Network Error", "network"
     if isinstance(exc, _te.TelegramError):
@@ -107,7 +107,7 @@ def build_error_message(
 
     ## ── source location ──────────────────────────────────────────────────────
     if record:
-        ## direct log.error() call — record has exact location
+        ## direct log.error() call - record has exact location
         raw_path    = record.pathname.replace("\\", "/")
         module_path = raw_path.split("tcbot/")[-1] if "tcbot/" in raw_path else record.name
         func_name   = record.funcName

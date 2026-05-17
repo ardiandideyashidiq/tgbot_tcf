@@ -2,7 +2,7 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 """
-Kick conversation workflow — reason + optional proof
+Kick conversation workflow - reason + optional proof
 
 Flow
 ────
@@ -91,13 +91,13 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         extraction.extract_target(update, args, ctx.bot),
     )
     if role_rank(executor_role) < role_rank("tester"):
-        await msg.reply_text("You need at least a Tester role to kick — not your call. 🚫")
+        await msg.reply_text("You need at least a Tester role to kick - not your call. 🚫")
         return ConversationHandler.END
     inline_reason = " ".join(args[1:] if has_explicit_target else args).strip()
 
     if not target_id:
         await msg.reply_text(
-            "Can't find that user — reply to their message or send me a user ID."
+            "Can't find that user - reply to their message or send me a user ID."
         )
         return ConversationHandler.END
 
@@ -110,14 +110,14 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         if role_rank(executor_role) <= role_rank(target_role):
             if target_role == "founder":
                 await msg.reply_text(
-                    f"That's {mention(target_id, target_name or 'the Founder')}, our Founder — "
+                    f"That's {mention(target_id, target_name or 'the Founder')}, our Founder - "
                     "kicking the boss? Not happening. 👑",
                     parse_mode="HTML",
                 )
             else:
                 label = ROLE_LABEL.get(target_role, target_role.capitalize())
                 await msg.reply_text(
-                    f"That's a {cfg.community_name} {label} — they outrank you here, can't kick them."
+                    f"That's a {cfg.community_name} {label} - they outrank you here, can't kick them."
                 )
             return ConversationHandler.END
         await auto_demote(
@@ -173,7 +173,7 @@ async def on_kick_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
     await asyncio.gather(
         q.answer(),
         q.edit_message_text(
-            "No reason — send proof (photo or video) if any, "
+            "No reason - send proof (photo or video) if any, "
             "or tap <b>Skip</b> to proceed.",
             parse_mode="HTML",
             reply_markup=_KB_PROOF,

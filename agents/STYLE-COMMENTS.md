@@ -1,12 +1,12 @@
-# Comment Style — TCF Bot
+# Comment Style - TCF Bot
 
-Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+Before making any changes, **read all documentation files in the `agents/` directory** - specifically:
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 ## Module Docstring
 
@@ -30,7 +30,7 @@ Multi-line docstrings are allowed for complex modules (e.g. mute_flow.py with it
 ## Function Docstrings
 
 Write docstrings only when the function's purpose is not immediately obvious from its name and signature.
-Keep them concise — one sentence or a short paragraph. No `:param:` / `:returns:` Sphinx tags.
+Keep them concise - one sentence or a short paragraph. No `:param:` / `:returns:` Sphinx tags.
 
 ```python
 async def sweep_group(self, chat_id: int) -> tuple[int, int]:
@@ -66,7 +66,7 @@ Do not comment what the code already says:
 # Increment applied counter
 applied += 1
 
-# Good — no comment needed
+# Good - no comment needed
 applied += 1
 ```
 
@@ -87,13 +87,13 @@ Use dashed dividers to separate major logical blocks in longer files:
 ## Short description
 ```
 
-Keep dividers consistent in length (75 dashes). Do not use them for every 5-line block —
+Keep dividers consistent in length (75 dashes). Do not use them for every 5-line block -
 only for genuinely distinct sections (e.g. keyboard builders vs. handlers vs. handler factory).
 
 ## What Not To Comment
 
 - Do not comment imports
-- Do not add "Legacy compat" or "Deprecated" blocks — remove dead code outright
+- Do not add "Legacy compat" or "Deprecated" blocks - remove dead code outright
 - Do not explain Python syntax
 - Do not add `# noqa` without a reason in the same comment
 ## Related documentation

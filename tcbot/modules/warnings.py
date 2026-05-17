@@ -48,15 +48,15 @@ __help_text__ = (
 
     "<b>Flow (/tcwarn)</b>\n"
     "1. Run <code>/tcwarn</code> with the target (and optional inline reason).\n"
-    "2. If no reason was given, the bot asks — reply with text or tap <b>Skip</b>.\n"
-    "3. The bot asks for proof — send a photo/video or tap <b>Skip</b> to warn without proof.\n\n"
+    "2. If no reason was given, the bot asks - reply with text or tap <b>Skip</b>.\n"
+    "3. The bot asks for proof - send a photo/video or tap <b>Skip</b> to warn without proof.\n\n"
 
     "<b>How to specify the target</b>\n"
     "Reply to a message, or provide a user ID / @username after the command.\n\n"
 
     "<b>Examples</b>\n"
-    "<code>/tcwarn @username spamming</code> — reason inline\n"
-    "<code>/tcw 123456789</code> — bot will ask for reason\n"
+    "<code>/tcwarn @username spamming</code> - reason inline\n"
+    "<code>/tcw 123456789</code> - bot will ask for reason\n"
     "<code>/tcunwarn @username</code>\n"
     "<code>/warns @username</code>\n"
     "<code>/resetwarns @username</code>"
@@ -81,13 +81,13 @@ async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await msg.reply_text(
-            "Specify a target — reply to a message or provide a user ID."
+            "Specify a target - reply to a message or provide a user ID."
         )
         return
 
     if target_id == ctx.bot.id:
         await msg.reply_text(
-            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} — "
+            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} - "
             "zero warnings here, ever. Nothing to remove. 😄",
             parse_mode="HTML",
         )
@@ -97,14 +97,14 @@ async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if target_role == "founder":
         fname = await db.users_db.get_first_name(target_id, "the Founder")
         await msg.reply_text(
-            f"That's {mention(target_id, fname)}, the Founder — no warnings on record. 👑",
+            f"That's {mention(target_id, fname)}, the Founder - no warnings on record. 👑",
             parse_mode="HTML",
         )
         return
     if target_role in ("admin", "developer", "tester"):
         fname, role_label = await _role_note(target_id, target_name, target_role)
         await msg.reply_text(
-            f"Heads up — {mention(target_id, fname)} is a {cfg.community_name} {role_label}. "
+            f"Heads up - {mention(target_id, fname)} is a {cfg.community_name} {role_label}. "
             "Proceeding with unwarn anyway.",
             parse_mode="HTML",
         )
@@ -117,7 +117,7 @@ async def cmd_warnlist(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await update.effective_message.reply_text(
-            "Specify a target — reply to a message or provide a user ID."
+            "Specify a target - reply to a message or provide a user ID."
         )
         return
     await execute_warnlist(update, ctx, target_id, target_name or str(target_id))
@@ -130,13 +130,13 @@ async def cmd_resetwarns(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await msg.reply_text(
-            "Specify a target — reply to a message or provide a user ID."
+            "Specify a target - reply to a message or provide a user ID."
         )
         return
 
     if target_id == ctx.bot.id:
         await msg.reply_text(
-            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} — "
+            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} - "
             "already at zero, always. Nothing to clear. 😄",
             parse_mode="HTML",
         )
@@ -146,14 +146,14 @@ async def cmd_resetwarns(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     if target_role == "founder":
         fname = await db.users_db.get_first_name(target_id, "the Founder")
         await msg.reply_text(
-            f"That's {mention(target_id, fname)}, the Founder — no warnings to clear. 👑",
+            f"That's {mention(target_id, fname)}, the Founder - no warnings to clear. 👑",
             parse_mode="HTML",
         )
         return
     if target_role in ("admin", "developer", "tester"):
         fname, role_label = await _role_note(target_id, target_name, target_role)
         await msg.reply_text(
-            f"Heads up — {mention(target_id, fname)} is a {cfg.community_name} {role_label}. "
+            f"Heads up - {mention(target_id, fname)} is a {cfg.community_name} {role_label}. "
             "Proceeding with reset anyway.",
             parse_mode="HTML",
         )

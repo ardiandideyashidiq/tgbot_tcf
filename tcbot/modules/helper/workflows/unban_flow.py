@@ -48,7 +48,7 @@ async def execute_unban(
         db.groups_db.active_groups(),
     )
 
-    ## unban from all groups — semaphore-bounded for rate safety
+    ## unban from all groups - semaphore-bounded for rate safety
     results = await fan_out(
         [ctx.bot.unban_chat_member(grp["chat_id"], target_id, only_if_banned=True)
          for grp in groups]
@@ -64,7 +64,7 @@ async def execute_unban(
     await asyncio.gather(
         ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
         msg.reply_text(
-            f"{mention(target_id, target_fname)} {code(str(target_id))} has been unbanned — "
+            f"{mention(target_id, target_fname)} {code(str(target_id))} has been unbanned - "
             f"removed from {len(groups) - failed}/{len(groups)} groups.",
             parse_mode="HTML",
         ),

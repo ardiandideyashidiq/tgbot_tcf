@@ -29,7 +29,7 @@ class _RateLimiter:
     Returns the remaining seconds in the window (> 0) when the limit is hit
     *without* recording the blocked call.
 
-    Memory is proportional to currently-active users — stale buckets are
+    Memory is proportional to currently-active users - stale buckets are
     pruned eagerly so the dict never accumulates all-time unique users.
     """
 
@@ -54,39 +54,39 @@ class _RateLimiter:
             dq.popleft()
 
         if not dq:
-            ## bucket fully cleared — recycle slot and allow
+            ## bucket fully cleared - recycle slot and allow
             self._buckets[uid] = deque([now])
             return 0.0
 
         if len(dq) >= self.max_calls:
-            ## blocked — tell caller how long until the oldest slot expires
+            ## blocked - tell caller how long until the oldest slot expires
             return round(self.window - (now - dq[0]), 1)
 
         dq.append(now)
         return 0.0
 
 
-## Commands : 8 calls per 30 s — comfortable for regular moderation
+## Commands : 8 calls per 30 s - comfortable for regular moderation
 _cmd_limiter = _RateLimiter(max_calls=8, window=30.0)
 
-## Buttons  : 20 presses per 10 s — allows snappy navigation
+## Buttons  : 20 presses per 10 s - allows snappy navigation
 _cbq_limiter = _RateLimiter(max_calls=20, window=10.0)
 
 
 async def global_rate_limit_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Universal per-user rate limiter — registered at group -1.
+    """Universal per-user rate limiter - registered at group -1.
 
     Runs before every handler group so the check is always first.
 
-    * **CallbackQuery** — 20 per 10 s.
+    * **CallbackQuery** - 20 per 10 s.
       Denied presses get a brief *toast* (``show_alert=False``) so the UI
       never freezes with a blocking popup.
 
-    * **Command text** — 8 per 30 s.
+    * **Command text** - 8 per 30 s.
       Denied commands get a reply showing exactly how many seconds to wait,
       then ``ApplicationHandlerStop`` drops the update from all other groups.
 
-    * **Everything else** — always passes (member cache, conversation text, …).
+    * **Everything else** - always passes (member cache, conversation text, …).
     """
     uid = update.effective_user.id if update.effective_user else None
     if not uid:
@@ -113,7 +113,7 @@ async def global_rate_limit_handler(update: Update, ctx: ContextTypes.DEFAULT_TY
         return
 
     if not any(text.startswith(p) for p in cfg.prefixes):
-        return  ## plain chat message — never rate-limit
+        return  ## plain chat message - never rate-limit
 
     wait = _cmd_limiter.check(uid)
     if wait:
@@ -137,7 +137,7 @@ def owner_only(func: Callable) -> Callable:
             return await func(update, ctx)
         if update.effective_message:
             await update.effective_message.reply_text(
-                "This command is reserved for the Founder — you're not authorized. 🔒"
+                "This command is reserved for the Founder - you're not authorized. 🔒"
             )
     return wrapper
 
@@ -151,13 +151,13 @@ def staff_only(func: Callable) -> Callable:
             return await func(update, ctx)
         if update.effective_message:
             await update.effective_message.reply_text(
-                "Staff and Founder only for this one — you don't have the rank. 🚫"
+                "Staff and Founder only for this one - you don't have the rank. 🚫"
             )
     return wrapper
 
 
 def mod_only(func: Callable) -> Callable:
-    """Founder, Admin, Developer — for ban/unban."""
+    """Founder, Admin, Developer - for ban/unban."""
     @functools.wraps(func)
     async def wrapper(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         uid = update.effective_user.id if update.effective_user else None
@@ -165,13 +165,13 @@ def mod_only(func: Callable) -> Callable:
             return await func(update, ctx)
         if update.effective_message:
             await update.effective_message.reply_text(
-                "You need Developer rank or above for this — not your call. 🚫"
+                "You need Developer rank or above for this - not your call. 🚫"
             )
     return wrapper
 
 
 def basic_mod_only(func: Callable) -> Callable:
-    """Founder, Admin, Developer, Tester — for kick/mute/warn."""
+    """Founder, Admin, Developer, Tester - for kick/mute/warn."""
     @functools.wraps(func)
     async def wrapper(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         uid = update.effective_user.id if update.effective_user else None
@@ -179,6 +179,6 @@ def basic_mod_only(func: Callable) -> Callable:
             return await func(update, ctx)
         if update.effective_message:
             await update.effective_message.reply_text(
-                "You need at least a Tester role for this — not your call. 🚫"
+                "You need at least a Tester role for this - not your call. 🚫"
             )
     return wrapper

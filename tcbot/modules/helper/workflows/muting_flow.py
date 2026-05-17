@@ -85,7 +85,7 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
     until = datetime.now(timezone.utc) + duration if duration else None
     perms = ChatPermissions(can_send_messages=False)
 
-    ## Apply across all connected groups — semaphore-bounded for rate safety
+    ## Apply across all connected groups - semaphore-bounded for rate safety
     groups  = await db.groups_db.active_groups()
     results = await fan_out(
         [bot.restrict_chat_member(
@@ -112,7 +112,7 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
         target_id, target_fname, admin_id, admin_fname, reason, dur_str,
     )
 
-    ## Log to DB, post to log channel, and edit summary — all in parallel
+    ## Log to DB, post to log channel, and edit summary - all in parallel
     chat_id  = update.effective_chat.id
     results2 = await asyncio.gather(
         db.mutes_db.log_mute(target_id, chat_id, reason, admin_id),
@@ -152,7 +152,7 @@ async def execute_unmute(
         can_pin_messages=False,
     )
 
-    ## Unrestrict across all connected groups — semaphore-bounded for rate safety
+    ## Unrestrict across all connected groups - semaphore-bounded for rate safety
     groups  = await db.groups_db.active_groups()
     results = await fan_out(
         [ctx.bot.restrict_chat_member(
@@ -169,11 +169,11 @@ async def execute_unmute(
         target_id, target_name, admin.id, admin.first_name,
     )
 
-    ## Send log to channel and reply — in parallel
+    ## Send log to channel and reply - in parallel
     results2 = await asyncio.gather(
         ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
         msg.reply_text(
-            f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted — "
+            f"{mention(target_id, target_name)} {code(str(target_id))} has been unmuted - "
             f"restored in {len(groups) - failed}/{len(groups)} groups.",
             parse_mode="HTML",
         ),

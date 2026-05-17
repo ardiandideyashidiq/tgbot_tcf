@@ -2,24 +2,24 @@
 
 This repository keeps its agent, style, and workflow conventions in `agents/`.
 Before changing code or documentation, review the guidance there first:
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 Telegram federation bot for the Transsion Core Federation (TCF) community.
 
 ## Features
 
-- **Federation bans** — issue, update, and lift bans that propagate across all affiliated groups
-- **Appeals** — deep-link appeal flow with staff review and approve/reject workflow
-- **Group management** — connect/disconnect groups, sweep existing bans on join
-- **Admin promotions** — request and approve staff role changes with a full audit trail
-- **Moderation** — per-group mute, kick, and warn commands
-- **Check-me** — users can query their own ban status from the bot
-- **Keep-alive** — Flask health-check endpoint on port 5000
+- **Federation bans** - issue, update, and lift bans that propagate across all affiliated groups
+- **Appeals** - deep-link appeal flow with staff review and approve/reject workflow
+- **Group management** - connect/disconnect groups, sweep existing bans on join
+- **Admin promotions** - request and approve staff role changes with a full audit trail
+- **Moderation** - per-group mute, kick, and warn commands
+- **Check-me** - users can query their own ban status from the bot
+- **Keep-alive** - Flask health-check endpoint on port 5000
 
 ## Stack
 
@@ -107,7 +107,7 @@ agents/                  Agent/AI coding guidelines
 python3 -m pytest tests/ -q
 ```
 
-61 tests — all run offline without a bot token or MongoDB connection.
+61 tests - all run offline without a bot token or MongoDB connection.
 
 ## License
 

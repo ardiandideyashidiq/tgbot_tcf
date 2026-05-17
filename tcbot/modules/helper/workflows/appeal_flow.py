@@ -136,7 +136,7 @@ async def on_appeal_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
     log_msg_id = ctx.user_data.get("appeal_log_msg_id", 0)
 
     if not ban_id:
-        await msg.reply_text("Session expired — please start the appeal again.")
+        await msg.reply_text("Session expired - please start the appeal again.")
         return ConversationHandler.END
 
     if log_msg_id and not re.search(rf"\b{log_msg_id}\b", text):
@@ -197,7 +197,7 @@ async def on_appeal_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> i
     instr_mid = ctx.user_data.get("appeal_instruction_msg_id")
     edit_coro = (
         ctx.bot.edit_message_text(
-            "Your appeal has been submitted. The team will review it shortly — we'll get back to you.",
+            "Your appeal has been submitted. The team will review it shortly - we'll get back to you.",
             chat_id=update.effective_chat.id,
             message_id=instr_mid,
         )
@@ -255,14 +255,14 @@ async def on_appeal_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
     lc, lt    = cfg.logs
 
     if action == "approve":
-        ## Deactivate ban + fetch active groups + fetch target name — all in parallel
+        ## Deactivate ban + fetch active groups + fetch target name - all in parallel
         _, groups, target_fname = await asyncio.gather(
             db.bans_db.deactivate_ban(ban_id),
             db.groups_db.active_groups(),
             db.users_db.get_first_name(target_id, str(target_id)),
         )
 
-        ## Unban from all groups — semaphore-bounded for rate safety
+        ## Unban from all groups - semaphore-bounded for rate safety
         await fan_out(
             [ctx.bot.unban_chat_member(grp["chat_id"], target_id, only_if_banned=True)
              for grp in groups]
@@ -272,7 +272,7 @@ async def on_appeal_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
         await asyncio.gather(
             ctx.bot.send_message(
                 target_id,
-                f"Your appeal for ban <code>{ban_id}</code> has been approved — "
+                f"Your appeal for ban <code>{ban_id}</code> has been approved - "
                 f"you're now unbanned from {cfg.community_name}. Welcome back.",
                 parse_mode="HTML",
             ),
@@ -311,7 +311,7 @@ async def on_appeal_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
             log.error("Appeal unban log failed: %s", exc)
 
     elif action == "reject":
-        ## Fetch target name + notify user + edit review message — all in parallel
+        ## Fetch target name + notify user + edit review message - all in parallel
         target_fname_result, *_ = await asyncio.gather(
             db.users_db.get_first_name(target_id, str(target_id)),
             ctx.bot.send_message(

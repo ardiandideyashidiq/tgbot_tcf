@@ -28,7 +28,7 @@ async def resolve_and_check(
     Returns (executor_role, target_role) on success, or (None, None) after
     replying with an error message.  Both DB checks run in parallel.
 
-    min_role: minimum role needed — "developer" for ban/unban, "tester" for
+    min_role: minimum role needed - "developer" for ban/unban, "tester" for
     kick/mute/warn.
     """
     executor_role, target_role = await asyncio.gather(
@@ -43,7 +43,7 @@ async def resolve_and_check(
         if role_rank(executor_role) <= role_rank(target_role):
             label = ROLE_LABEL.get(target_role, target_role.capitalize())
             await msg.reply_text(
-                f"That's a {label} — they outrank you here, can't take action on them."
+                f"That's a {label} - they outrank you here, can't take action on them."
             )
             return None, None
 
@@ -81,7 +81,7 @@ async def auto_demote(
         ),
         bot.send_message(
             target_id,
-            f"Your <b>{label}</b> role in {cfg.community_name} has been removed — "
+            f"Your <b>{label}</b> role in {cfg.community_name} has been removed - "
             f"you were {verb} from the federation.",
             parse_mode="HTML",
         ),

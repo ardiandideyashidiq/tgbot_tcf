@@ -45,11 +45,11 @@ class TestAllowDeny:
         assert 0.0 < wait <= 10.0
 
     def test_denied_call_not_recorded(self):
-        """Blocked call must NOT consume a slot — only allowed calls are recorded."""
+        """Blocked call must NOT consume a slot - only allowed calls are recorded."""
         rl = make_rl(max_calls=2, window=10.0)
         rl.check(1)              ## slot 1
-        rl.check(1)              ## slot 2 — now full
-        rl.check(1)              ## blocked — must NOT record
+        rl.check(1)              ## slot 2 - now full
+        rl.check(1)              ## blocked - must NOT record
         rl.check(1)              ## still blocked
         wait = rl.check(1)
         assert wait > 0.0        ## still throttled, not suddenly freed
@@ -85,13 +85,13 @@ class TestWindowExpiry:
         monkeypatch.setattr("tcbot.modules.helper.decorators.time.monotonic", lambda: next(calls))
 
         assert rl.check(1) == 0.0   ## t=base   slot 1
-        assert rl.check(1) == 0.0   ## t=base   slot 2 — full
-        assert rl.check(1) == 0.0   ## t=base+2 window expired — allowed again
-        assert rl.check(1) == 0.0   ## t=base+2 slot 2 again — still allowed
+        assert rl.check(1) == 0.0   ## t=base   slot 2 - full
+        assert rl.check(1) == 0.0   ## t=base+2 window expired - allowed again
+        assert rl.check(1) == 0.0   ## t=base+2 slot 2 again - still allowed
 
     def test_partial_expiry_keeps_remaining_slots(self, monkeypatch):
         """Two calls at t=0, one at t=0.  At t=5 only the two t=0 calls expired
-        (window=5) — the t=0 third call is still fresh, so one slot is used."""
+        (window=5) - the t=0 third call is still fresh, so one slot is used."""
         rl = make_rl(max_calls=3, window=5.0)
         base = time.monotonic()
         # t=0: three calls fill the bucket
@@ -100,7 +100,7 @@ class TestWindowExpiry:
 
         rl.check(1)   ## slot 1 @ t=0
         rl.check(1)   ## slot 2 @ t=0
-        rl.check(1)   ## slot 3 @ t=0  — full
+        rl.check(1)   ## slot 3 @ t=0  - full
         # at t+6 all three have expired → allowed fresh
         assert rl.check(1) == 0.0
 

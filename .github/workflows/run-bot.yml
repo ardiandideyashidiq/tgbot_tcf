@@ -1,4 +1,4 @@
-name: TCF Bot — 24/7 Runner
+name: TCF Bot - 24/7 Runner
 
 on:
   schedule:
@@ -54,7 +54,7 @@ jobs:
           if [[ -f bot.log ]] && grep -qiE "(Traceback|^\w+Error:|CRITICAL)" bot.log; then
             echo "CRASH=true" >> "$GITHUB_ENV"
             grep -n "" bot.log | tail -120 > crash_tail.log
-            echo "Crash detected — last 120 lines saved."
+            echo "Crash detected - last 120 lines saved."
           else
             echo "CRASH=false" >> "$GITHUB_ENV"
           fi

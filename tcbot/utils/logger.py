@@ -6,8 +6,8 @@
 Logging setup for the TCF bot.
 
 Provides:
-    - BotLogFormatter     — human-readable console format
-    - TelegramErrorHandler — ships every ERROR/CRITICAL log record to LOG_ERRORS
+    - BotLogFormatter     - human-readable console format
+    - TelegramErrorHandler - ships every ERROR/CRITICAL log record to LOG_ERRORS
 automatically via the running asyncio event loop (no extra code needed anywhere)
 """
 
@@ -69,7 +69,7 @@ class TelegramErrorHandler(logging.Handler):
     and ships it to the LOG_ERRORS Telegram channel asynchronously.
 
     Works by scheduling a coroutine on the running asyncio event loop inside
-    emit() — zero blocking, zero per-module code required.
+    emit() - zero blocking, zero per-module code required.
     """
 
     def __init__(self) -> None:
@@ -83,7 +83,7 @@ class TelegramErrorHandler(logging.Handler):
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            return  ## no running event loop — startup or teardown, skip
+            return  ## no running event loop - startup or teardown, skip
 
         ## Import lazily to avoid circular imports at module load time
         from tcbot.utils import error_reporter

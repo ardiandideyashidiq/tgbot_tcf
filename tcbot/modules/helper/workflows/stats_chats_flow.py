@@ -87,7 +87,7 @@ async def on_stats_chats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     lines = [f"<b>Connected Chats ({total})</b>\n"]
     for i, grp in enumerate(chunk, start=1):
         lines.append(
-            f"{page * _PAGE_SIZE + i}. {esc(grp['title'])} — {code(str(grp['chat_id']))}"
+            f"{page * _PAGE_SIZE + i}. {esc(grp['title'])} - {code(str(grp['chat_id']))}"
         )
 
     await q.edit_message_text(

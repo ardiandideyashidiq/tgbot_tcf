@@ -1,14 +1,14 @@
 # © Copyright 2024 - 2026 Transsion Core
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
-## In-process TTL cache — shared singletons for hot-path DB call elimination
+## In-process TTL cache - shared singletons for hot-path DB call elimination
 from __future__ import annotations
 
 import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-## Public sentinel — use ``val is CACHE_MISS`` to detect a cache miss.
+## Public sentinel - use ``val is CACHE_MISS`` to detect a cache miss.
 ## Distinct from None because None is a valid cache value (e.g. user has no role).
 CACHE_MISS: object = object()
 
@@ -16,7 +16,7 @@ CACHE_MISS: object = object()
 class TTLCache:
     """Single-process in-memory TTL cache for asyncio-based code.
 
-    All operations are synchronous — no locks are needed because asyncio is
+    All operations are synchronous - no locks are needed because asyncio is
     cooperative and only one coroutine runs at a time on the event loop.
 
     ``get_or_fetch`` is the primary interface; ``get`` / ``put`` /
@@ -83,7 +83,7 @@ active_groups_cache: TTLCache = TTLCache(ttl=30.0)
 
 _ALL_GROUPS_KEY: str = "__all__"
 
-## 300-second owner-ID cache (single int entry — ownership transfers are very rare).
+## 300-second owner-ID cache (single int entry - ownership transfers are very rare).
 ## Populated by admins_db.get_owner_id; invalidated on set_owner / ensure_initial_owner.
 owner_id_cache: TTLCache = TTLCache(ttl=300.0)
 

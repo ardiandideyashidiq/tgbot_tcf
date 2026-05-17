@@ -48,10 +48,10 @@ _TOPICS_SORTED: list[tuple[str, str]] = sorted(
     key=lambda t: t[0].lower(),
 )
 
-## Menu-path topics — callback keys stay as "help_<mod>"
+## Menu-path topics - callback keys stay as "help_<mod>"
 HELP_TOPICS_MENU: list[tuple[str, str]] = _TOPICS_SORTED
 
-## Command-path topics — callback keys become "helpc_<mod>"
+## Command-path topics - callback keys become "helpc_<mod>"
 HELP_TOPICS_CMD: list[tuple[str, str]] = [
     (name, "helpc_" + key[5:]) for name, key in _TOPICS_SORTED
 ]
@@ -119,7 +119,7 @@ async def on_help_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def on_help_menu_group(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Help tapped from group /start inline — answer with alert, no edit.
+    Help tapped from group /start inline - answer with alert, no edit.
     """
     q: CallbackQuery = update.callback_query
     await q.answer(
@@ -134,7 +134,7 @@ async def on_helpc_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await _render_help_index(update, ctx, with_back_to_start=False)
 
 
-## ── Help topic — menu path ─────────────────────────────────────────────────
+## ── Help topic - menu path ─────────────────────────────────────────────────
 
 async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
@@ -156,7 +156,7 @@ async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-## ── Help topic — command path ──────────────────────────────────────────────
+## ── Help topic - command path ──────────────────────────────────────────────
 
 async def on_help_topic_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query

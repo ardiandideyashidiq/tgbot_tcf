@@ -20,7 +20,7 @@ __help_text__ = (
     "<code>/tcfgroups</code> (alias: <code>/tcg</code>)\n\n"
 
     "<b>Who can use it</b>\n"
-    "Anyone — no special permissions needed.\n\n"
+    "Anyone - no special permissions needed.\n\n"
 
     "<b>Where to use it</b>\n"
     "Bot PM, exec group, or any connected group.\n\n"
@@ -40,7 +40,7 @@ def _render(groups: list[dict], detailed: bool) -> str:
     lines = [f"<b>Connected Groups</b>\n\nCount: {len(groups)}\n"]
     for g in groups:
         if detailed:
-            lines.append(f"- {esc(g['title'])} — {code(str(g['chat_id']))}")
+            lines.append(f"- {esc(g['title'])} - {code(str(g['chat_id']))}")
         else:
             lines.append(f"- {esc(g['title'])}")
     return "\n".join(lines)

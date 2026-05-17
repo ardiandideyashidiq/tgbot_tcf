@@ -38,7 +38,7 @@ async def is_admin(user_id: int) -> bool:
 
 
 async def is_staff(user_id: int) -> bool:
-    """True if owner or admin — both checks run in parallel."""
+    """True if owner or admin - both checks run in parallel."""
     owner, admin = await asyncio.gather(is_owner(user_id), is_admin(user_id))
     return owner or admin
 
@@ -53,7 +53,7 @@ async def set_owner(user_id: int) -> None:
     await _owners().delete_many({})
     await _owners().insert_one({"user_id": user_id})
     owner_id_cache.put(_OWNER_KEY, user_id)
-    ## Clear the entire role cache — we don't know the old owner's user_id
+    ## Clear the entire role cache - we don't know the old owner's user_id
     effective_role_cache.clear()
 
 

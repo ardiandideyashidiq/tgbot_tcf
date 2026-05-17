@@ -3,7 +3,7 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Tests for tcbot.modules.helper.extraction — ResolvedTarget and get_reason.
+Tests for tcbot.modules.helper.extraction - ResolvedTarget and get_reason.
 """
 
 from __future__ import annotations

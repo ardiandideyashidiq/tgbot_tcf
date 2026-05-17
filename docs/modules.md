@@ -1,13 +1,13 @@
-# Modules and Service Boundaries — TCF Bot
+# Modules and Service Boundaries - TCF Bot
 
 This page maps the module boundaries and service responsibilities used by the bot.
 Before rewriting or refactoring modules, read the repository guidance in `agents/` for the expected code structure and naming conventions.
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 This document describes the high-level layout of service boundaries and module responsibilities.
 It is based on the code under `tcbot/modules/`, `tcbot/database/`, and `tcbot/utils/`.
@@ -17,8 +17,8 @@ It is based on the code under `tcbot/modules/`, `tcbot/database/`, and `tcbot/ut
 Modules are discovered and filtered in `tcbot/modules/__init__.py`.
 The `ALL_MODULES` list contains active modules after applying:
 
-- `MODULES_LOAD` — explicit allow list
-- `MODULES_NO_LOAD` — explicit deny list
+- `MODULES_LOAD` - explicit allow list
+- `MODULES_NO_LOAD` - explicit deny list
 
 The module loader imports each discovered module and collects `__handlers__` from each imported module.
 
@@ -26,9 +26,9 @@ The module loader imports each discovered module and collects `__handlers__` fro
 
 Each module file typically exposes:
 
-- `__module_name__` — visible command name for `/help`
-- `__help_text__` — short description of the module's functionality
-- `__handlers__` — PTB handlers registered by the module
+- `__module_name__` - visible command name for `/help`
+- `__help_text__` - short description of the module's functionality
+- `__handlers__` - PTB handlers registered by the module
 
 A module may hide itself from `/help` by setting `__module_name__ = None`.
 
@@ -75,8 +75,8 @@ The helper package also contains the `workflows/` subpackage.
 Conversation and approval flows are organized under `tcbot/modules/helper/workflows/`.
 Each workflow is split into two concerns:
 
-- `*_flow.py` — execution logic for the feature
-- `*_conv.py` — Telegram `ConversationHandler` builder and state definitions
+- `*_flow.py` - execution logic for the feature
+- `*_conv.py` - Telegram `ConversationHandler` builder and state definitions
 
 Example pairs:
 

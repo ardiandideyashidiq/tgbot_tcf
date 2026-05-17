@@ -1,23 +1,23 @@
-# Development Workflow and Onboarding — TCF Bot
+# Development Workflow and Onboarding - TCF Bot
 
 This page describes development conventions, branch strategy, and test expectations.
 Before contributing or changing repo behavior, review the `agents/` guidance so your work matches the project rules and environment expectations.
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 This document explains the repository workflow and practical rules for maintaining the bot code.
 It is intentional, project-specific guidance for contributors and agents.
 
 ## Branching
 
-- `main` — production-ready code only
-- `feat/<short-description>` — new features
-- `fix/<short-description>` — bug fixes
-- `refactor/<short-description>` — refactors and cleanup
+- `main` - production-ready code only
+- `feat/<short-description>` - new features
+- `fix/<short-description>` - bug fixes
+- `refactor/<short-description>` - refactors and cleanup
 
 Only merge to `main` after the bot starts cleanly and the test suite passes.
 

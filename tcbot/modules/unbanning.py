@@ -27,7 +27,7 @@ __help_text__ = (
 
     "<b>What it does</b>\n"
     "Lifts an active federation ban on the target user. The unban is applied across "
-    "<b>all connected groups</b> simultaneously — the user's Telegram ban is removed in "
+    "<b>all connected groups</b> simultaneously - the user's Telegram ban is removed in "
     "every group so they can rejoin freely. A log entry is posted to the federation logs channel.\n\n"
     "If the user has no active federation ban, the bot will let you know and take no action.\n"
     "If the target's ban was under appeal, the appeal is also resolved as approved.\n\n"
@@ -49,13 +49,13 @@ async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_fname = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await msg.reply_text(
-            "Specify a target — reply to a message or provide a user ID."
+            "Specify a target - reply to a message or provide a user ID."
         )
         return
 
     if target_id == ctx.bot.id:
         await msg.reply_text(
-            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} — I manage the bans, "
+            f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} - I manage the bans, "
             "not receive them. Nothing to undo here. 😄",
             parse_mode="HTML",
         )
@@ -65,7 +65,7 @@ async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     if target_role == "founder":
         fname = await db.users_db.get_first_name(target_id, "the Founder")
         await msg.reply_text(
-            f"That's {mention(target_id, fname)}, the Founder — "
+            f"That's {mention(target_id, fname)}, the Founder - "
             "they've never been banned. Nothing to undo. 👑",
             parse_mode="HTML",
         )
@@ -74,7 +74,7 @@ async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         role_label = ROLE_LABEL.get(target_role, target_role)
         fname      = await db.users_db.get_first_name(target_id, str(target_id))
         await msg.reply_text(
-            f"That's a {cfg.community_name} {role_label} — "
+            f"That's a {cfg.community_name} {role_label} - "
             "staff can't be federation-banned, so there's nothing to undo here.",
             parse_mode="HTML",
         )

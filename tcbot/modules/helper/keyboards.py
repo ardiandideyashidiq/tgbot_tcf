@@ -134,7 +134,7 @@ def checkme_ban_kb(
     ban_id: str,
     proof_link: str | None = None,
 ) -> InlineKeyboardMarkup:
-    """Summary view keyboard — Details | Proof (row 1), Appeal (row 2)."""
+    """Summary view keyboard - Details | Proof (row 1), Appeal (row 2)."""
     appeal_url = f"https://t.me/{bot_username}?start=appeal_{ban_id}"
     row1 = [InlineKeyboardButton("Details", callback_data=f"checkme_detail:{ban_id}")]
     if proof_link:
@@ -149,7 +149,7 @@ def checkme_detail_back_kb(
     ban_id: str,
     proof_link: str | None = None,
 ) -> InlineKeyboardMarkup:
-    """Detail view keyboard — optional Proof (row 1), Back (row 2)."""
+    """Detail view keyboard - optional Proof (row 1), Back (row 2)."""
     rows = []
     if proof_link:
         rows.append([InlineKeyboardButton("Proof", url=proof_link)])
@@ -183,7 +183,7 @@ def main_menu_kb() -> InlineKeyboardMarkup:
 
 
 def group_start_kb(bot_username: str) -> InlineKeyboardMarkup:
-    """Keyboard for /start sent inside a group — sends user to PM."""
+    """Keyboard for /start sent inside a group - sends user to PM."""
     pm_url = f"https://t.me/{bot_username}?start=menu"
     return InlineKeyboardMarkup(
         [
@@ -228,14 +228,14 @@ def _build_topic_rows(topics: list[tuple[str, str]]) -> list[list[InlineKeyboard
 
 
 def help_topics_menu_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:
-    """Help index when reached via the start menu — includes « Back to start."""
+    """Help index when reached via the start menu - includes « Back to start."""
     rows = _build_topic_rows(topics)
     rows.append([InlineKeyboardButton("« Back", callback_data="back_to_start")])
     return InlineKeyboardMarkup(rows)
 
 
 def help_topics_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:
-    """Help index when reached via /help command (PM or group) — no back to start."""
+    """Help index when reached via /help command (PM or group) - no back to start."""
     return InlineKeyboardMarkup(_build_topic_rows(topics))
 
 
@@ -272,7 +272,7 @@ def back_to_start_kb() -> InlineKeyboardMarkup:
 
 
 def back_to_help_kb() -> InlineKeyboardMarkup:
-    """Back to help index — used from menu-path topics (goes to help_menu)."""
+    """Back to help index - used from menu-path topics (goes to help_menu)."""
     return InlineKeyboardMarkup(
         [
             [
@@ -283,7 +283,7 @@ def back_to_help_kb() -> InlineKeyboardMarkup:
 
 
 def back_to_help_cmd_kb() -> InlineKeyboardMarkup:
-    """Back to help index — used from command-path topics (goes to helpc_main)."""
+    """Back to help index - used from command-path topics (goes to helpc_main)."""
     return InlineKeyboardMarkup(
         [
             [

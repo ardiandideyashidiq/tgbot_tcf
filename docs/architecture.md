@@ -1,13 +1,13 @@
-# Project Architecture — TCF Bot
+# Project Architecture - TCF Bot
 
 This document explains the repository architecture and runtime shape.
 Before altering architecture-related code, review the repository guidance in `agents/` to ensure the change matches style, workflow, and environment rules.
-- `agents/RULES.md` — coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` — comment and docstring style
-- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` — project-specific guidance and gotchas
-- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+- `agents/RULES.md` - coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` - comment and docstring style
+- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` - project-specific guidance and gotchas
+- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
 
 This document describes the code architecture for the TCF bot repository.
 It is based on the code under `tcbot/` and the test suite in `tests/`.
@@ -17,12 +17,12 @@ It is based on the code under `tcbot/` and the test suite in `tests/`.
 The application lives under `tcbot/`.
 The primary packages are:
 
-- `tcbot/__init__.py` — configuration parsing and the central `cfg` adapter
-- `tcbot/__main__.py` — bot startup, handler registration, error handling, and keepalive
-- `tcbot/alive.py` — Flask keepalive server on port `5000`
-- `tcbot/database/` — async MongoDB helpers and collection access
-- `tcbot/modules/` — Telegram command modules, helper utilities, and workflow builders
-- `tcbot/utils/` — logging, prefix parsing, error reporting, and date formatting
+- `tcbot/__init__.py` - configuration parsing and the central `cfg` adapter
+- `tcbot/__main__.py` - bot startup, handler registration, error handling, and keepalive
+- `tcbot/alive.py` - Flask keepalive server on port `5000`
+- `tcbot/database/` - async MongoDB helpers and collection access
+- `tcbot/modules/` - Telegram command modules, helper utilities, and workflow builders
+- `tcbot/utils/` - logging, prefix parsing, error reporting, and date formatting
 
 This repository is a Telegram bot, not a web service. The bot uses long polling via `python-telegram-bot`.
 
@@ -65,12 +65,12 @@ The public database namespace is `tcbot.database` via `tcbot/database/__init__.p
 
 Important files:
 
-- `tcbot/database/mongos.py` — Motor client, `connect()`, `ensure_indexes()`, and `col()` accessors
-- `tcbot/database/admins_db.py` — owner and admin CRUD
-- `tcbot/database/bans_db.py` — federation bans, active ban queries, and enforcement helpers
-- `tcbot/database/groups_db.py` — group connection state and pending join queue
-- `tcbot/database/roles_db.py` — role resolution, rank checks, and role-based authorization
-- `tcbot/database/users_db.py` — member caching and name resolution
+- `tcbot/database/mongos.py` - Motor client, `connect()`, `ensure_indexes()`, and `col()` accessors
+- `tcbot/database/admins_db.py` - owner and admin CRUD
+- `tcbot/database/bans_db.py` - federation bans, active ban queries, and enforcement helpers
+- `tcbot/database/groups_db.py` - group connection state and pending join queue
+- `tcbot/database/roles_db.py` - role resolution, rank checks, and role-based authorization
+- `tcbot/database/users_db.py` - member caching and name resolution
 - `tcbot/database/kicks_db.py`, `mutes_db.py`, `warns_db.py`, `queues_db.py`
 
 The project enforces async database helpers only. Handlers use the database layer rather than raw collection calls.
@@ -98,14 +98,14 @@ See [Modules and service boundaries](modules.md) for details.
 Shared utilities live under `tcbot/modules/helper/`.
 This package contains:
 
-- `formatter.py` — HTML text builders and safe formatting helpers
-- `extraction.py` — target resolution and identity helpers
-- `keyboards.py` — inline keyboard builders
-- `decorators.py` — access control decorators like `owner_only`, `staff_only`, and `basic_mod_only`
-- `role_guard.py` — shared role enforcement logic and auto-demotion
-- `parse_link.py` / `parse_logmsg.py` / `parse_editmsg.py` — message formatting and safe edit helpers
-- `ban_info.py` — shared ban detail rendering
-- `workflows/` — conversation handler flows and executors
+- `formatter.py` - HTML text builders and safe formatting helpers
+- `extraction.py` - target resolution and identity helpers
+- `keyboards.py` - inline keyboard builders
+- `decorators.py` - access control decorators like `owner_only`, `staff_only`, and `basic_mod_only`
+- `role_guard.py` - shared role enforcement logic and auto-demotion
+- `parse_link.py` / `parse_logmsg.py` / `parse_editmsg.py` - message formatting and safe edit helpers
+- `ban_info.py` - shared ban detail rendering
+- `workflows/` - conversation handler flows and executors
 
 See [Conversation flows and workflows](workflows.md) for the workflow structure.
 
@@ -114,10 +114,10 @@ See [Conversation flows and workflows](workflows.md) for the workflow structure.
 The `tcbot/utils/` package provides support functions used across the bot.
 Key modules:
 
-- `logger.py` — structured logging setup and formatting
-- `prefixes.py` — command and prefix parsing helpers
-- `timedate_format.py` — timezone-aware formatting and UTC helpers
-- `error_reporter.py` — error delivery for uncaught exceptions
+- `logger.py` - structured logging setup and formatting
+- `prefixes.py` - command and prefix parsing helpers
+- `timedate_format.py` - timezone-aware formatting and UTC helpers
+- `error_reporter.py` - error delivery for uncaught exceptions
 
 ## Testing and verification
 

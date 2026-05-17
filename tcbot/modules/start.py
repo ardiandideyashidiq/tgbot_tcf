@@ -43,7 +43,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     arg      = parts[1].strip() if len(parts) > 1 else ""
     botname = ctx.bot.first_name
 
-    ## Group / supergroup context — send a minimal message with PM link
+    ## Group / supergroup context - send a minimal message with PM link
     if chat.type in ("group", "supergroup"):
         bot_username = ctx.bot.username or ""
         await msg.reply_text(

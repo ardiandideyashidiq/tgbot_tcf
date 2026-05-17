@@ -34,7 +34,7 @@ __help_text__ = (
 
     "<b>What it does</b>\n"
     "Issues a <b>federation-wide ban</b> on the target, applied across all connected groups "
-    "automatically. A reason is required — provide it directly after the target in the command.\n\n"
+    "automatically. A reason is required - provide it directly after the target in the command.\n\n"
     "After the command, the bot walks you through the proof step: send one or more photos or "
     "videos as evidence, then tap <b>Done</b>. Tap <b>Skip</b> if you have no proof. "
     "The ban record and proof are logged to the federation log channel.\n\n"
@@ -79,18 +79,18 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     if not reason:
-        await msg.reply_text("A reason is required — /tcban <target> <reason>.")
+        await msg.reply_text("A reason is required - /tcban <target> <reason>.")
         return ConversationHandler.END
 
     if target_id == ctx.bot.id:
         await msg.reply_text(
-            "That's me you're trying to ban 😐 — I keep this federation running. Nice try."
+            "That's me you're trying to ban 😐 - I keep this federation running. Nice try."
         )
         return ConversationHandler.END
 
     if target_id == admin.id:
         await msg.reply_text(
-            "Can't ban yourself — that's not how moderation works. 🙃"
+            "Can't ban yourself - that's not how moderation works. 🙃"
         )
         return ConversationHandler.END
 
@@ -99,14 +99,14 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         if role_rank(executor_role) <= role_rank(target_role):
             if target_role == "founder":
                 await msg.reply_text(
-                    f"That's {mention(target_id, target_fname or 'the Founder')}, our Founder — "
+                    f"That's {mention(target_id, target_fname or 'the Founder')}, our Founder - "
                     "banning them is simply not on the table. 👑",
                     parse_mode="HTML",
                 )
             else:
                 label = ROLE_LABEL.get(target_role, target_role.capitalize())
                 await msg.reply_text(
-                    f"That's a {cfg.community_name} {label} — they outrank you here, can't ban them."
+                    f"That's a {cfg.community_name} {label} - they outrank you here, can't ban them."
                 )
             return ConversationHandler.END
         await auto_demote(

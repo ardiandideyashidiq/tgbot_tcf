@@ -46,7 +46,7 @@ async def execute_warn(
     )
 
     if count >= WARN_LIMIT:
-        ## clear warns + ban + federation log — all in parallel
+        ## clear warns + ban + federation log - all in parallel
         results = await asyncio.gather(
             db.warns_db.clear_warns(target_id, chat_id),
             ctx.bot.ban_chat_member(chat_id, target_id),
@@ -66,7 +66,7 @@ async def execute_warn(
             log.error("Auto-ban on warn limit failed: %s", ban_result)
             await msg.reply_text(
                 f"{mention(target_id, target_name)} hit {WARN_LIMIT} warnings "
-                f"but auto-ban failed — please ban them manually.{proof_line}",
+                f"but auto-ban failed - please ban them manually.{proof_line}",
                 parse_mode="HTML",
             )
     else:
@@ -75,7 +75,7 @@ async def execute_warn(
             ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
             msg.reply_text(
                 f"{mention(target_id, target_name)} has been warned "
-                f"({count}/{WARN_LIMIT}) — {reason}{proof_line}",
+                f"({count}/{WARN_LIMIT}) - {reason}{proof_line}",
                 parse_mode="HTML",
             ),
             return_exceptions=True,

@@ -33,17 +33,17 @@ __help_text__ = (
     "<b>/tcpromote</b>\n"
     "Assigns a role to a user. Omit the role argument to get an inline button menu.\n"
     "Usage: <code>/tcpromote @user [admin|developer|tester]</code>\n"
-    "— Founder can promote to any role directly.\n"
-    "— Admin can promote to Developer or Tester directly; promoting someone to Admin "
+    "- Founder can promote to any role directly.\n"
+    "- Admin can promote to Developer or Tester directly; promoting someone to Admin "
     "sends a pending request to the Founder for approval.\n"
-    "— You cannot promote a user to a rank equal to or above your own.\n\n"
+    "- You cannot promote a user to a rank equal to or above your own.\n\n"
 
     "<b>/tcdemote</b>\n"
     "Removes a user's role. A confirmation button is shown before the action executes.\n"
     "Usage: <code>/tcdemote @user</code>\n"
-    "— Founder can demote any role.\n"
-    "— Admin can demote Developer or Tester only.\n"
-    "— When a user with a role is banned or kicked, their role is automatically removed "
+    "- Founder can demote any role.\n"
+    "- Admin can demote Developer or Tester only.\n"
+    "- When a user with a role is banned or kicked, their role is automatically removed "
     "and they are notified by DM.\n\n"
 
     "<b>/transferowner</b>\n"
@@ -63,7 +63,7 @@ __help_text__ = (
 
     "<b>Examples</b>\n"
     "<code>/tcpromote @username developer</code>\n"
-    "<code>/tcpromote 123456789</code> — shows role selection menu\n"
+    "<code>/tcpromote 123456789</code> - shows role selection menu\n"
     "<code>/tcdemote @username</code>\n"
     "<code>/transferowner @newowner</code>"
 )
@@ -99,7 +99,7 @@ async def _execute_promote(
 ) -> tuple[bool, str]:
     """Execute a role assignment and return (success, reply_text)."""
     if current_role == "founder":
-        return False, "That's the Founder — can't assign a role over them. 👑"
+        return False, "That's the Founder - can't assign a role over them. 👑"
 
     if role_rank(current_role) >= role_rank(role):
         label = ROLE_LABEL.get(current_role, current_role)
@@ -127,7 +127,7 @@ async def _execute_promote(
                 bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
                 bot.send_message(
                     target_id,
-                    f"You've been promoted to Admin in {cfg.community_name} — welcome to the staff team! 🎉",
+                    f"You've been promoted to Admin in {cfg.community_name} - welcome to the staff team! 🎉",
                 ),
                 return_exceptions=True,
             )
@@ -167,7 +167,7 @@ async def _execute_promote(
                 )
             except Exception as exc:
                 log.error("Promo request notify failed: %s", exc)
-        return True, "Submitted — the Founder has been notified and will review it shortly. ✅"
+        return True, "Submitted - the Founder has been notified and will review it shortly. ✅"
 
     ## role in ("developer", "tester")
     if executor_role not in ("founder", "admin"):
@@ -193,7 +193,7 @@ async def _execute_promote(
         bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
         bot.send_message(
             target_id,
-            f"You've been assigned the {role_label} role in {cfg.community_name} — welcome to the team! 🎉",
+            f"You've been assigned the {role_label} role in {cfg.community_name} - welcome to the team! 🎉",
         ),
         return_exceptions=True,
     )
@@ -219,21 +219,21 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     role_arg       = remaining_args[0].lower() if remaining_args else ""
 
     if executor_role not in ("founder", "admin"):
-        await msg.reply_text("Only Founder and Admin can promote users — not your call. 🚫")
+        await msg.reply_text("Only Founder and Admin can promote users - not your call. 🚫")
         return
 
     if not target_id:
         await msg.reply_text(
-            "Specify a target — reply to a message, or provide a user ID / @username."
+            "Specify a target - reply to a message, or provide a user ID / @username."
         )
         return
 
     if target_id == admin.id:
-        await msg.reply_text("Can't promote yourself — the hierarchy doesn't work that way. 🙃")
+        await msg.reply_text("Can't promote yourself - the hierarchy doesn't work that way. 🙃")
         return
 
     if target_id == ctx.bot.id:
-        await msg.reply_text("That's me — promoting a bot doesn't quite work. 😄")
+        await msg.reply_text("That's me - promoting a bot doesn't quite work. 😄")
         return
 
     role         = _ROLE_ALIASES.get(role_arg)
@@ -247,7 +247,7 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await msg.reply_text(text, parse_mode="HTML")
         return
 
-    ## No role arg — show selection buttons
+    ## No role arg - show selection buttons
     available = _available_roles_for(executor_role)
     if not available:
         await msg.reply_text("You don't have permission to assign any roles.")
@@ -318,17 +318,17 @@ async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         extraction.extract_target(update, args, ctx.bot),
     )
     if executor_role not in ("founder", "admin"):
-        await msg.reply_text("Only Founder and Admin can demote users — not your call. 🚫")
+        await msg.reply_text("Only Founder and Admin can demote users - not your call. 🚫")
         return
 
     if not target_id:
         await msg.reply_text(
-            "Specify a target — reply to a message, or provide a user ID / @username."
+            "Specify a target - reply to a message, or provide a user ID / @username."
         )
         return
 
     if target_id == admin.id:
-        await msg.reply_text("Can't demote yourself — ask a higher-up if needed. 🙃")
+        await msg.reply_text("Can't demote yourself - ask a higher-up if needed. 🙃")
         return
 
     target_role = await get_effective_role(target_id)
@@ -390,7 +390,7 @@ async def on_demote_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
 
     if not removed:
         await q.edit_message_text(
-            "Couldn't remove the role — it may have already been cleared.", reply_markup=None
+            "Couldn't remove the role - it may have already been cleared.", reply_markup=None
         )
         return
 
@@ -433,12 +433,12 @@ async def cmd_transfer(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     target_id, target_fname = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
         await update.effective_message.reply_text(
-            "Specify the new owner — reply to a message, or provide a user ID / @username."
+            "Specify the new owner - reply to a message, or provide a user ID / @username."
         )
         return
     if target_id == current_owner.id:
         await update.effective_message.reply_text(
-            "You're already the Founder — can't transfer ownership to yourself. 😅"
+            "You're already the Founder - can't transfer ownership to yourself. 😅"
         )
         return
     ## add_admin must complete before set_owner (set_owner does delete_many + insert)
@@ -552,11 +552,11 @@ async def on_promo_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
         await asyncio.gather(
             ctx.bot.send_message(
                 target_id,
-                f"Your promotion request has been approved — welcome to the {cfg.community_name} staff team, Admin! 🎉",
+                f"Your promotion request has been approved - welcome to the {cfg.community_name} staff team, Admin! 🎉",
             ),
             ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
             q.edit_message_text(
-                (q.message.text or "") + f"\n\n— Approved by {admin.first_name}",
+                (q.message.text or "") + f"\n\n- Approved by {admin.first_name}",
                 reply_markup=None,
             ),
             return_exceptions=True,
@@ -575,7 +575,7 @@ async def on_promo_decision(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> N
             ),
             ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
             q.edit_message_text(
-                (q.message.text or "") + f"\n\n— Rejected by {admin.first_name}",
+                (q.message.text or "") + f"\n\n- Rejected by {admin.first_name}",
                 reply_markup=None,
             ),
             return_exceptions=True,

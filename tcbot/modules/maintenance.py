@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 __module_name__ = "Cleanup"
 __help_text__ = (
     "<b>Commands & Aliases</b>\n"
-    "<code>/leaveall</code> — aliases: <code>/exitall</code>, <code>/tcleave</code>\n"
-    "<code>/cleanup</code> — aliases: <code>/tcclean</code>, <code>/tcc</code>\n\n"
+    "<code>/leaveall</code> - aliases: <code>/exitall</code>, <code>/tcleave</code>\n"
+    "<code>/cleanup</code> - aliases: <code>/tcclean</code>, <code>/tcc</code>\n\n"
 
     "<b>Who can use it</b>\n"
     "<code>/leaveall</code>: Founder only.\n"
@@ -34,7 +34,7 @@ __help_text__ = (
     "<b>What it does</b>\n"
     "<code>/leaveall</code>: makes the bot leave every connected group simultaneously, marks "
     "them all as disconnected in the database, and posts a log entry for each group. "
-    "This is irreversible — each group must be manually reconnected with <code>/tcconnect</code>. "
+    "This is irreversible - each group must be manually reconnected with <code>/tcconnect</code>. "
     "Use only in emergencies.\n\n"
     "<code>/cleanup</code>: scans all groups in the database and attempts to verify the bot "
     "still has access. Any group where the bot was kicked, removed, or can no longer reach is "
@@ -42,8 +42,8 @@ __help_text__ = (
     "Run this periodically to keep the group list accurate.\n\n"
 
     "<b>Examples</b>\n"
-    "<code>/cleanup</code> — remove stale or inaccessible groups from the federation.\n"
-    "<code>/leaveall</code> — emergency withdrawal from all connected groups."
+    "<code>/cleanup</code> - remove stale or inaccessible groups from the federation.\n"
+    "<code>/leaveall</code> - emergency withdrawal from all connected groups."
 )
 
 
@@ -55,7 +55,7 @@ async def _leave_one(
     admin_id: int,
     admin_name: str,
 ) -> list:
-    """Leave one group, deactivate it in DB, and post a disconnection log — all in parallel."""
+    """Leave one group, deactivate it in DB, and post a disconnection log - all in parallel."""
     return await asyncio.gather(
         bot.leave_chat(grp["chat_id"]),
         db.groups_db.deactivate_group(grp["chat_id"]),
@@ -82,7 +82,7 @@ async def cmd_leaveall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     status = await update.effective_message.reply_text(f"Leaving {len(groups)} groups...")
     lc, lt = cfg.logs
 
-    ## All groups processed concurrently — no sequential sleep between them
+    ## All groups processed concurrently - no sequential sleep between them
     all_results = await asyncio.gather(
         *(_leave_one(ctx.bot, g, lc, lt, admin.id, admin.first_name) for g in groups),
         return_exceptions=True,
@@ -116,7 +116,7 @@ async def _should_remove(bot, grp: dict) -> bool:
 async def cmd_cleanup(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     groups = await db.groups_db.active_groups()
 
-    ## Check all groups concurrently — one network round-trip per group, all in parallel
+    ## Check all groups concurrently - one network round-trip per group, all in parallel
     checks = await asyncio.gather(
         *(_should_remove(ctx.bot, g) for g in groups),
         return_exceptions=True,

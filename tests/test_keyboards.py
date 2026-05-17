@@ -3,7 +3,7 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Tests for tcbot.modules.helper.keyboards — all keyboard factory functions.
+Tests for tcbot.modules.helper.keyboards - all keyboard factory functions.
 """
 
 from __future__ import annotations

@@ -115,6 +115,20 @@ Before making any changes, **read all documentation files in the `agents/` direc
 - `agents/CLAUDE.md` — project-specific guidance and gotchas
 - `agents/REPLIT.md` — Replit environment, config, and secrets guidance
 
+## Related documentation
+
+- [Documentation hub](docs/index.md)
+- [Project architecture](docs/architecture.md)
+- [Modules and service boundaries](docs/modules.md)
+- [Conversation flows and workflows](docs/workflows.md)
+- [Development workflow and onboarding](docs/development.md)
+- [AI / agent guidelines](docs/agent-guidelines.md)
+- [Agent instructions for Claude](agents/CLAUDE.md)
+- [Code style guidelines](agents/STYLE-CODE.md)
+- [Comment style guidelines](agents/STYLE-COMMENTS.md)
+- [Workflow expectations](agents/WORKFLOW.md)
+- [Project rules and constraints](agents/RULES.md)
+
 ## Deployment
 
 - Workflow: `python3 -m tcbot`

@@ -1,5 +1,13 @@
 # Project Rules — TCF Bot
 
+Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
+- `agents/RULES.md` — coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` — comment and docstring style
+- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` — project-specific guidance and gotchas
+- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+
 ## General
 
 1. This is a production federation bot. Every change must be backward-compatible with existing MongoDB data.
@@ -56,3 +64,12 @@
 2. `can_act_on(executor_id, target_id)` is the canonical check for whether one user may take action against another. Never compare ranks inline.
 3. Auto-demote (`role_guard.auto_demote`) must be called whenever a ban or kick is executed against a user who holds any role.
 4. Developer and Tester roles live in the `tc_roles` MongoDB collection. Admin promotion to Developer/Tester is direct; Admin promotion to Admin goes through the request queue.
+
+## Related documentation
+
+- [Documentation hub](../docs/index.md)
+- [Project architecture](../docs/architecture.md)
+- [Modules and service boundaries](../docs/modules.md)
+- [Conversation flows and workflows](../docs/workflows.md)
+- [Development workflow and onboarding](../docs/development.md)
+- [AI / agent guidelines](../docs/agent-guidelines.md)

@@ -1,5 +1,13 @@
 # Claude Agent — TCF Bot Instructions
 
+Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
+- `agents/RULES.md` — coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` — comment and docstring style
+- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` — project-specific guidance and gotchas
+- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+
 ## Project Overview
 
 TCF (Transsion Core Federation) is a Telegram federation bot built with:
@@ -178,3 +186,12 @@ if target_role in ("admin", "developer", "tester"):
 Run with: `python3 -m pytest tests/ -q`
 Restart the workflow after any change: `python3 -m tcbot`
 Watch for import errors before testing behavior in Telegram.
+
+## Related documentation
+
+- [Documentation hub](../docs/index.md)
+- [Project architecture](../docs/architecture.md)
+- [Modules and service boundaries](../docs/modules.md)
+- [Conversation flows and workflows](../docs/workflows.md)
+- [Development workflow and onboarding](../docs/development.md)
+- [AI / agent guidelines](../docs/agent-guidelines.md)

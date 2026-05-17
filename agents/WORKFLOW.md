@@ -1,5 +1,13 @@
 # Development Workflow — TCF Bot
 
+Before making any changes, **read all documentation files in the `agents/` directory** — specifically:
+- `agents/RULES.md` — coding conventions, what is forbidden
+- `agents/STYLE-CODE.md` — code style, typing, and formatting rules
+- `agents/STYLE-COMMENTS.md` — comment and docstring style
+- `agents/WORKFLOW.md` — branching, commit conventions, and deployment checklist
+- `agents/CLAUDE.md` — project-specific guidance and gotchas
+- `agents/REPLIT.md` — Replit environment, config, and secrets guidance
+
 ## Branching
 
 - `main` — production-ready code only
@@ -64,3 +72,12 @@ Before pushing to production:
 - [ ] `/help` lists all expected modules
 - [ ] MongoDB connection confirmed in logs (`MongoDB connected → <db_name>`)
 - [ ] Keep-alive Flask server on port 5000 confirmed in logs
+
+## Related documentation
+
+- [Documentation hub](../docs/index.md)
+- [Project architecture](../docs/architecture.md)
+- [Modules and service boundaries](../docs/modules.md)
+- [Conversation flows and workflows](../docs/workflows.md)
+- [Development workflow and onboarding](../docs/development.md)
+- [AI / agent guidelines](../docs/agent-guidelines.md)

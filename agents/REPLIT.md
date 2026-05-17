@@ -50,3 +50,12 @@ Structured log format: `[HH:MM] [DD-MM-YYYY] | <community_name> | <L> - <module>
 
 Log level: `INFO` by default. Set `logging.DEBUG` in `utils/logger.py` for verbose output.
 Third-party loggers (httpx, telegram, motor, pymongo) are capped at WARNING.
+
+## Related documentation
+
+- [Documentation hub](../docs/index.md)
+- [Project architecture](../docs/architecture.md)
+- [Modules and service boundaries](../docs/modules.md)
+- [Conversation flows and workflows](../docs/workflows.md)
+- [Development workflow and onboarding](../docs/development.md)
+- [AI / agent guidelines](../docs/agent-guidelines.md)

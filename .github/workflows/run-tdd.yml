@@ -12,7 +12,7 @@ on:
       python_versions:
         description: "Python versions to test (comma-separated, e.g: 3.11,3.12,3.13,3.14,3.15)"
         required: false
-        default: "3.11,3.12,3.13,3.14"
+        default: "3.11,3.12,3.13,3.14,3.15"
         type: string
       use_latest_packages:
         description: "Upgrade all packages to latest? (uncheck = use pinned requirements.txt)"
@@ -36,7 +36,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          VERSIONS="${{ inputs.python_versions || '3.11,3.12,3.13' }}"
+          VERSIONS="${{ inputs.python_versions || '3.11,3.12,3.13,3.14,3.15' }}"
           JSON=$(python3 -c "
           import json
           versions = [v.strip() for v in '$VERSIONS'.split(',') if v.strip()]

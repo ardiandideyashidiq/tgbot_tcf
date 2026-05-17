@@ -80,8 +80,10 @@ Each workflow is split into two concerns:
 
 Example pairs:
 
-- `ban_flow.py` / `kicking_conv.py`
+- `ban_flow.py` / `ban_conv.py` / `proof_flow.py` / `proof_conv.py`
 - `muting_flow.py` / `muting_conv.py`
+- `unban_flow.py` / `unban_conv.py`
+- `kicking_flow.py` / `kicking_conv.py`
 - `appeal_flow.py` / `warning_conv.py`
 
 See [Conversation flows and workflows](workflows.md) for more detail.

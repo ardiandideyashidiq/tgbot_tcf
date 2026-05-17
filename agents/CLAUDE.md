@@ -57,6 +57,13 @@ tcbot/
 │   │   ├── parse_link.py   - message_link(), appeal_deep_link(), utcnow(),
 │   │   │                     user_link(), safe_first_name(), chat_id_to_link_id()
 │   │   └── workflows/      - ConversationHandler flows and executors
+│   │       ├── proof_flow.py   - upload_proof() - media upload to proof channel
+│   │       ├── proof_conv.py   - WAITING_PROOF, album accumulators, on_proof_received,
+│   │       │                     _flush_album, on_cancel_proof, on_ban_timeout
+│   │       ├── ban_flow.py     - _execute_ban() - DB write, log dispatch, group enforcement
+│   │       ├── ban_conv.py     - build_handler(entry_fn) - ban ConversationHandler factory
+│   │       ├── unban_flow.py   - execute_unban() - DB deactivation, group unban, log
+│   │       └── unban_conv.py   - cmd_unban, _FILTER, build_handler()
 │   └── *.py             - Individual command modules
 └── utils/
     ├── dispatch.py      - fan_out(): semaphore-bounded multi-group dispatcher (max 10 concurrent)

@@ -16,7 +16,8 @@ from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import extraction, keyboards
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
-from tcbot.modules.helper.workflows.ban_flow import WAITING_PROOF, build_handler
+from tcbot.modules.helper.workflows.ban_conv import build_handler
+from tcbot.modules.helper.workflows.proof_conv import WAITING_PROOF
 from tcbot.utils.prefixes import parse_cmd_args
 
 log = logging.getLogger(__name__)

@@ -25,13 +25,35 @@ This split keeps UI flow definitions separate from the underlying action logic.
 
 Use this pairing pattern:
 
-- `ban_flow.py` and `kicking_conv.py`
+- `ban_flow.py` and `ban_conv.py` / `proof_conv.py`
 - `muting_flow.py` and `muting_conv.py`
+- `unban_flow.py` and `unban_conv.py`
+- `kicking_flow.py` and `kicking_conv.py`
 - `appeal_flow.py` and `warning_conv.py`
 - `stats_flow.py` and `stats_chats_flow.py`
 
 The `*_conv.py` file is responsible for building the PTB handler and the conversation state graph.
 The `*_flow.py` file is responsible for executing the feature once required information is collected.
+
+## Ban workflow split
+
+The ban workflow is split across four files for clarity:
+
+| File | Responsibility |
+|---|---|
+| `proof_flow.py` | Uploads proof media to the proof channel; returns `proof_message_id` |
+| `proof_conv.py` | Album accumulators, `on_proof_received`, `_flush_album`, `on_cancel_proof`, `on_ban_timeout`, `WAITING_PROOF` constant |
+| `ban_flow.py` | `_execute_ban` — DB write, log dispatch, group enforcement |
+| `ban_conv.py` | `build_handler(entry_fn)` — ConversationHandler factory for the ban flow |
+
+Import chain (no circularity): `ban_conv` → `proof_conv` → `ban_flow` → `proof_flow`
+
+## Unban workflow
+
+| File | Responsibility |
+|---|---|
+| `unban_flow.py` | `execute_unban` — DB deactivation, group unban, log dispatch |
+| `unban_conv.py` | `cmd_unban` handler, `_FILTER`, `build_handler()` |
 
 ## Timeouts
 
@@ -52,12 +74,19 @@ Keep these values in `config.env` and do not hardcode timeouts inside the conver
 
 ## Example flow files
 
+- `tcbot/modules/helper/workflows/proof_flow.py`
+- `tcbot/modules/helper/workflows/proof_conv.py`
 - `tcbot/modules/helper/workflows/ban_flow.py`
+- `tcbot/modules/helper/workflows/ban_conv.py`
+- `tcbot/modules/helper/workflows/unban_flow.py`
+- `tcbot/modules/helper/workflows/unban_conv.py`
 - `tcbot/modules/helper/workflows/connected_flow.py`
 - `tcbot/modules/helper/workflows/kicking_flow.py`
+- `tcbot/modules/helper/workflows/kicking_conv.py`
 - `tcbot/modules/helper/workflows/muting_flow.py`
+- `tcbot/modules/helper/workflows/muting_conv.py`
 - `tcbot/modules/helper/workflows/appeal_flow.py`
-- `tcbot/modules/helper/workflows/warning_flow.py`
+- `tcbot/modules/helper/workflows/warning_conv.py`
 
 ## Relationship to modules
 

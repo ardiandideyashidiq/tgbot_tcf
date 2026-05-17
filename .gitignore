@@ -32,3 +32,6 @@ build/
 
 # Replit attached assets
 attached_assets/
+
+# Local
+logs*/

@@ -100,7 +100,10 @@ jobs:
 
                   for case in s:
                       case_name = f"{case.classname or xml_path.stem}.{case.name}"
-                      if case.skipped:
+                      skipped_flag = getattr(case, "is_skipped", None)
+                      if callable(skipped_flag):
+                          skipped_flag = skipped_flag()
+                      if skipped_flag:
                           skipped_cases.append(case_name)
                           continue
                       result = (case.result or [None])[0]

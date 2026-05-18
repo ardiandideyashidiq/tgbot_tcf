@@ -64,7 +64,6 @@ This package is the place for:
 - keyboard builders (`keyboards.py`)
 - formatting helpers (`formatter.py`, `parse_logmsg.py`, `parse_link.py`)
 - safety and filtering helpers (`decorators.py` — auth guards `owner_only` / `staff_only` / `mod_only` / `basic_mod_only` and the opt-in `log_execution` tracer; `parse_editmsg.py` — safe message edit with content-unchanged guard)
-- promote execution helper (`promote_exec.py` — `_execute_promote`, `_ROLE_ALIASES`, `_available_roles_for`)
 - role and authorization helpers (`role_guard.py`)
 - ban presentation helpers (`ban_info.py`)
 - target extraction helpers (`extraction.py`)
@@ -89,9 +88,9 @@ Example pairs:
 - `warning_flow.py` / `warning_conv.py`
 - `appeal_flow.py` (no conv pairing — external deep-link flow)
 
-Standalone executors (no ConversationHandler): `connected_flow.py`, `stats_flow.py`, `stats_chats_flow.py`.
+Standalone executors (no ConversationHandler): `connected_flow.py`, `stats_flow.py`, `stats_chats_flow.py`, `promote_flow.py`.
 
-The `promote_exec.py` helper under `helper/` contains the shared `_execute_promote` executor used by `admins.py` and its callbacks, extracted to keep `admins.py` within the 500-line guideline.
+`promote_flow.py` contains the shared `_execute_promote` executor used by `admins.py` and its callbacks. It lives in `workflows/` alongside the other execution flows.
 
 See [Conversation flows and workflows](workflows.md) for more detail.
 

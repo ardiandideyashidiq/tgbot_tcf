@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import ContextTypes
 
 from tcbot import database as db
 from tcbot.modules.helper.ban_info import build_ban_detail
@@ -276,12 +276,3 @@ async def on_stats_search_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
     await _render_bans_page(q, 0)
 
 
-handlers = [
-    CallbackQueryHandler(on_stats_bans,          pattern=r"^stats_bans:\d+$"),
-    CallbackQueryHandler(on_stats_ban_item,       pattern=r"^stats_ban_item:\d+:\d+$"),
-    CallbackQueryHandler(on_stats_bans_search,    pattern=r"^stats_bans_search$"),
-    CallbackQueryHandler(on_stats_search_item,    pattern=r"^stats_search_item:\d+$"),
-    CallbackQueryHandler(on_stats_search_back,    pattern=r"^stats_search_back$"),
-    CallbackQueryHandler(on_stats_search_cancel,  pattern=r"^stats_search_cancel$"),
-    MessageHandler(filters.TEXT & ~ALL_PREFIXES_CMD_FILTER, on_bans_search_input),
-]

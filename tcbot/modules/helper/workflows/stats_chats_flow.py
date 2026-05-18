@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import CallbackQueryHandler, ContextTypes
+from telegram.ext import ContextTypes
 
 from tcbot import database as db
 from tcbot.modules.helper.formatter import code, esc, mention
@@ -111,7 +111,3 @@ async def on_stats_chat_item(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> 
     )
 
 
-handlers = [
-    CallbackQueryHandler(on_stats_chats,     pattern=r"^stats_chats:\d+$"),
-    CallbackQueryHandler(on_stats_chat_item, pattern=r"^stats_chat_item:\d+:\d+$"),
-]

@@ -8,14 +8,25 @@ import asyncio
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest
-from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
+from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
 from tcbot import cfg, database as db
 from tcbot.modules.helper import decorators
 from tcbot.modules.helper.formatter import esc, mention
-from tcbot.modules.helper.workflows.stats_chats_flow import handlers as _chats_handlers
-from tcbot.modules.helper.workflows.stats_flow import handlers as _ban_handlers
-from tcbot.utils.prefixes import build_prefixed_filters
+from tcbot.modules.helper.workflows.stats_chats_flow import (
+    on_stats_chats,
+    on_stats_chat_item,
+)
+from tcbot.modules.helper.workflows.stats_flow import (
+    on_bans_search_input,
+    on_stats_ban_item,
+    on_stats_bans,
+    on_stats_bans_search,
+    on_stats_search_back,
+    on_stats_search_cancel,
+    on_stats_search_item,
+)
+from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
 
 __module_name__ = "Stats"
 __help_text__ = (
@@ -170,10 +181,21 @@ async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     )
 
 
+_STATS_FILTER = build_prefixed_filters("tcstats")
+
 __handlers__ = [
-    MessageHandler(build_prefixed_filters("tcstats"), cmd_stats),
-    CallbackQueryHandler(on_stats_main,   pattern=r"^stats_main$"),
-    CallbackQueryHandler(on_stats_admins, pattern=r"^stats_admins$"),
-    *_chats_handlers,
-    *_ban_handlers,
+    MessageHandler(_STATS_FILTER,                      cmd_stats),
+    CallbackQueryHandler(on_stats_main,                pattern=r"^stats_main$"),
+    CallbackQueryHandler(on_stats_admins,              pattern=r"^stats_admins$"),
+    ## ── Connected Chats drill-down ─────────────────────────────────────────
+    CallbackQueryHandler(on_stats_chats,               pattern=r"^stats_chats:\d+$"),
+    CallbackQueryHandler(on_stats_chat_item,           pattern=r"^stats_chat_item:\d+:\d+$"),
+    ## ── User Bans drill-down ───────────────────────────────────────────────
+    CallbackQueryHandler(on_stats_bans,                pattern=r"^stats_bans:\d+$"),
+    CallbackQueryHandler(on_stats_ban_item,            pattern=r"^stats_ban_item:\d+:\d+$"),
+    CallbackQueryHandler(on_stats_bans_search,         pattern=r"^stats_bans_search$"),
+    CallbackQueryHandler(on_stats_search_item,         pattern=r"^stats_search_item:\d+$"),
+    CallbackQueryHandler(on_stats_search_back,         pattern=r"^stats_search_back$"),
+    CallbackQueryHandler(on_stats_search_cancel,       pattern=r"^stats_search_cancel$"),
+    MessageHandler(filters.TEXT & ~ALL_PREFIXES_CMD_FILTER, on_bans_search_input),
 ]

@@ -107,7 +107,7 @@ agents/                  Agent/AI coding guidelines
 python3 -m pytest tests/ -q
 ```
 
-61 tests - all run offline without a bot token or MongoDB connection.
+121 tests - all run offline without a bot token or MongoDB connection.
 
 ## License
 

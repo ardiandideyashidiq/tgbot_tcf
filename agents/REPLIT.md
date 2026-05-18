@@ -34,7 +34,7 @@ Key variables:
 
 Managed via `pyproject.toml` + `uv.lock`. Install with:
 ```
-pip install -r requirements.txt
+uv sync
 ```
 
 Core deps: `python-telegram-bot[all]==22.5`, `motor`, `flask`, `python-dotenv`, `apscheduler`

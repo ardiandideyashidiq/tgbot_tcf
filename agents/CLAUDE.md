@@ -55,6 +55,8 @@ tcbot/
 │   │   ├── ban_info.py     - build_ban_detail() shared between checking/stats
 │   │   ├── parse_link.py   - message_link(), appeal_deep_link(), utcnow(),
 │   │   │                     user_link(), safe_first_name(), chat_id_to_link_id()
+│   │   ├── promote_exec.py - _execute_promote(), _ROLE_ALIASES, _available_roles_for()
+│   │   │                     extracted from admins.py to keep it under 500 lines
 │   │   └── workflows/      - ConversationHandler flows and executors
 │   │       ├── proof_flow.py   - upload_proof() - media upload to proof channel
 │   │       ├── proof_conv.py   - WAITING_PROOF, album accumulators, on_proof_received,

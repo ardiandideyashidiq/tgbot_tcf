@@ -12,6 +12,7 @@ from telegram.ext import ContextTypes, MessageHandler, filters
 
 from tcbot import database as db
 from tcbot import cfg
+from tcbot.modules.helper import decorators
 from tcbot.modules.helper.formatter import mention
 
 log = logging.getLogger(__name__)
@@ -57,6 +58,7 @@ async def _handle_member(
     )
 
 
+@decorators.log_execution
 async def on_new_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg  = update.effective_message
     chat = update.effective_chat
@@ -72,6 +74,7 @@ async def on_new_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     ])
 
 
+@decorators.log_execution
 async def on_left_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg  = update.effective_message
     chat = update.effective_chat

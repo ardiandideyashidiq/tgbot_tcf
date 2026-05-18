@@ -63,7 +63,8 @@ This package is the place for:
 
 - keyboard builders (`keyboards.py`)
 - formatting helpers (`formatter.py`, `parse_logmsg.py`, `parse_link.py`)
-- safety and filtering helpers (`decorators.py` — auth guards `owner_only` / `staff_only` / `mod_only` / `basic_mod_only` and the opt-in `log_execution` tracer; `parse_editmsg.py`)
+- safety and filtering helpers (`decorators.py` — auth guards `owner_only` / `staff_only` / `mod_only` / `basic_mod_only` and the opt-in `log_execution` tracer; `parse_editmsg.py` — safe message edit with content-unchanged guard)
+- promote execution helper (`promote_exec.py` — `_execute_promote`, `_ROLE_ALIASES`, `_available_roles_for`)
 - role and authorization helpers (`role_guard.py`)
 - ban presentation helpers (`ban_info.py`)
 - target extraction helpers (`extraction.py`)
@@ -80,11 +81,17 @@ Each workflow is split into two concerns:
 
 Example pairs:
 
-- `ban_flow.py` / `ban_conv.py` / `proof_flow.py` / `proof_conv.py`
+- `ban_flow.py` / `ban_conv.py`
+- `proof_flow.py` / `proof_conv.py`
 - `muting_flow.py` / `muting_conv.py`
 - `unban_flow.py` / `unban_conv.py`
 - `kicking_flow.py` / `kicking_conv.py`
-- `appeal_flow.py` / `warning_conv.py`
+- `warning_flow.py` / `warning_conv.py`
+- `appeal_flow.py` (no conv pairing — external deep-link flow)
+
+Standalone executors (no ConversationHandler): `connected_flow.py`, `stats_flow.py`, `stats_chats_flow.py`.
+
+The `promote_exec.py` helper under `helper/` contains the shared `_execute_promote` executor used by `admins.py` and its callbacks, extracted to keep `admins.py` within the 500-line guideline.
 
 See [Conversation flows and workflows](workflows.md) for more detail.
 
@@ -113,10 +120,11 @@ Utility modules support common concerns without owning bot actions:
 
 - `tcbot/utils/logger.py`
 - `tcbot/utils/prefixes.py`
+- `tcbot/utils/dispatch.py` - `fan_out()` semaphore-bounded multi-group dispatcher
 - `tcbot/utils/timedate_format.py`
 - `tcbot/utils/error_reporter.py`
 
-Use these modules for cross-cutting infrastructure such as logging, prefix parsing, datetime formatting, and exception reporting.
+Use these modules for cross-cutting infrastructure such as logging, prefix parsing, fan-out dispatch, datetime formatting, and exception reporting.
 
 ## Related documentation
 

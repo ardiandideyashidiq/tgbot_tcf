@@ -10,6 +10,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
 from tcbot import cfg, database as db
+from tcbot.modules.helper import decorators
 from tcbot.modules.helper.formatter import code, esc
 from tcbot.modules.helper.parse_editmsg import safe_edit
 from tcbot.utils.prefixes import build_prefixed_filters
@@ -58,6 +59,7 @@ def _kb(detailed: bool) -> InlineKeyboardMarkup:
 
 ## ── /tcfgroups command ──────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_tcfgroups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     groups = await db.groups_db.active_groups()
     if not groups:
@@ -83,10 +85,12 @@ async def _toggle(update: Update, ctx: ContextTypes.DEFAULT_TYPE, detailed: bool
     await safe_edit(q.message, _render(groups, detailed), reply_markup=_kb(detailed))
 
 
+@decorators.log_execution
 async def on_groups_details(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await _toggle(update, ctx, True)
 
 
+@decorators.log_execution
 async def on_groups_simple(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await _toggle(update, ctx, False)
 

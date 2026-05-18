@@ -11,6 +11,7 @@ from telegram.error import BadRequest
 from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
 from tcbot import cfg, database as db
+from tcbot.modules.helper import decorators
 from tcbot.modules.helper.formatter import esc, mention
 from tcbot.modules.helper.workflows.stats_chats_flow import handlers as _chats_handlers
 from tcbot.modules.helper.workflows.stats_flow import handlers as _ban_handlers
@@ -81,6 +82,7 @@ async def _stats_text() -> str:
 
 ## ── /tcstats command ───────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     text = await _stats_text()
     await update.effective_message.reply_text(text, parse_mode="HTML", reply_markup=_stats_kb())
@@ -88,6 +90,7 @@ async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 ## ── stats_main callback ─────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def on_stats_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
     _, text = await asyncio.gather(q.answer(), _stats_text())
@@ -100,6 +103,7 @@ async def on_stats_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 ## ── stats_admins callback ───────────────────────────────────────────────────
 
+@decorators.log_execution
 async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
 

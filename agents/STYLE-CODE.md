@@ -104,6 +104,25 @@ class SweepResult:
     errors:  int = 0
 ```
 
+## Decorator Order
+
+When stacking auth and tracing decorators on a handler, place `@log_execution` closest to the function definition and the auth guard outermost:
+
+```python
+@decorators.owner_only          # outermost – checked first
+@decorators.log_execution       # innermost – logs after auth passes
+async def cmd_transfer(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    ...
+```
+
+For handlers with no auth guard, `@log_execution` is the sole decorator:
+
+```python
+@decorators.log_execution
+async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    ...
+```
+
 ## Related documentation
 
 - [Documentation hub](../docs/index.md)

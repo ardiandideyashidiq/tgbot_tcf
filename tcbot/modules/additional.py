@@ -10,6 +10,7 @@ from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, 
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from tcbot import cfg
+from tcbot.modules.helper import decorators
 
 __module_name__ = None
 
@@ -40,6 +41,7 @@ def _additional_kb() -> InlineKeyboardMarkup:
 
 ## ── Callback handler ────────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def on_additional_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     await asyncio.gather(

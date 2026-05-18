@@ -16,6 +16,7 @@ from telegram.ext import (
 )
 
 from tcbot import cfg, database as db
+from tcbot.modules.helper import decorators
 from tcbot.modules.helper.workflows.connected_flow import (
     _check_bot_perms,
     _complete_join,
@@ -55,6 +56,7 @@ __help_text__ = (
 )
 
 
+@decorators.log_execution
 async def cmd_tcconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     chat = update.effective_chat
     user = update.effective_user

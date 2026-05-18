@@ -116,6 +116,7 @@ Key modules:
 
 - `logger.py` - structured logging setup and formatting
 - `prefixes.py` - command and prefix parsing helpers
+- `dispatch.py` - `fan_out()` semaphore-bounded multi-group dispatcher (max 10 concurrent)
 - `timedate_format.py` - timezone-aware formatting and UTC helpers
 - `error_reporter.py` - error delivery for uncaught exceptions
 

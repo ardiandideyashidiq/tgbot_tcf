@@ -10,7 +10,7 @@ from telegram import CallbackQuery, Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from tcbot import cfg
-from tcbot.modules.helper import keyboards
+from tcbot.modules.helper import decorators, keyboards
 
 __module_name__ = None
 
@@ -60,6 +60,7 @@ _PRIVACY_POLICY_MSG = (
 
 ## ── Callback handlers ───────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def on_privacy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     botname = ctx.bot.first_name or "This bot"
@@ -74,6 +75,7 @@ async def on_privacy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
 
 ## ── Privacy policy callback ─────────────────────────────────────────────────
 
+@decorators.log_execution
 async def on_privacy_policy_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     q: CallbackQuery = update.callback_query
     botname = ctx.bot.first_name or "This bot"

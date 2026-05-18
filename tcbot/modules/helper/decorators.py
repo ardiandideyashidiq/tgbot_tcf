@@ -127,6 +127,35 @@ async def global_rate_limit_handler(update: Update, ctx: ContextTypes.DEFAULT_TY
         raise ApplicationHandlerStop
 
 
+## ── Execution tracer ───────────────────────────────────────────────────────
+
+def log_execution(func: Callable) -> Callable:
+    """Wrap a handler to emit entry / exit / exception traces at DEBUG level.
+
+    Logs the handler name and effective user ID on entry.
+    On success logs elapsed milliseconds.  On exception logs at ERROR level
+    (with full traceback) and re-raises so PTB error handling stays intact.
+
+    Opt-in: apply to any command or callback handler you want to trace.
+    Has zero overhead when the root logger is above DEBUG.
+    """
+    @functools.wraps(func)
+    async def wrapper(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+        uid  = update.effective_user.id if update.effective_user else "?"
+        name = func.__name__
+        t0   = time.monotonic()
+        log.debug("[%s] uid=%s enter", name, uid)
+        try:
+            result = await func(update, ctx)
+        except Exception:
+            elapsed = (time.monotonic() - t0) * 1_000
+            log.exception("[%s] uid=%s raised after %.1fms", name, uid, elapsed)
+            raise
+        log.debug("[%s] uid=%s ok (%.1fms)", name, uid, (time.monotonic() - t0) * 1_000)
+        return result  # type: ignore[return-value]
+    return wrapper
+
+
 ## ── Auth decorators ────────────────────────────────────────────────────────
 
 def owner_only(func: Callable) -> Callable:

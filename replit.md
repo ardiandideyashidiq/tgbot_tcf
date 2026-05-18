@@ -81,7 +81,7 @@ Auto-demote: when a user with any role is **banned or kicked**, their role is au
 
 Run with: `python3 -m pytest`
 
-110 tests across 9 files - all pass offline (no real bot token or MongoDB needed).
+121 tests across 9 files - all pass offline (no real bot token or MongoDB needed).
 Test dependencies: `pip install pytest pytest-asyncio` (Replit) or `uv sync --extra test` (local).
 
 | File | What it tests |
@@ -91,7 +91,7 @@ Test dependencies: `pip install pytest pytest-asyncio` (Replit) or `uv sync --ex
 | `tests/test_users_resolver.py` | `resolve_identity` with mocked repos |
 | `tests/test_prefix.py` | Alt-prefix dispatcher and registry |
 | `tests/test_keyboards.py` | `tcbot.modules.helper.keyboards` factory shapes |
-| `tests/test_messages.py` | `M` string constants |
+| `tests/test_decorators.py` | `log_execution` tracer decorator |
 | `tests/test_appeals_pure.py` | Pure appeal logic functions |
 | `tests/test_log_templates.py` | `parse_logmsg` log-message formatters |
 | `tests/test_rate_limiter.py` | `_RateLimiter` sliding-window logic |

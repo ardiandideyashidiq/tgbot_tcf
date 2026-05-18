@@ -63,7 +63,7 @@ This package is the place for:
 
 - keyboard builders (`keyboards.py`)
 - formatting helpers (`formatter.py`, `parse_logmsg.py`, `parse_link.py`)
-- safety and filtering helpers (`decorators.py`, `parse_editmsg.py`)
+- safety and filtering helpers (`decorators.py` — auth guards `owner_only` / `staff_only` / `mod_only` / `basic_mod_only` and the opt-in `log_execution` tracer; `parse_editmsg.py`)
 - role and authorization helpers (`role_guard.py`)
 - ban presentation helpers (`ban_info.py`)
 - target extraction helpers (`extraction.py`)

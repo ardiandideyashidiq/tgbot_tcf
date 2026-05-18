@@ -101,7 +101,7 @@ This package contains:
 - `formatter.py` - HTML text builders and safe formatting helpers
 - `extraction.py` - target resolution and identity helpers
 - `keyboards.py` - inline keyboard builders
-- `decorators.py` - access control decorators like `owner_only`, `staff_only`, and `basic_mod_only`
+- `decorators.py` - access control decorators (`owner_only`, `staff_only`, `mod_only`, `basic_mod_only`) and the opt-in `log_execution` tracing decorator
 - `role_guard.py` - shared role enforcement logic and auto-demotion
 - `parse_link.py` / `parse_logmsg.py` / `parse_editmsg.py` - message formatting and safe edit helpers
 - `ban_info.py` - shared ban detail rendering

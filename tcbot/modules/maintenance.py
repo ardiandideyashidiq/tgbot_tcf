@@ -72,6 +72,7 @@ async def _leave_one(
 
 
 @decorators.owner_only
+@decorators.log_execution
 async def cmd_leaveall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     admin  = update.effective_user
     groups = await db.groups_db.active_groups()
@@ -113,6 +114,7 @@ async def _should_remove(bot, grp: dict) -> bool:
 
 
 @decorators.staff_only
+@decorators.log_execution
 async def cmd_cleanup(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     groups = await db.groups_db.active_groups()
 

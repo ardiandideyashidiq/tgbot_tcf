@@ -202,6 +202,7 @@ async def _execute_promote(
 
 ## ── Promote command ────────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     admin = update.effective_user
     msg   = update.effective_message
@@ -310,6 +311,7 @@ async def on_promote_role_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE)
 
 ## ── Demote command ─────────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     admin = update.effective_user
     msg   = update.effective_message
@@ -433,6 +435,7 @@ async def on_demote_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
 ## ── Transfer ownership ─────────────────────────────────────────────────────
 
 @decorators.owner_only
+@decorators.log_execution
 async def cmd_transfer(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     current_owner = update.effective_user
     args = parse_cmd_args(update.effective_message.text)
@@ -511,6 +514,7 @@ async def cmd_promote_request(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 ## ── Promotion list (Admin and above) ───────────────────────────────────────
 
 @decorators.staff_only
+@decorators.log_execution
 async def cmd_promote_list(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     pending = await db.queues_db.all_pending()
     if not pending:

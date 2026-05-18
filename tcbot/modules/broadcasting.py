@@ -46,6 +46,7 @@ __help_text__ = (
 
 
 @decorators.staff_only
+@decorators.log_execution
 async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg   = update.effective_message
     admin = update.effective_user

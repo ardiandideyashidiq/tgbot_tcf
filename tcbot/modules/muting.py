@@ -54,6 +54,7 @@ __help_text__ = (
 
 
 @decorators.basic_mod_only
+@decorators.log_execution
 async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg  = update.effective_message
     args = parse_cmd_args(msg.text)

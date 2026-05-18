@@ -40,15 +40,14 @@ tcbot/
 │   └── queues_db.py     - Promotion request queue
 ├── modules/
 │   ├── __init__.py      - Module discovery, filtering, handler ordering
-│   ├── messages.py      - Central M namespace for all user-facing strings
 │   ├── appeals.py       - Pure functions for appeal business logic
-│   ├── admins_ext.py    - Admin service layer (promote, demote, transfer ownership)
 │   ├── helper/
 │   │   ├── formatter.py    - HTML helpers: esc(), code(), mention(), bold()
 │   │   ├── extraction.py   - extract_target(), ResolvedTarget, resolve_identity()
 │   │   ├── keyboards.py    - All InlineKeyboardMarkup builders
 │   │   │                     promote_role_kb(target_id, roles), demote_confirm_kb(target_id)
-│   │   ├── decorators.py   - owner_only, staff_only, mod_only, basic_mod_only
+│   │   ├── decorators.py   - owner_only, staff_only, mod_only, basic_mod_only,
+│   │   │                     log_execution (opt-in execution tracer)
 │   │   ├── role_guard.py   - resolve_and_check(), auto_demote() - shared moderation helpers
 │   │   ├── parse_logmsg.py - Log message text builders
 │   │   │                     role_assigned, role_removed, role_auto_demoted
@@ -115,6 +114,8 @@ Key helpers in `tcbot.modules.helper.role_guard`:
 Decorator notes:
 - `@decorators.mod_only` - Founder/Admin/Developer (ban/unban)
 - `@decorators.basic_mod_only` - Founder/Admin/Developer/Tester (kick/mute/warn)
+- `@decorators.log_execution` - opt-in tracer; logs entry, exit, and exceptions with elapsed ms
+  Place innermost (closest to `async def`) after any auth decorators.
 
 Auto-demote: fires on ban AND kick when target holds any role.
 

@@ -45,6 +45,7 @@ __help_text__ = (
 )
 
 
+@decorators.log_execution
 async def cmd_tcdisconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     chat = update.effective_chat
     user = update.effective_user
@@ -93,6 +94,7 @@ async def cmd_tcdisconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
 
 
 @decorators.staff_only
+@decorators.log_execution
 async def cmd_rmtc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     args = parse_cmd_args(update.effective_message.text)
     if not args or not args[0].lstrip("-").isdigit():

@@ -13,7 +13,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 from tcbot import cfg, database as db
 from tcbot.modules.about import __about_msg__
 from tcbot.modules.groups import _render
-from tcbot.modules.helper import keyboards
+from tcbot.modules.helper import decorators, keyboards
 from tcbot.utils.prefixes import build_prefixed_filters
 
 log = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ _GROUP_START_TEXT = (
 
 ## ── /start command ─────────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     msg      = update.effective_message
     chat     = update.effective_chat

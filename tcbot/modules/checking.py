@@ -11,7 +11,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
 from tcbot import cfg, database as db
 from tcbot.database.roles_db import ROLE_LABEL, get_effective_role
-from tcbot.modules.helper import extraction, keyboards
+from tcbot.modules.helper import decorators, extraction, keyboards
 from tcbot.modules.helper.ban_info import build_ban_detail
 from tcbot.modules.helper.formatter import code, esc, mention
 from tcbot.modules.helper.parse_link import message_link
@@ -92,6 +92,7 @@ async def _ban_summary(
 
 ## ── /checkme ───────────────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_checkme(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     user  = update.effective_user
     msg   = update.effective_message
@@ -198,6 +199,7 @@ async def on_checkme_back(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
 
 ## ── /checkban ──────────────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_baninfo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     args = parse_cmd_args(update.effective_message.text)
     target_id, target_fname = await extraction.extract_target(update, args, ctx.bot)

@@ -26,13 +26,13 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 | `tcbot/database/queues_db.py` | Promotion-request queue collection |
 | `tcbot/database/roles_db.py` | Developer/Tester roles collection (`tc_roles`); also exports `get_effective_role`, `role_rank`, `can_act_on` |
 | `tcbot/database/users_db.py` | Member-cache collection |
-| `tcbot/modules/messages.py` | Central `M` namespace for all user-facing strings |
 | `tcbot/modules/appeals.py` | Pure functions for appeal business logic |
-| `tcbot/modules/admins_ext.py` | Admin service layer (promote, demote, transfer ownership) |
 | `tcbot/modules/helper/parse_link.py` | Link builders, HTML helpers (`user_link`, `safe_first_name`), `utcnow()` |
 | `tcbot/modules/helper/keyboards.py` | All inline-keyboard factory functions (includes `promote_role_kb`, `demote_confirm_kb`) |
+| `tcbot/modules/helper/decorators.py` | Auth decorators (`owner_only`, `staff_only`, `mod_only`, `basic_mod_only`) + `log_execution` tracer |
 | `tcbot/modules/helper/role_guard.py` | `resolve_and_check()` + `auto_demote()` - shared role-permission helpers for moderation flows |
 | `tcbot/modules/helper/extraction.py` | `extract_target()`, `ResolvedTarget`, `resolve_identity()` |
+| `tcbot/utils/dispatch.py` | `fan_out()` — semaphore-bounded multi-group dispatcher (max 10 concurrent) |
 | `tcbot/utils/prefixes.py` | Prefix filter builder + alt-prefix dispatcher (`_REGISTRY`) |
 | `tcbot/utils/logger.py` | `BotLogFormatter` and `setup()` |
 | `tcbot/utils/timedate_format.py` | `fmt_dt()` (tz-safe), `utc_now()` |

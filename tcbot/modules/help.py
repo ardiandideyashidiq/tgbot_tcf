@@ -13,7 +13,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes, MessageHandler
 
 from tcbot import cfg
 from tcbot.modules import ALL_MODULES
-from tcbot.modules.helper import keyboards
+from tcbot.modules.helper import decorators, keyboards
 from tcbot.utils.prefixes import build_prefixed_filters
 
 log = logging.getLogger(__name__)
@@ -100,6 +100,7 @@ async def _render_help_index(
 
 ## ── /help command ──────────────────────────────────────────────────────────
 
+@decorators.log_execution
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     botname = ctx.bot.first_name
     await update.effective_message.reply_text(
@@ -155,19 +156,20 @@ async def _show_topic(q: CallbackQuery, menu_key: str, back_kb) -> None:
     )
 
 
-## ── Help topic - menu path ─────────────────────────────────────────────────
+## ── Help topic - unified handler (menu path + command path) ────────────────
 
-async def on_help_topic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+async def on_help_topic_any(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle both ``help_<mod>`` (menu path) and ``helpc_<mod>`` (command path).
+
+    The two paths differ only in which back-button keyboard is used.
+    ``helpc_*`` data is normalised to its ``help_*`` key before lookup.
+    """
     q: CallbackQuery = update.callback_query
-    await _show_topic(q, q.data, keyboards.back_to_help_kb())
-
-
-## ── Help topic - command path ──────────────────────────────────────────────
-
-async def on_help_topic_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    q: CallbackQuery = update.callback_query
-    ## "helpc_banning" → "help_banning"
-    await _show_topic(q, "help_" + q.data[6:], keyboards.back_to_help_cmd_kb())
+    if q.data.startswith("helpc_"):
+        ## "helpc_banning" → "help_banning"
+        await _show_topic(q, "help_" + q.data[6:], keyboards.back_to_help_cmd_kb())
+    else:
+        await _show_topic(q, q.data, keyboards.back_to_help_kb())
 
 
 ## ── Handler list ───────────────────────────────────────────────────────────
@@ -176,9 +178,10 @@ _HELP_FILTER = build_prefixed_filters("help") | build_prefixed_filters("commands
 
 __handlers__ = [
     MessageHandler(_HELP_FILTER, cmd_help),
-    CallbackQueryHandler(on_help_menu,        pattern=r"^help_menu$"),
-    CallbackQueryHandler(on_help_menu_group,  pattern=r"^help_menu_group$"),
+    CallbackQueryHandler(on_help_menu,       pattern=r"^help_menu$"),
+    CallbackQueryHandler(on_help_menu_group, pattern=r"^help_menu_group$"),
     CallbackQueryHandler(on_helpc_main,      pattern=r"^helpc_main$"),
-    CallbackQueryHandler(on_help_topic,       pattern=r"^help_\w+$"),
-    CallbackQueryHandler(on_help_topic_cmd,   pattern=r"^helpc_\w+$"),
+    ## Unified topic handler: catches both help_<mod> and helpc_<mod>
+    ## Registered after the specific patterns above so they take priority.
+    CallbackQueryHandler(on_help_topic_any,  pattern=r"^(help|helpc)_\w+$"),
 ]

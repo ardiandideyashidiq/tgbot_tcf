@@ -3,7 +3,7 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Warn conversation workflow - reason + optional proof
+Warn conversation workflow - reason (required) + optional proof
 
 Flow
 ────
@@ -13,12 +13,13 @@ Flow
 
 2. If reason was NOT given inline → WAITING_REASON
     • user sends plain text       → stored as reason, continue
-    • (no skip - a reason is required for a warning)
+    • Cancel button pressed       → conversation ends, no action
+    (no Skip — a reason is mandatory for a warning)
 
 3. WAITING_PROOF (always reached)
     • user sends photo/video      → proof description noted, execute warn
     • Skip button pressed         → execute warn without proof
-    • Cancel button pressed       → cancel flow
+    • Cancel button pressed       → conversation ends, no action
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update
 from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
@@ -36,9 +37,18 @@ from telegram.ext import (
 )
 
 from tcbot import cfg
-from tcbot.database.roles_db import get_effective_role, role_rank, ROLE_LABEL
+from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
+from tcbot.modules.helper.workflows.reason_flow import (
+    parse_inline_reason,
+    proof_kb,
+    proof_step_prompt,
+    reason_noted_prompt,
+    reason_only_kb,
+    reason_prompt,
+    record_proof,
+)
 from tcbot.modules.helper.workflows.warning_flow import execute_warn
 from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters, parse_cmd_args
 
@@ -46,15 +56,6 @@ log = logging.getLogger(__name__)
 
 WAITING_REASON = 0
 WAITING_PROOF  = 1
-
-_KB_REASON = InlineKeyboardMarkup([[
-    InlineKeyboardButton("Cancel", callback_data="warn_cancel"),
-]])
-
-_KB_PROOF = InlineKeyboardMarkup([[
-    InlineKeyboardButton("Skip",   callback_data="warn_skip_proof"),
-    InlineKeyboardButton("Cancel", callback_data="warn_cancel"),
-]])
 
 
 ## ── Helpers ────────────────────────────────────────────────────────────────
@@ -99,7 +100,8 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if role_rank(executor_role) < role_rank("tester"):
         await msg.reply_text("You need at least a Tester role to warn users - not your call. 🚫")
         return ConversationHandler.END
-    inline_reason = " ".join(args[1:] if has_explicit_target else args).strip()
+
+    inline_reason = parse_inline_reason(args, has_explicit_target)
 
     if not target_id:
         await msg.reply_text(
@@ -138,19 +140,16 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if inline_reason:
         ctx.user_data["warn_reason"] = inline_reason
         await msg.reply_text(
-            f"Warning {target_mention}.\n"
-            f"Reason: <b>{inline_reason}</b>\n\n"
-            "Got any proof? Send a photo or video, or tap <b>Skip</b>.",
+            reason_noted_prompt("warn", inline_reason, target_mention),
             parse_mode="HTML",
-            reply_markup=_KB_PROOF,
+            reply_markup=proof_kb("warn"),
         )
         return WAITING_PROOF
 
     await msg.reply_text(
-        f"About to warn {target_mention}.\n"
-        "A reason is required - type it below. Or tap <b>Cancel</b> to abort.",
+        reason_prompt(target_mention, "warn"),
         parse_mode="HTML",
-        reply_markup=_KB_REASON,
+        reply_markup=reason_only_kb("warn"),
     )
     return WAITING_REASON
 
@@ -158,12 +157,16 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 ## ── WAITING_REASON handlers ────────────────────────────────────────────────
 
 async def on_warn_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    ctx.user_data["warn_reason"] = update.effective_message.text.strip()
+    reason = update.effective_message.text.strip()
+    ctx.user_data["warn_reason"] = reason
+    target_mention = mention(
+        ctx.user_data["warn_target_id"],
+        ctx.user_data["warn_target_name"],
+    )
     await update.effective_message.reply_text(
-        "Reason noted. Send proof (photo or video) if you have any, "
-        "or tap <b>Skip</b> to issue the warning now.",
+        proof_step_prompt(target_mention, "warn", reason),
         parse_mode="HTML",
-        reply_markup=_KB_PROOF,
+        reply_markup=proof_kb("warn"),
     )
     return WAITING_PROOF
 
@@ -171,11 +174,9 @@ async def on_warn_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 ## ── WAITING_PROOF handlers ─────────────────────────────────────────────────
 
 async def on_warn_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    msg = update.effective_message
-    if msg.photo:
-        ctx.user_data["warn_proof_desc"] = f"Photo (msg {msg.message_id})"
-    elif msg.video:
-        ctx.user_data["warn_proof_desc"] = f"Video (msg {msg.message_id})"
+    proof = record_proof(update.effective_message)
+    if proof:
+        ctx.user_data["warn_proof_desc"] = proof
     return await _do_warn(update, ctx)
 
 
@@ -197,7 +198,6 @@ async def on_warn_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 ## ── ConversationHandler factory ────────────────────────────────────────────
 
 _WARN_FILTER = build_prefixed_filters("tcwarn") | build_prefixed_filters("tcw")
-
 
 ## Commands that must NOT be swallowed by the fallback so they can reach
 ## their own MessageHandlers registered after warn_conversation() in __handlers__.

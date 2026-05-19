@@ -17,12 +17,12 @@ from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
 from tcbot.modules.helper.workflows.kicking_conv import (
     WAITING_PROOF,
-    _KB_PROOF,
-    _KB_REASON,
     build_handler,
 )
 from tcbot.modules.helper.workflows.reason_flow import (
     parse_inline_reason,
+    proof_kb,
+    reason_kb,
     reason_noted_prompt,
     reason_prompt,
 )
@@ -133,14 +133,14 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await msg.reply_text(
             reason_noted_prompt("kick", inline_reason, target_mention),
             parse_mode="HTML",
-            reply_markup=_KB_PROOF,
+            reply_markup=proof_kb("kick"),
         )
         return WAITING_PROOF
 
     await msg.reply_text(
         reason_prompt(target_mention, "kick"),
         parse_mode="HTML",
-        reply_markup=_KB_REASON,
+        reply_markup=reason_kb("kick"),
     )
     return 0  ## WAITING_REASON
 

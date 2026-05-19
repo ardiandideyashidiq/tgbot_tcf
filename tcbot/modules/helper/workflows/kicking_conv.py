@@ -27,7 +27,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update
 from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
@@ -38,22 +38,19 @@ from telegram.ext import (
 
 from tcbot import cfg
 from tcbot.modules.helper.workflows.kicking_flow import execute_kick
+from tcbot.modules.helper.workflows.reason_flow import (
+    proof_kb,
+    proof_step_prompt,
+    reason_kb,
+    reason_noted_prompt,
+    record_proof,
+)
 from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
 
 log = logging.getLogger(__name__)
 
 WAITING_REASON = 0
 WAITING_PROOF  = 1
-
-_KB_REASON = InlineKeyboardMarkup([[
-    InlineKeyboardButton("Skip",   callback_data="kick_skip_reason"),
-    InlineKeyboardButton("Cancel", callback_data="kick_cancel"),
-]])
-
-_KB_PROOF = InlineKeyboardMarkup([[
-    InlineKeyboardButton("Skip",   callback_data="kick_skip_proof"),
-    InlineKeyboardButton("Cancel", callback_data="kick_cancel"),
-]])
 
 
 ## ── Helpers ────────────────────────────────────────────────────────────────
@@ -83,12 +80,13 @@ async def _do_kick(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def on_kick_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     """User typed the reason - store it and ask for proof."""
-    ctx.user_data["kick_reason"] = update.effective_message.text.strip()
+    reason = update.effective_message.text.strip()
+    ctx.user_data["kick_reason"] = reason
+    target_mention = ctx.user_data.get("kick_target_name", "target")
     await update.effective_message.reply_text(
-        "Reason noted. Send proof (photo or video) if you have any, "
-        "or tap <b>Skip</b> to proceed.",
+        proof_step_prompt(target_mention, "kick", reason),
         parse_mode="HTML",
-        reply_markup=_KB_PROOF,
+        reply_markup=proof_kb("kick"),
     )
     return WAITING_PROOF
 
@@ -97,13 +95,13 @@ async def on_kick_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
     """Skip button in reason state - use default reason and ask for proof."""
     q = update.callback_query
     ctx.user_data["kick_reason"] = "No reason provided"
+    target_mention = ctx.user_data.get("kick_target_name", "target")
     await asyncio.gather(
         q.answer(),
         q.edit_message_text(
-            "No reason - send proof (photo or video) if any, "
-            "or tap <b>Skip</b> to proceed.",
+            proof_step_prompt(target_mention, "kick", "No reason provided"),
             parse_mode="HTML",
-            reply_markup=_KB_PROOF,
+            reply_markup=proof_kb("kick"),
         ),
     )
     return WAITING_PROOF
@@ -113,11 +111,9 @@ async def on_kick_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) ->
 
 async def on_kick_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     """User sent a photo or video as proof - record it and execute kick."""
-    msg = update.effective_message
-    if msg.photo:
-        ctx.user_data["kick_proof_desc"] = f"Photo (msg {msg.message_id})"
-    elif msg.video:
-        ctx.user_data["kick_proof_desc"] = f"Video (msg {msg.message_id})"
+    proof = record_proof(update.effective_message)
+    if proof:
+        ctx.user_data["kick_proof_desc"] = proof
     return await _do_kick(update, ctx)
 
 

@@ -239,28 +239,6 @@ def help_topics_kb(topics: list[tuple[str, str]]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(_build_topic_rows(topics))
 
 
-def mute_reason_kb() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("Skip", callback_data="mute_skip_reason"),
-                InlineKeyboardButton("Cancel", callback_data="mute_cancel"),
-            ]
-        ]
-    )
-
-
-def mute_proof_kb() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("Skip", callback_data="mute_skip_proof"),
-                InlineKeyboardButton("Cancel", callback_data="mute_cancel"),
-            ]
-        ]
-    )
-
-
 def back_to_start_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [

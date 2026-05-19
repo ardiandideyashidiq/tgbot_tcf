@@ -14,10 +14,12 @@ Flow
 2. If reason was NOT given inline → WAITING_REASON
     • user sends plain text  → stored as reason, continue
     • Skip button pressed    → reason = "No reason provided", continue
+    • Cancel button pressed  → conversation ends, no action
 
 3. WAITING_PROOF (always reached)
     • user sends photo/video → proof note stored, execute mute
     • Skip button pressed    → execute mute without proof
+    • Cancel button pressed  → conversation ends, no action
 """
 from __future__ import annotations
 
@@ -34,14 +36,23 @@ from telegram.ext import (
 )
 
 from tcbot import cfg
-from tcbot.database.roles_db import get_effective_role, role_rank, ROLE_LABEL
-from tcbot.modules.helper import decorators, extraction, keyboards
+from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
+from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import code, mention
 from tcbot.modules.helper.workflows.muting_flow import (
     _DURATION_RE,
     _execute_mute,
     fmt_duration,
     parse_duration,
+)
+from tcbot.modules.helper.workflows.reason_flow import (
+    parse_inline_reason,
+    proof_kb,
+    proof_step_prompt,
+    reason_kb,
+    reason_noted_prompt,
+    reason_prompt,
+    record_proof,
 )
 from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters, parse_cmd_args
 
@@ -76,6 +87,7 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if role_rank(executor_role) < role_rank("tester"):
         await msg.reply_text("You need at least a Tester role to mute - not your call. 🚫")
         return ConversationHandler.END
+
     remaining_args = list(raw_args[1:] if has_explicit_target else raw_args)
 
     if not target_id:
@@ -112,7 +124,7 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if remaining_args and _DURATION_RE.match(remaining_args[0]):
         duration = parse_duration(remaining_args.pop(0))
 
-    inline_reason = " ".join(remaining_args).strip()
+    inline_reason = parse_inline_reason(remaining_args, has_explicit_target=False)
 
     ctx.user_data.update({
         "mute_target_id":    target_id,
@@ -125,27 +137,24 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         "mute_proof_desc":   None,
     })
 
+    target_mention = mention(target_id, target_fname or str(target_id))
+    dur_str        = fmt_duration(duration)
+    extra_info     = f"{code(str(target_id))} — {dur_str}"
+
     if inline_reason:
         ctx.user_data["mute_reason"] = inline_reason
-        dur_str = fmt_duration(duration)
         prompt = await msg.reply_text(
-            f"Muting {mention(target_id, target_fname or str(target_id))} "
-            f"{code(str(target_id))} {dur_str}.\n"
-            f"Reason: <i>{inline_reason}</i>\n\n"
-            f"Send proof (photo / video) or press <b>Skip</b>.",
+            reason_noted_prompt("mute", inline_reason, target_mention, extra_info=extra_info),
             parse_mode="HTML",
-            reply_markup=keyboards.mute_proof_kb(),
+            reply_markup=proof_kb("mute"),
         )
         ctx.user_data["mute_prompt_id"] = prompt.message_id
         return WAITING_PROOF
 
-    dur_str = fmt_duration(duration)
     prompt = await msg.reply_text(
-        f"Muting {mention(target_id, target_fname or str(target_id))} "
-        f"{code(str(target_id))} {dur_str}.\n\n"
-        f"Send a <b>reason</b> or press <b>Skip</b>.",
+        reason_prompt(target_mention, "mute", extra_info=extra_info),
         parse_mode="HTML",
-        reply_markup=keyboards.mute_reason_kb(),
+        reply_markup=reason_kb("mute"),
     )
     ctx.user_data["mute_prompt_id"] = prompt.message_id
     return WAITING_REASON
@@ -161,15 +170,15 @@ async def on_reason_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     prompt_chat  = ctx.user_data["mute_prompt_chat"]
     prompt_id    = ctx.user_data.get("mute_prompt_id")
     dur_str      = fmt_duration(duration)
+    target_mention = mention(target_id, target_fname)
+    extra_info     = f"{code(str(target_id))} — {dur_str}"
     try:
         await ctx.bot.edit_message_text(
-            f"Muting {mention(target_id, target_fname)} {code(str(target_id))} {dur_str}.\n"
-            f"Reason: <i>{ctx.user_data['mute_reason']}</i>\n\n"
-            f"Send proof (photo / video) or press <b>Skip</b>.",
+            proof_step_prompt(target_mention, "mute", ctx.user_data["mute_reason"], extra_info),
             chat_id=prompt_chat,
             message_id=prompt_id,
             parse_mode="HTML",
-            reply_markup=keyboards.mute_proof_kb(),
+            reply_markup=proof_kb("mute"),
         )
     except Exception as exc:
         log.error("Mute prompt edit failed (reason step): %s", exc)
@@ -183,14 +192,15 @@ async def on_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     target_fname = ctx.user_data["mute_target_fname"]
     duration     = ctx.user_data["mute_duration"]
     dur_str      = fmt_duration(duration)
+    target_mention = mention(target_id, target_fname)
+    extra_info     = f"{code(str(target_id))} — {dur_str}"
     try:
         await asyncio.gather(
             q.answer(),
             q.edit_message_text(
-                f"Muting {mention(target_id, target_fname)} {code(str(target_id))} {dur_str}.\n\n"
-                f"Send proof (photo / video) or press <b>Skip</b>.",
+                proof_step_prompt(target_mention, "mute", "No reason provided", extra_info),
                 parse_mode="HTML",
-                reply_markup=keyboards.mute_proof_kb(),
+                reply_markup=proof_kb("mute"),
             ),
         )
     except Exception as exc:
@@ -201,11 +211,9 @@ async def on_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 ## ── WAITING_PROOF handlers ─────────────────────────────────────────────────
 
 async def on_proof_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    msg = update.effective_message
-    if msg.photo:
-        ctx.user_data["mute_proof_desc"] = f"Photo (msg {msg.message_id})"
-    elif msg.video:
-        ctx.user_data["mute_proof_desc"] = f"Video (msg {msg.message_id})"
+    proof = record_proof(update.effective_message)
+    if proof:
+        ctx.user_data["mute_proof_desc"] = proof
     await _execute_mute(ctx.bot, update, ctx.user_data)
     return ConversationHandler.END
 

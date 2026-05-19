@@ -15,9 +15,9 @@ It is intentional, project-specific guidance for contributors and agents.
 ## Branching
 
 - `main` - production-ready code only
-- `feat/<short-description>` - new features
-- `fix/<short-description>` - bug fixes
-- `refactor/<short-description>` - refactors and cleanup
+- `feat/<long-description>` - new features
+- `fix/<long-description>` - bug fixes
+- `refactor/<long-description>` - refactors and cleanup
 
 Only merge to `main` after the bot starts cleanly and the test suite passes.
 

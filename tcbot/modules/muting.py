@@ -15,8 +15,6 @@ from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import code, mention
 from tcbot.modules.helper.workflows.muting_flow import (
-    WAITING_PROOF,
-    WAITING_REASON,
     _DURATION_RE,
     execute_unmute,
     fmt_duration,
@@ -24,6 +22,8 @@ from tcbot.modules.helper.workflows.muting_flow import (
     parse_duration,
 )
 from tcbot.modules.helper.workflows.reason_flow import (
+    WAITING_PROOF,
+    WAITING_REASON,
     parse_inline_reason,
     proof_kb,
     reason_kb,
@@ -132,7 +132,10 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if remaining_args and _DURATION_RE.match(remaining_args[0]):
         duration = parse_duration(remaining_args.pop(0))
 
-    inline_reason = parse_inline_reason(remaining_args, has_explicit_target=False)
+    inline_reason  = parse_inline_reason(remaining_args, has_explicit_target=False)
+    target_mention = mention(target_id, target_fname or str(target_id))
+    dur_str        = fmt_duration(duration)
+    extra_info     = f"{code(str(target_id))} — {dur_str}"
 
     ctx.user_data.update({
         "mute_target_id":    target_id,
@@ -143,11 +146,8 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         "mute_prompt_chat":  msg.chat.id,
         "mute_reason":       "",
         "mute_proof_desc":   None,
+        "mute_extra_info":   extra_info,
     })
-
-    target_mention = mention(target_id, target_fname or str(target_id))
-    dur_str        = fmt_duration(duration)
-    extra_info     = f"{code(str(target_id))} — {dur_str}"
 
     if inline_reason:
         ctx.user_data["mute_reason"] = inline_reason

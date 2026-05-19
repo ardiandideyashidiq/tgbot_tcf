@@ -3,17 +3,16 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Warning executor + conversation workflow
+Warning executor + conversation factory
 
-Sections
-────────
+Exports
+───────
+WARN_LIMIT            — auto-ban threshold (3)
 execute_warn()        — per-group warn (auto-ban at WARN_LIMIT)
 execute_unwarn()      — remove latest warning in group
 execute_warnlist()    — show warning count + reasons
 execute_resetwarns()  — clear all warnings for a user in a group
-WAITING_REASON/PROOF  — state constants
-on_warn_*             — ConversationHandler state handlers
-warn_conversation()   — ConversationHandler factory
+warn_conversation()   — ConversationHandler factory (delegates to reason_flow)
 """
 
 from __future__ import annotations
@@ -22,32 +21,17 @@ import asyncio
 import logging
 
 from telegram import Update
-from telegram.ext import (
-    CallbackQueryHandler,
-    ContextTypes,
-    ConversationHandler,
-    MessageHandler,
-    filters,
-)
+from telegram.ext import ContextTypes
 
 from tcbot import cfg, database as db
 from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import code, mention
-from tcbot.modules.helper.workflows.reason_flow import (
-    proof_kb,
-    proof_step_prompt,
-    reason_only_kb,
-    reason_prompt,
-    record_proof,
-)
-from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
+from tcbot.modules.helper.workflows.reason_flow import build_modaction_conv
+from tcbot.utils.prefixes import build_prefixed_filters
 
 log = logging.getLogger(__name__)
 
 WARN_LIMIT = 3
-
-WAITING_REASON = 0
-WAITING_PROOF  = 1
 
 
 ## ── Executors ───────────────────────────────────────────────────────────────
@@ -202,67 +186,16 @@ async def execute_resetwarns(
     )
 
 
-## ── Conversation helpers ─────────────────────────────────────────────────────
+## ── Executor adapter ────────────────────────────────────────────────────────
 
-def _clear(ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    for k in ("warn_target_id", "warn_target_name", "warn_reason", "warn_proof_desc"):
-        ctx.user_data.pop(k, None)
-
-
-async def _end_conversation(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.effective_message.reply_text("Warn operation cancelled.")
-    return ConversationHandler.END
-
-
-async def _do_warn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    target_id   = ctx.user_data["warn_target_id"]
-    target_name = ctx.user_data["warn_target_name"]
-    reason      = ctx.user_data["warn_reason"]
-    proof_desc  = ctx.user_data.get("warn_proof_desc")
-    _clear(ctx)
+async def _exec_warn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Pop warn data from user_data and call execute_warn."""
+    target_id   = ctx.user_data.pop("warn_target_id", 0)
+    target_name = ctx.user_data.pop("warn_target_name", "")
+    reason      = ctx.user_data.pop("warn_reason", "")
+    proof_desc  = ctx.user_data.pop("warn_proof_desc", None)
+    ctx.user_data.pop("warn_extra_info", None)
     await execute_warn(update, ctx, target_id, target_name, reason, proof_desc=proof_desc)
-    return ConversationHandler.END
-
-
-## ── WAITING_REASON handlers ─────────────────────────────────────────────────
-
-async def on_warn_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    reason = update.effective_message.text.strip()
-    ctx.user_data["warn_reason"] = reason
-    target_mention = mention(
-        ctx.user_data["warn_target_id"],
-        ctx.user_data["warn_target_name"],
-    )
-    await update.effective_message.reply_text(
-        proof_step_prompt(target_mention, "warn", reason),
-        parse_mode="HTML",
-        reply_markup=proof_kb("warn"),
-    )
-    return WAITING_PROOF
-
-
-## ── WAITING_PROOF handlers ──────────────────────────────────────────────────
-
-async def on_warn_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    proof = record_proof(update.effective_message)
-    if proof:
-        ctx.user_data["warn_proof_desc"] = proof
-    return await _do_warn(update, ctx)
-
-
-async def on_warn_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.callback_query.answer()
-    return await _do_warn(update, ctx)
-
-
-async def on_warn_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    q = update.callback_query
-    _clear(ctx)
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text("Got it, warning cancelled. No action was taken."),
-    )
-    return ConversationHandler.END
 
 
 ## ── ConversationHandler factory ─────────────────────────────────────────────
@@ -271,7 +204,7 @@ _WARN_FILTER = build_prefixed_filters("tcwarn") | build_prefixed_filters("tcw")
 
 ## Commands that must NOT be swallowed by the fallback so they reach their own
 ## MessageHandlers registered after warn_conversation() in __handlers__.
-_WARN_CONV_ESCAPE = (
+_WARN_ESCAPE = (
     build_prefixed_filters("tcunwarn")
     | build_prefixed_filters("tcunw")
     | build_prefixed_filters("warns")
@@ -281,26 +214,10 @@ _WARN_CONV_ESCAPE = (
 )
 
 
-def warn_conversation(entry_fn) -> ConversationHandler:
-    """Return the warn ConversationHandler with the given entry-point function."""
-    return ConversationHandler(
-        entry_points=[MessageHandler(_WARN_FILTER, entry_fn)],
-        states={
-            WAITING_REASON: [
-                MessageHandler(filters.TEXT & ~ALL_PREFIXES_CMD_FILTER, on_warn_reason),
-                CallbackQueryHandler(on_warn_cancel, pattern=r"^warn_cancel$"),
-            ],
-            WAITING_PROOF: [
-                MessageHandler(filters.PHOTO | filters.VIDEO, on_warn_proof),
-                CallbackQueryHandler(on_warn_skip_proof, pattern=r"^warn_skip_proof$"),
-                CallbackQueryHandler(on_warn_cancel,     pattern=r"^warn_cancel$"),
-            ],
-        },
-        fallbacks=[
-            CallbackQueryHandler(on_warn_cancel, pattern=r"^warn_cancel$"),
-            MessageHandler(ALL_PREFIXES_CMD_FILTER & ~_WARN_CONV_ESCAPE, _end_conversation),
-        ],
-        per_user=True,
-        per_chat=True,
-        conversation_timeout=cfg.proof_timeout,
+def warn_conversation(entry_fn) -> object:
+    """Return the warn ConversationHandler via the central reason_flow factory."""
+    return build_modaction_conv(
+        "warn", entry_fn, _exec_warn, _WARN_FILTER,
+        reason_required=True,
+        escape_filter=_WARN_ESCAPE,
     )

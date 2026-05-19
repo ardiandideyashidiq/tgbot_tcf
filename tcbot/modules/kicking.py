@@ -15,8 +15,9 @@ from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
-from tcbot.modules.helper.workflows.kicking_flow import WAITING_PROOF, kick_conversation
+from tcbot.modules.helper.workflows.kicking_flow import kick_conversation
 from tcbot.modules.helper.workflows.reason_flow import (
+    WAITING_PROOF,
     parse_inline_reason,
     proof_kb,
     reason_kb,

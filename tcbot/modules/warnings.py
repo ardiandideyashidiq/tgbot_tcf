@@ -21,9 +21,11 @@ from tcbot.modules.helper.workflows.reason_flow import (
     reason_only_kb,
     reason_prompt,
 )
-from tcbot.modules.helper.workflows.warning_flow import (
+from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_PROOF,
     WAITING_REASON,
+)
+from tcbot.modules.helper.workflows.warning_flow import (
     WARN_LIMIT,
     execute_resetwarns,
     execute_unwarn,

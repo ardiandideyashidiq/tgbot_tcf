@@ -3,17 +3,15 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Mute/unmute executor + conversation workflow
+Mute/unmute executor + conversation factory
 
-Sections
-────────
+Exports
+───────
 parse_duration()      — parse '3d', '1mo', '2ye' tokens
 fmt_duration()        — human-readable duration string
 _execute_mute()       — federation-wide mute executor
 execute_unmute()      — restore full permissions across all groups
-WAITING_REASON/PROOF  — state constants
-on_*                  — ConversationHandler state handlers
-mute_conversation()   — ConversationHandler factory
+mute_conversation()   — ConversationHandler factory (delegates to reason_flow)
 """
 
 from __future__ import annotations
@@ -24,33 +22,19 @@ import re
 from datetime import timedelta
 
 from telegram import ChatPermissions, Update
-from telegram.ext import (
-    CallbackQueryHandler,
-    ContextTypes,
-    ConversationHandler,
-    MessageHandler,
-    filters,
-)
+from telegram.ext import ContextTypes
 
 from tcbot import cfg, database as db
 from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import code, mention
-from tcbot.modules.helper.workflows.reason_flow import (
-    proof_kb,
-    proof_step_prompt,
-    reason_kb,
-    record_proof,
-)
+from tcbot.modules.helper.workflows.reason_flow import build_modaction_conv
 from tcbot.utils.dispatch import fan_out
-from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
+from tcbot.utils.prefixes import build_prefixed_filters
 from tcbot.utils.timedate_format import utc_now
 
 log = logging.getLogger(__name__)
 
 _DURATION_RE = re.compile(r"^(\d+)(ye|mo|[smhdw])$", re.IGNORECASE)
-
-WAITING_REASON = 0
-WAITING_PROOF  = 1
 
 
 ## ── Duration helpers ────────────────────────────────────────────────────────
@@ -212,93 +196,18 @@ async def execute_unmute(
         await msg.reply_text(reply, parse_mode="HTML")
 
 
-## ── WAITING_REASON handlers ─────────────────────────────────────────────────
+## ── Executor adapter ────────────────────────────────────────────────────────
 
-async def on_reason_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    ctx.user_data["mute_reason"] = update.effective_message.text.strip()
-    target_id    = ctx.user_data["mute_target_id"]
-    target_fname = ctx.user_data["mute_target_fname"]
-    duration     = ctx.user_data["mute_duration"]
-    prompt_chat  = ctx.user_data["mute_prompt_chat"]
-    prompt_id    = ctx.user_data.get("mute_prompt_id")
-    dur_str        = fmt_duration(duration)
-    target_mention = mention(target_id, target_fname)
-    extra_info     = f"{code(str(target_id))} — {dur_str}"
-    try:
-        await ctx.bot.edit_message_text(
-            proof_step_prompt(target_mention, "mute", ctx.user_data["mute_reason"], extra_info),
-            chat_id=prompt_chat,
-            message_id=prompt_id,
-            parse_mode="HTML",
-            reply_markup=proof_kb("mute"),
-        )
-    except Exception as exc:
-        log.error("Mute prompt edit failed (reason step): %s", exc)
-    return WAITING_PROOF
-
-
-async def on_skip_reason(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    q = update.callback_query
-    ctx.user_data["mute_reason"] = "No reason provided"
-    target_id    = ctx.user_data["mute_target_id"]
-    target_fname = ctx.user_data["mute_target_fname"]
-    duration     = ctx.user_data["mute_duration"]
-    dur_str        = fmt_duration(duration)
-    target_mention = mention(target_id, target_fname)
-    extra_info     = f"{code(str(target_id))} — {dur_str}"
-    try:
-        await asyncio.gather(
-            q.answer(),
-            q.edit_message_text(
-                proof_step_prompt(target_mention, "mute", "No reason provided", extra_info),
-                parse_mode="HTML",
-                reply_markup=proof_kb("mute"),
-            ),
-        )
-    except Exception as exc:
-        log.error("Mute prompt edit failed (skip-reason step): %s", exc)
-    return WAITING_PROOF
-
-
-## ── WAITING_PROOF handlers ──────────────────────────────────────────────────
-
-async def on_proof_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    proof = record_proof(update.effective_message)
-    if proof:
-        ctx.user_data["mute_proof_desc"] = proof
-    await _execute_mute(ctx.bot, update, ctx.user_data)
-    return ConversationHandler.END
-
-
-async def on_skip_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    q = update.callback_query
-    await asyncio.gather(
-        q.answer(),
-        _execute_mute(ctx.bot, update, ctx.user_data),
-    )
-    return ConversationHandler.END
-
-
-## ── Cancel ──────────────────────────────────────────────────────────────────
-
-async def on_mute_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    q = update.callback_query
-    await asyncio.gather(
-        q.answer(),
-        q.edit_message_text("Got it, mute cancelled. No action was taken."),
-    )
-    return ConversationHandler.END
-
-
-async def _end_conversation(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.effective_message.reply_text("Mute operation cancelled.")
-    return ConversationHandler.END
+async def _exec_mute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Copy mute data from user_data, clean up, then call _execute_mute."""
+    meta = {k: v for k, v in ctx.user_data.items() if k.startswith("mute_")}
+    for k in list(meta):
+        ctx.user_data.pop(k, None)
+    await _execute_mute(ctx.bot, update, meta)
 
 
 ## ── ConversationHandler factory ─────────────────────────────────────────────
 
-## Unmute commands must NOT be caught by the fallback — excluding them here
-## lets PTB fall through to the MessageHandler registered for cmd_unmute.
 _UNMUTE_ESCAPE = (
     build_prefixed_filters("tcunmute")
     | build_prefixed_filters("tcunm")
@@ -306,26 +215,10 @@ _UNMUTE_ESCAPE = (
 )
 
 
-def mute_conversation(entry_fn) -> ConversationHandler:
-    """Return the mute ConversationHandler with the given entry-point function."""
+def mute_conversation(entry_fn) -> object:
+    """Return the mute ConversationHandler via the central reason_flow factory."""
     _entry = build_prefixed_filters("tcmute") | build_prefixed_filters("tcm")
-    return ConversationHandler(
-        entry_points=[MessageHandler(_entry, entry_fn)],
-        states={
-            WAITING_REASON: [
-                CallbackQueryHandler(on_skip_reason, pattern=r"^mute_skip_reason$"),
-                CallbackQueryHandler(on_mute_cancel, pattern=r"^mute_cancel$"),
-                MessageHandler(filters.TEXT & ~ALL_PREFIXES_CMD_FILTER, on_reason_text),
-            ],
-            WAITING_PROOF: [
-                CallbackQueryHandler(on_skip_proof,  pattern=r"^mute_skip_proof$"),
-                CallbackQueryHandler(on_mute_cancel, pattern=r"^mute_cancel$"),
-                MessageHandler(filters.PHOTO | filters.VIDEO, on_proof_received),
-            ],
-        },
-        fallbacks=[MessageHandler(ALL_PREFIXES_CMD_FILTER & ~_UNMUTE_ESCAPE, _end_conversation)],
-        conversation_timeout=cfg.proof_timeout,
-        per_chat=True,
-        per_user=True,
-        per_message=False,
+    return build_modaction_conv(
+        "mute", entry_fn, _exec_mute, _entry,
+        escape_filter=_UNMUTE_ESCAPE,
     )

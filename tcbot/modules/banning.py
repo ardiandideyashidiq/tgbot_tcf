@@ -16,9 +16,7 @@ from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction, keyboards
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
-from tcbot.modules.helper.workflows.ban_conv import build_handler
-from tcbot.modules.helper.workflows.ban_flow import _execute_ban
-from tcbot.modules.helper.workflows.proof_conv import WAITING_PROOF
+from tcbot.modules.helper.workflows.ban_flow import WAITING_PROOF, ban_conversation
 from tcbot.utils.prefixes import parse_cmd_args
 
 log = logging.getLogger(__name__)
@@ -96,9 +94,7 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     if target_id == admin.id:
-        await msg.reply_text(
-            "Can't ban yourself - that's not how moderation works. 🙃"
-        )
+        await msg.reply_text("Can't ban yourself - that's not how moderation works. 🙃")
         return ConversationHandler.END
 
     target_role = await get_effective_role(target_id)
@@ -127,7 +123,6 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     ctx.user_data["ban_reason"]       = reason
     ctx.user_data["ban_admin_id"]     = admin.id
     ctx.user_data["ban_admin_fname"]  = admin.first_name
-    ctx.user_data["_proof_executor"]  = _execute_ban
 
     prompt = await msg.reply_text(
         "Proof required. Send a photo or video (multiple files allowed).\n"
@@ -142,4 +137,4 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 ## ── Handlers ───────────────────────────────────────────────────────────────
 
-__handlers__ = [build_handler(cmd_ban_start)]
+__handlers__ = [ban_conversation(cmd_ban_start)]

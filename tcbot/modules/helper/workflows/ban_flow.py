@@ -3,7 +3,15 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Ban executor - federation-wide ban, DB write, log dispatch, and group enforcement
+Ban executor + proof collection conversation
+
+Sections
+────────
+_execute_ban()        — federation-wide ban, DB write, log dispatch, group enforcement
+on_proof_received()   — WAITING_PROOF handler — single or album proof
+on_cancel_proof()     — cancel callback
+on_proof_timeout()    — timeout / fallback handler
+ban_conversation()    — ConversationHandler factory
 """
 
 from __future__ import annotations
@@ -12,7 +20,14 @@ import asyncio
 import logging
 from typing import Any
 
-from telegram import Bot, Message
+from telegram import Bot, Message, Update
+from telegram.ext import (
+    CallbackQueryHandler,
+    ContextTypes,
+    ConversationHandler,
+    MessageHandler,
+    filters,
+)
 
 from tcbot import cfg, database as db
 from tcbot.modules.helper import keyboards, parse_logmsg
@@ -20,10 +35,19 @@ from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.parse_link import appeal_deep_link, message_link
 from tcbot.modules.helper.workflows.proof_flow import upload_proof
 from tcbot.utils.dispatch import fan_out
+from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
 from tcbot.utils.timedate_format import utc_now
 
 log = logging.getLogger(__name__)
 
+WAITING_PROOF = 0
+
+## Module-level album accumulators (keyed by media_group_id)
+_albums:     dict[str, list[Message]]  = {}
+_album_meta: dict[str, dict[str, Any]] = {}
+
+
+## ── Ban executor ────────────────────────────────────────────────────────────
 
 async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict[str, Any]) -> None:
     target_id: int      = meta.get("ban_target_id")
@@ -130,6 +154,7 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict[str, Any]) -> N
     log_msg_id: int = 0
     if not isinstance(log_result, BaseException):
         log_msg_id = log_result.message_id
+        log.info("Ban log posted: ban_id=%s msg_id=%s", ban_id, log_msg_id)
     else:
         log.error("Ban log send failed: %s", log_result)
 
@@ -147,6 +172,7 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict[str, Any]) -> N
         [bot.ban_chat_member(grp["chat_id"], target_id) for grp in groups]
     )
     failed = sum(1 for r in results if isinstance(r, BaseException))
+    log.info("Ban enforced: target=%s groups=%d/%d", target_id, len(groups) - failed, len(groups))
 
     ## Edit the original prompt to a summary + cache user in parallel
     summary = (
@@ -168,3 +194,72 @@ async def _execute_ban(bot: Bot, msgs: list[Message], meta: dict[str, Any]) -> N
         )
     else:
         await db.users_db.upsert_user(target_id, None, target_fname)
+
+
+## ── Proof collection state handlers ─────────────────────────────────────────
+
+async def on_proof_received(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    msg = update.effective_message
+
+    if msg.media_group_id:
+        mgid = msg.media_group_id
+        if mgid not in _albums:
+            _albums[mgid]     = []
+            _album_meta[mgid] = dict(ctx.user_data)
+            asyncio.create_task(_flush_album(mgid, ctx.bot))
+        _albums[mgid].append(msg)
+        return WAITING_PROOF
+
+    ## Single media file - execute immediately
+    await _execute_ban(ctx.bot, [msg], dict(ctx.user_data))
+    return ConversationHandler.END
+
+
+async def _flush_album(mgid: str, bot: Bot) -> None:
+    await asyncio.sleep(cfg.album_debounce)
+    msgs = _albums.pop(mgid, [])
+    meta = _album_meta.pop(mgid, {})
+    if not msgs or not meta:
+        return
+    log.info("Flushing album %s with %d media items", mgid, len(msgs))
+    await _execute_ban(bot, msgs, meta)
+
+
+async def on_cancel_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    q = update.callback_query
+    await asyncio.gather(
+        q.answer(),
+        q.edit_message_text("Cancelled. No ban was issued."),
+    )
+    return ConversationHandler.END
+
+
+async def on_proof_timeout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    if update.effective_message:
+        await update.effective_message.reply_text(
+            "Timed out waiting for proof. No ban was issued."
+        )
+    return ConversationHandler.END
+
+
+## ── ConversationHandler factory ─────────────────────────────────────────────
+
+_BAN_FILTER = build_prefixed_filters("tcban") | build_prefixed_filters("tcb")
+
+
+def ban_conversation(entry_fn) -> ConversationHandler:
+    """Return the ban ConversationHandler with the given entry-point function."""
+    return ConversationHandler(
+        entry_points=[MessageHandler(_BAN_FILTER, entry_fn)],
+        states={
+            WAITING_PROOF: [
+                CallbackQueryHandler(on_cancel_proof, pattern=r"^cancel_proof$"),
+                MessageHandler(filters.PHOTO | filters.VIDEO, on_proof_received),
+            ],
+        },
+        fallbacks=[MessageHandler(ALL_PREFIXES_CMD_FILTER, on_proof_timeout)],
+        conversation_timeout=cfg.proof_timeout,
+        per_chat=True,
+        per_user=True,
+        per_message=False,
+    )

@@ -4,21 +4,35 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from telegram import Update
-from telegram.ext import ContextTypes, MessageHandler
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler
 
 from tcbot import cfg, database as db
-from tcbot.database.roles_db import ROLE_LABEL, get_effective_role
+from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
-from tcbot.modules.helper.workflows.warning_conv import warn_conversation
+from tcbot.modules.helper.workflows.reason_flow import (
+    parse_inline_reason,
+    proof_kb,
+    reason_noted_prompt,
+    reason_only_kb,
+    reason_prompt,
+)
 from tcbot.modules.helper.workflows.warning_flow import (
+    WAITING_PROOF,
+    WAITING_REASON,
     WARN_LIMIT,
     execute_resetwarns,
     execute_unwarn,
     execute_warnlist,
+    warn_conversation,
 )
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
+
+log = logging.getLogger(__name__)
 
 
 ## ── Module & Help ─────────────────────────────────────────────────────────
@@ -51,7 +65,7 @@ __help_text__ = (
 
     "<b>Flow (/tcwarn)</b>\n"
     "1. Run <code>/tcwarn</code> with the target (and optional inline reason).\n"
-    "2. If no reason was given, the bot asks - reply with text or tap <b>Skip</b>.\n"
+    "2. If no reason was given, the bot asks - reply with text.\n"
     "3. The bot asks for proof - send a photo/video or tap <b>Skip</b> to warn without proof.\n\n"
 
     "<b>How to specify the target</b>\n"
@@ -79,6 +93,80 @@ async def _role_note(
     return fname, role_label
 
 
+## ── /tcwarn entry point ────────────────────────────────────────────────────
+
+@decorators.ratelimiter(limit=5, period=60)
+@decorators.log_execution
+async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    msg   = update.effective_message
+    admin = update.effective_user
+
+    args = parse_cmd_args(msg.text)
+    has_explicit_target = bool(args) and (
+        args[0].lstrip("-").isdigit() or args[0].startswith("@")
+    )
+    ## Role check and target resolution run in parallel
+    executor_role, (target_id, target_name) = await asyncio.gather(
+        get_effective_role(admin.id),
+        extraction.extract_target(update, args, ctx.bot),
+    )
+    if role_rank(executor_role) < role_rank("tester"):
+        await msg.reply_text("You need at least a Tester role to warn users - not your call. 🚫")
+        return ConversationHandler.END
+
+    inline_reason = parse_inline_reason(args, has_explicit_target)
+
+    if not target_id:
+        await msg.reply_text(
+            "Can't find that user - reply to their message or send me a user ID."
+        )
+        return ConversationHandler.END
+
+    if target_id == ctx.bot.id:
+        await msg.reply_text("Warn me? 😄 I'm the one who manages warnings around here.")
+        return ConversationHandler.END
+
+    target_role = await get_effective_role(target_id)
+    if target_role:
+        if role_rank(executor_role) <= role_rank(target_role):
+            if target_role == "founder":
+                await msg.reply_text(
+                    f"That's {mention(target_id, target_name or 'the Founder')}, our Founder - "
+                    "warning them? That's a hard no. 👑",
+                    parse_mode="HTML",
+                )
+            else:
+                label = ROLE_LABEL.get(target_role, target_role.capitalize())
+                await msg.reply_text(
+                    f"That's a {cfg.community_name} {label} - they outrank you here, can't warn them."
+                )
+            return ConversationHandler.END
+
+    ctx.user_data.update({
+        "warn_target_id":   target_id,
+        "warn_target_name": target_name or str(target_id),
+        "warn_proof_desc":  None,
+    })
+
+    target_mention = mention(target_id, target_name or str(target_id))
+
+    if inline_reason:
+        ctx.user_data["warn_reason"] = inline_reason
+        await msg.reply_text(
+            reason_noted_prompt("warn", inline_reason, target_mention),
+            parse_mode="HTML",
+            reply_markup=proof_kb("warn"),
+        )
+        return WAITING_PROOF
+
+    await msg.reply_text(
+        reason_prompt(target_mention, "warn"),
+        parse_mode="HTML",
+        reply_markup=reason_only_kb("warn"),
+    )
+    return WAITING_REASON
+
+
 ## ── /tcunwarn ───────────────────────────────────────────────────────────────
 
 @decorators.ratelimiter(limit=5, period=60)
@@ -89,9 +177,7 @@ async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     args = parse_cmd_args(msg.text)
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
-        await msg.reply_text(
-            "Specify a target - reply to a message or provide a user ID."
-        )
+        await msg.reply_text("Specify a target - reply to a message or provide a user ID.")
         return
 
     if target_id == ctx.bot.id:
@@ -146,9 +232,7 @@ async def cmd_resetwarns(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
     args = parse_cmd_args(msg.text)
     target_id, target_name = await extraction.extract_target(update, args, ctx.bot)
     if not target_id:
-        await msg.reply_text(
-            "Specify a target - reply to a message or provide a user ID."
-        )
+        await msg.reply_text("Specify a target - reply to a message or provide a user ID.")
         return
 
     if target_id == ctx.bot.id:
@@ -185,7 +269,7 @@ _WARNLIST_FILTER = build_prefixed_filters("warns")    | build_prefixed_filters("
 _RESET_FILTER    = build_prefixed_filters("resetwarns") | build_prefixed_filters("clearwarns")
 
 __handlers__ = [
-    warn_conversation(),
+    warn_conversation(cmd_warn_entry),
     MessageHandler(_UNWARN_FILTER,   cmd_unwarn),
     MessageHandler(_WARNLIST_FILTER, cmd_warnlist),
     MessageHandler(_RESET_FILTER,    cmd_resetwarns),

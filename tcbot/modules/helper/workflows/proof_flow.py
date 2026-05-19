@@ -37,13 +37,16 @@ async def upload_proof(
                     media.append(InputMediaVideo(m.video.file_id, caption=cap, parse_mode="HTML"))
                     first_caption_set = True
             sent = await bot.send_media_group(proof_chat, media, message_thread_id=proof_thread)
-            return sent[0].message_id
+            proof_msg_id = sent[0].message_id
+            log.info("Proof album uploaded: %d items, message_id=%s", len(sent), proof_msg_id)
+            return proof_msg_id
         elif msgs[0].photo:
             sent = await bot.send_photo(
                 proof_chat, msgs[0].photo[-1].file_id,
                 caption=caption, parse_mode="HTML",
                 message_thread_id=proof_thread,
             )
+            log.info("Proof photo uploaded: message_id=%s", sent.message_id)
             return sent.message_id
         elif msgs[0].video:
             sent = await bot.send_video(
@@ -51,6 +54,7 @@ async def upload_proof(
                 caption=caption, parse_mode="HTML",
                 message_thread_id=proof_thread,
             )
+            log.info("Proof video uploaded: message_id=%s", sent.message_id)
             return sent.message_id
     except Exception as exc:
         log.error("Proof upload failed: %s", exc)

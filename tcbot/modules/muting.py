@@ -4,16 +4,35 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from telegram import Update
-from telegram.ext import ContextTypes, MessageHandler
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler
 
 from tcbot import cfg, database as db
-from tcbot.database.roles_db import ROLE_LABEL, get_effective_role
+from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
-from tcbot.modules.helper.formatter import mention
-from tcbot.modules.helper.workflows.muting_conv import build_handler
-from tcbot.modules.helper.workflows.muting_flow import execute_unmute
+from tcbot.modules.helper.formatter import code, mention
+from tcbot.modules.helper.workflows.muting_flow import (
+    WAITING_PROOF,
+    WAITING_REASON,
+    _DURATION_RE,
+    execute_unmute,
+    fmt_duration,
+    mute_conversation,
+    parse_duration,
+)
+from tcbot.modules.helper.workflows.reason_flow import (
+    parse_inline_reason,
+    proof_kb,
+    reason_kb,
+    reason_noted_prompt,
+    reason_prompt,
+)
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
+
+log = logging.getLogger(__name__)
 
 
 ## ── Module & Help ─────────────────────────────────────────────────────────
@@ -54,6 +73,99 @@ __help_text__ = (
     "<code>/tcm @username</code> - permanent mute, bot walks you through it\n"
     "<code>/tcunmute @username</code> - lift mute immediately across all groups"
 )
+
+
+## ── /tcmute entry point ────────────────────────────────────────────────────
+
+@decorators.ratelimiter(limit=5, period=60)
+@decorators.log_execution
+async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    msg   = update.effective_message
+    admin = update.effective_user
+
+    raw_args = parse_cmd_args(msg.text)
+    has_explicit_target = bool(raw_args) and (
+        raw_args[0].lstrip("-").isdigit() or raw_args[0].startswith("@")
+    )
+    ## Role check and target resolution run in parallel
+    executor_role, (target_id, target_fname) = await asyncio.gather(
+        get_effective_role(admin.id),
+        extraction.extract_target(update, raw_args, ctx.bot),
+    )
+    if role_rank(executor_role) < role_rank("tester"):
+        await msg.reply_text("You need at least a Tester role to mute - not your call. 🚫")
+        return ConversationHandler.END
+
+    remaining_args = list(raw_args[1:] if has_explicit_target else raw_args)
+
+    if not target_id:
+        await msg.reply_text("Cannot resolve target. Reply to a message or provide a user ID.")
+        return ConversationHandler.END
+
+    if target_id == ctx.bot.id:
+        await msg.reply_text(
+            "Muting me won't do much - I don't send messages on my own anyway. 😄"
+        )
+        return ConversationHandler.END
+
+    if target_id == admin.id:
+        await msg.reply_text("Can't mute yourself - that's not how this works. 🙃")
+        return ConversationHandler.END
+
+    target_role = await get_effective_role(target_id)
+    if target_role:
+        if role_rank(executor_role) <= role_rank(target_role):
+            if target_role == "founder":
+                await msg.reply_text(
+                    f"That's {mention(target_id, target_fname or 'the Founder')}, our Founder - "
+                    "muting them is not happening. 👑",
+                    parse_mode="HTML",
+                )
+            else:
+                label = ROLE_LABEL.get(target_role, target_role.capitalize())
+                await msg.reply_text(
+                    f"That's a {cfg.community_name} {label} - they outrank you here, can't mute them."
+                )
+            return ConversationHandler.END
+
+    duration = None
+    if remaining_args and _DURATION_RE.match(remaining_args[0]):
+        duration = parse_duration(remaining_args.pop(0))
+
+    inline_reason = parse_inline_reason(remaining_args, has_explicit_target=False)
+
+    ctx.user_data.update({
+        "mute_target_id":    target_id,
+        "mute_target_fname": target_fname or str(target_id),
+        "mute_duration":     duration,
+        "mute_admin_id":     admin.id,
+        "mute_admin_fname":  admin.first_name,
+        "mute_prompt_chat":  msg.chat.id,
+        "mute_reason":       "",
+        "mute_proof_desc":   None,
+    })
+
+    target_mention = mention(target_id, target_fname or str(target_id))
+    dur_str        = fmt_duration(duration)
+    extra_info     = f"{code(str(target_id))} — {dur_str}"
+
+    if inline_reason:
+        ctx.user_data["mute_reason"] = inline_reason
+        prompt = await msg.reply_text(
+            reason_noted_prompt("mute", inline_reason, target_mention, extra_info=extra_info),
+            parse_mode="HTML",
+            reply_markup=proof_kb("mute"),
+        )
+        ctx.user_data["mute_prompt_id"] = prompt.message_id
+        return WAITING_PROOF
+
+    prompt = await msg.reply_text(
+        reason_prompt(target_mention, "mute", extra_info=extra_info),
+        parse_mode="HTML",
+        reply_markup=reason_kb("mute"),
+    )
+    ctx.user_data["mute_prompt_id"] = prompt.message_id
+    return WAITING_REASON
 
 
 ## ── /tcunmute command ──────────────────────────────────────────────────────
@@ -109,6 +221,6 @@ _UNMUTE_FILTER = (
 )
 
 __handlers__ = [
-    build_handler(),
+    mute_conversation(cmd_mute_start),
     MessageHandler(_UNMUTE_FILTER, cmd_unmute),
 ]

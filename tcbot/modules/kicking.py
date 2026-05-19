@@ -15,10 +15,7 @@ from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
-from tcbot.modules.helper.workflows.kicking_conv import (
-    WAITING_PROOF,
-    build_handler,
-)
+from tcbot.modules.helper.workflows.kicking_flow import WAITING_PROOF, kick_conversation
 from tcbot.modules.helper.workflows.reason_flow import (
     parse_inline_reason,
     proof_kb,
@@ -147,4 +144,4 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
 ## ── Handlers ───────────────────────────────────────────────────────────────
 
-__handlers__ = [build_handler(cmd_kick_entry)]
+__handlers__ = [kick_conversation(cmd_kick_entry)]

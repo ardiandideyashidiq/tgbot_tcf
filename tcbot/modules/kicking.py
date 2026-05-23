@@ -17,15 +17,11 @@ from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
-from tcbot.modules.helper.workflows.kicking_flow import kick_conversation
-from tcbot.modules.helper.workflows.proof_flow import proof_kb
+from tcbot.modules.helper.workflows.kicking_flow import kick_conversation, proof, reason
 from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_PROOF,
     WAITING_REASON,
     parse_inline_reason,
-    reason_kb,
-    reason_noted_prompt,
-    reason_prompt,
 )
 from tcbot.utils.prefixes import parse_cmd_args
 
@@ -132,16 +128,16 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if inline_reason:
         ctx.user_data["kick_reason"] = inline_reason
         await msg.reply_text(
-            reason_noted_prompt("kick", inline_reason, target_mention),
+            proof.noted_prompt("kick", inline_reason, target_mention),
             parse_mode="HTML",
-            reply_markup=proof_kb("kick"),
+            reply_markup=proof.keyboard(),
         )
         return WAITING_PROOF
 
     await msg.reply_text(
-        reason_prompt(target_mention, "kick"),
+        reason.prompt(target_mention, "kick"),
         parse_mode="HTML",
-        reply_markup=reason_kb("kick"),
+        reply_markup=reason.keyboard(),
     )
     return WAITING_REASON
 

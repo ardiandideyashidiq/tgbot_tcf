@@ -33,8 +33,8 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 | `tcbot/modules/helper/role_guard.py` | `resolve_and_check()` + `auto_demote()` - shared role-permission helpers for moderation flows |
 | `tcbot/modules/helper/extraction.py` | `extract_target()`, `ResolvedTarget`, `resolve_identity()` |
 | `tcbot/modules/helper/workflows/promote_flow.py` | `_execute_promote()`, `_ROLE_ALIASES`, `_available_roles_for()` — promote execution logic shared by admins.py |
-| `tcbot/modules/helper/workflows/reason_flow.py` | Central factory: `WAITING_REASON`, `WAITING_PROOF`, `build_modaction_conv()` — builds the generic reason + proof `ConversationHandler` for kick, mute, and warn; exports reason-step keyboards (`reason_kb`, `reason_only_kb`), reason-step prompts, and `parse_inline_reason()` |
-| `tcbot/modules/helper/workflows/proof_flow.py` | All proof-step concerns: `proof_kb()`, `proof_step_prompt()`, `record_proof()`, `upload_proof()` |
+| `tcbot/modules/helper/workflows/reason_flow.py` | `BuildReason` class + `build_modaction_conv(reason, proof, ...)` factory + `WAITING_REASON`/`WAITING_PROOF` constants + `parse_inline_reason()`. `BuildReason(action, *, skip_allowed, skip_label, cancel_label)` — `.keyboard()` and `.prompt()` |
+| `tcbot/modules/helper/workflows/proof_flow.py` | `BuildProof` class + `upload_proof()`. `BuildProof(action, *, skip_allowed, skip_label, cancel_label)` — `.keyboard()`, `.step_prompt()`, `.noted_prompt()`, `.record()` (static) |
 | `tcbot/modules/helper/workflows/ban_flow.py` | Ban executor, album proof state handlers, `ban_conversation(entry_fn)` |
 | `tcbot/utils/dispatch.py` | `fan_out()` — semaphore-bounded multi-group dispatcher (max 10 concurrent) |
 | `tcbot/utils/prefixes.py` | Prefix filter builder + alt-prefix dispatcher (`_REGISTRY`) |

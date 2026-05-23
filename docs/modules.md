@@ -239,58 +239,62 @@ These files contain `ConversationHandler` factories and executors. They do not e
 
 ### `reason_flow.py`
 
-Central ConversationHandler factory for kick, mute, and warn.
+Central reason-step infrastructure for kick, mute, and warn.
 
 **Exports:**
 - `WAITING_REASON = 0` and `WAITING_PROOF = 1` — state constants
-- `build_modaction_conv(action, entry_fn, executor, entry_filter, ...)` → `ConversationHandler`
-- `reason_kb(action)`, `reason_only_kb(action)` — inline keyboards for the reason step
-- `reason_prompt(target_mention, action, extra_info)` — reason step prompt text
-- `reason_noted_prompt(action, reason, target_mention, extra_info)` — "reason noted, want proof?" text
-- `parse_inline_reason(args, ...)` → `str` — extracts inline reason from command args
+- `parse_inline_reason(args, has_explicit_target)` → `str` — extracts inline reason from command args
+- `BuildReason(action, *, skip_allowed, skip_label, cancel_label)` — configurable reason-step builder:
+  - `.keyboard()` → `InlineKeyboardMarkup` — reason-step keyboard (Skip included only if `skip_allowed=True`)
+  - `.prompt(target_mention, action_label, extra_info)` → `str` — "About to X Y. What's the reason?" prompt
+- `build_modaction_conv(reason, proof, entry_fn, executor, entry_filter, escape_filter)` → `ConversationHandler`
 
-Proof-step concerns (`proof_kb`, `proof_step_prompt`, `record_proof`) live in `proof_flow.py` and are imported from there.
+All proof-step concerns live in `proof_flow.py`; `BuildProof` is imported from there.
 
 ### `ban_flow.py`
 
 Album-aware ban proof ConversationHandler.
 
+- **Module-level instance:** `proof = BuildProof("ban", skip_allowed=False)` — imported by `banning.py`
 - State: `WAITING_PROOF`
 - Buffers multiple photos/videos from a media album (album debounce window from `cfg.album_debounce`)
-- On `Done`: calls `_execute_ban()`, applies to all connected groups via `fan_out()`
-- On `Cancel`: aborts the flow, deletes the prompt
+- On proof received: calls `_execute_ban()`, applies to all connected groups via `fan_out()`
+- On `Cancel`: aborts the flow, edits the prompt
 - **Factory:** `ban_conversation(entry_fn)` → `ConversationHandler`
-- **Executor:** `_execute_ban(update, ctx, ...)` — creates or updates the ban record, uploads proof, posts log
+- **Executor:** `_execute_ban(bot, msgs, meta)` — creates or updates the ban record, uploads proof, posts log
 
 ### `kicking_flow.py`
 
 Kick executor and ConversationHandler.
 
-- `execute_kick(bot, groups, target_id, ...)` — kicks the user from all connected groups via `fan_out()`
-- `_exec_kick(update, ctx, ...)` — adapter for `reason_flow`
-- **Factory:** `kick_conversation(entry_fn)` → delegates to `reason_flow.build_modaction_conv()`
+- **Module-level instances:** `reason = BuildReason("kick")`, `proof = BuildProof("kick")` — imported by `kicking.py`
+- `execute_kick(update, ctx, target_id, target_name, reason_text, proof_desc)` — ban + immediate unban in the current group
+- `_exec_kick(update, ctx)` — adapter that pops `kick_*` keys from `user_data` and calls `execute_kick`
+- **Factory:** `kick_conversation(entry_fn)` → delegates to `reason_flow.build_modaction_conv(reason, proof, ...)`
 
 ### `muting_flow.py`
 
 Mute/unmute executors and ConversationHandler.
 
-- `parse_duration(token)` → `int` (seconds) — parses `3d`, `1w`, `2h`, etc.
-- `fmt_duration(secs | None)` → `str` — formats duration for display
-- `_execute_mute(bot, groups, target_id, duration, ...)` — applies restriction to all groups via `fan_out()`
+- **Module-level instances:** `reason = BuildReason("mute")`, `proof = BuildProof("mute")` — imported by `muting.py`
+- `parse_duration(token)` → `timedelta | None` — parses `3d`, `1w`, `2h`, etc.
+- `fmt_duration(td | None)` → `str` — formats duration for display
+- `_execute_mute(bot, update, meta)` — applies restriction to all groups via `fan_out()`, edits the prompt to a summary
 - `execute_unmute(update, ctx, target_id, fname)` — removes restriction from all groups
-- `_exec_mute(update, ctx, ...)` — adapter for `reason_flow`
-- **Factory:** `mute_conversation(entry_fn)` → delegates to `reason_flow.build_modaction_conv()`
+- `_exec_mute(update, ctx)` — adapter that copies `mute_*` keys from `user_data` and calls `_execute_mute`
+- **Factory:** `mute_conversation(entry_fn)` → delegates to `reason_flow.build_modaction_conv(reason, proof, ...)`
 
 ### `warning_flow.py`
 
 Warn executors and ConversationHandler.
 
-- `execute_warn(...)` — adds a warning in `warns_db`, notifies the group
-- `execute_unwarn(...)` — decrements warnings or removes the record
-- `execute_warnlist(...)` — formats and sends a user's warning history
-- `execute_resetwarns(...)` — resets all warnings for a user in a chat
-- `_exec_warn(update, ctx, ...)` — adapter for `reason_flow`
-- **Factory:** `warn_conversation(entry_fn)` → delegates to `reason_flow.build_modaction_conv()`
+- **Module-level instances:** `reason = BuildReason("warn", skip_allowed=False)`, `proof = BuildProof("warn")` — imported by `warnings.py`
+- `execute_warn(update, ctx, target_id, target_name, reason_text, proof_desc)` — adds a warning in `warns_db`, auto-bans at `WARN_LIMIT`
+- `execute_unwarn(update, ctx, target_id, target_name)` — removes the most recent warning
+- `execute_warnlist(update, ctx, target_id, target_name)` — formats and sends a user's warning history
+- `execute_resetwarns(update, ctx, target_id, target_name)` — clears all warnings for a user in the chat
+- `_exec_warn(update, ctx)` — adapter that pops `warn_*` keys from `user_data` and calls `execute_warn`
+- **Factory:** `warn_conversation(entry_fn)` → delegates to `reason_flow.build_modaction_conv(reason, proof, ...)`
 
 ### `unban_flow.py`
 
@@ -335,9 +339,11 @@ Statistics executors. Pure async functions that query aggregation data and forma
 All proof-step concerns live here. Import proof helpers from this module — not from `reason_flow`.
 
 **Exports:**
-- `proof_kb(action)` → `InlineKeyboardMarkup` — Skip + Cancel keyboard for the proof step
-- `proof_step_prompt(target_mention, action_label, reason, extra_info)` → `str` — proof-step prompt after reason was collected in-conversation
-- `record_proof(msg)` → `str | None` — returns a short description (`"Photo (msg N)"` / `"Video (msg N)"`) from a photo/video message, or `None`
+- `BuildProof(action, *, skip_allowed, skip_label, cancel_label)` — configurable proof-step builder:
+  - `.keyboard()` → `InlineKeyboardMarkup` — proof-step keyboard (Skip included only if `skip_allowed=True`)
+  - `.step_prompt(target_mention, action_label, reason, extra_info)` → `str` — "Reason noted — Xing Y" prompt (used after an in-conversation reason)
+  - `.noted_prompt(action_label, inline_reason, target_mention, extra_info)` → `str` — "Xing Y. Reason: Z" prompt (used when reason was provided inline in the command)
+  - `.record(msg)` → `str | None` — static; returns `"Photo (msg N)"` / `"Video (msg N)"` or `None`
 - `upload_proof(bot, msgs, caption, proof_chat, proof_thread)` → `int | None` — uploads proof media (single or album) to the proof channel; returns the uploaded message ID or `None` on failure
 
 ---

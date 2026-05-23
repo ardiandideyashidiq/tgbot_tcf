@@ -22,15 +22,13 @@ from tcbot.modules.helper.workflows.muting_flow import (
     fmt_duration,
     mute_conversation,
     parse_duration,
+    proof,
+    reason,
 )
-from tcbot.modules.helper.workflows.proof_flow import proof_kb
 from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_PROOF,
     WAITING_REASON,
     parse_inline_reason,
-    reason_kb,
-    reason_noted_prompt,
-    reason_prompt,
 )
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 
@@ -154,17 +152,17 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if inline_reason:
         ctx.user_data["mute_reason"] = inline_reason
         prompt = await msg.reply_text(
-            reason_noted_prompt("mute", inline_reason, target_mention, extra_info=extra_info),
+            proof.noted_prompt("mute", inline_reason, target_mention, extra_info=extra_info),
             parse_mode="HTML",
-            reply_markup=proof_kb("mute"),
+            reply_markup=proof.keyboard(),
         )
         ctx.user_data["mute_prompt_id"] = prompt.message_id
         return WAITING_PROOF
 
     prompt = await msg.reply_text(
-        reason_prompt(target_mention, "mute", extra_info=extra_info),
+        reason.prompt(target_mention, "mute", extra_info=extra_info),
         parse_mode="HTML",
-        reply_markup=reason_kb("mute"),
+        reply_markup=reason.keyboard(),
     )
     ctx.user_data["mute_prompt_id"] = prompt.message_id
     return WAITING_REASON

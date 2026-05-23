@@ -7,11 +7,13 @@ Mute/unmute executor + conversation factory
 
 Exports
 ───────
-parse_duration()      — parse '3d', '1mo', '2ye' tokens
-fmt_duration()        — human-readable duration string
-_execute_mute()       — federation-wide mute executor
-execute_unmute()      — restore full permissions across all groups
-mute_conversation()   — ConversationHandler factory (delegates to reason_flow)
+reason            — BuildReason instance for the mute action
+proof             — BuildProof instance for the mute action
+parse_duration()  — parse '3d', '1mo', '2ye' tokens
+fmt_duration()    — human-readable duration string
+_execute_mute()   — federation-wide mute executor
+execute_unmute()  — restore full permissions across all groups
+mute_conversation() — ConversationHandler factory (delegates to reason_flow)
 """
 
 from __future__ import annotations
@@ -27,7 +29,8 @@ from telegram.ext import ContextTypes
 from tcbot import cfg, database as db
 from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import code, mention
-from tcbot.modules.helper.workflows.reason_flow import build_modaction_conv
+from tcbot.modules.helper.workflows.proof_flow import BuildProof
+from tcbot.modules.helper.workflows.reason_flow import BuildReason, build_modaction_conv
 from tcbot.utils.dispatch import fan_out
 from tcbot.utils.prefixes import build_prefixed_filters
 from tcbot.utils.timedate_format import utc_now
@@ -35,6 +38,10 @@ from tcbot.utils.timedate_format import utc_now
 log = logging.getLogger(__name__)
 
 _DURATION_RE = re.compile(r"^(\d+)(ye|mo|[smhdw])$", re.IGNORECASE)
+
+## Per-action BuildReason and BuildProof instances — imported by muting.py
+reason = BuildReason("mute")
+proof  = BuildProof("mute")
 
 
 ## ── Duration helpers ────────────────────────────────────────────────────────
@@ -85,7 +92,7 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
     """Apply a federation-wide mute across all connected groups and edit the prompt to a summary."""
     target_id    = meta["mute_target_id"]
     target_fname = meta["mute_target_fname"]
-    reason       = meta.get("mute_reason") or "No reason provided"
+    reason_text  = meta.get("mute_reason") or "No reason provided"
     admin_id     = meta["mute_admin_id"]
     duration     = meta.get("mute_duration")
     proof_desc   = meta.get("mute_proof_desc")
@@ -111,7 +118,7 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
     summary = (
         f"{mention(target_id, target_fname)} {code(str(target_id))} "
         f"has been muted <b>{dur_str}</b>.\n"
-        f"Reason: {reason}"
+        f"Reason: {reason_text}"
         f"{proof_line}\n"
         f"Applied to {len(groups) - failed}/{len(groups)} groups."
     )
@@ -119,13 +126,13 @@ async def _execute_mute(bot, update: Update, meta: dict) -> None:
     admin_fname = meta.get("mute_admin_fname", "Admin")
     lc, lt      = cfg.logs
     log_text    = parse_logmsg.mute_log(
-        target_id, target_fname, admin_id, admin_fname, reason, dur_str,
+        target_id, target_fname, admin_id, admin_fname, reason_text, dur_str,
     )
 
     ## Log to DB, post to log channel, and edit summary - all in parallel
     chat_id  = update.effective_chat.id
     results2 = await asyncio.gather(
-        db.mutes_db.log_mute(target_id, chat_id, reason, admin_id),
+        db.mutes_db.log_mute(target_id, chat_id, reason_text, admin_id),
         bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
         bot.edit_message_text(
             summary,
@@ -219,6 +226,6 @@ def mute_conversation(entry_fn) -> object:
     """Return the mute ConversationHandler via the central reason_flow factory."""
     _entry = build_prefixed_filters("tcmute") | build_prefixed_filters("tcm")
     return build_modaction_conv(
-        "mute", entry_fn, _exec_mute, _entry,
+        reason, proof, entry_fn, _exec_mute, _entry,
         escape_filter=_UNMUTE_ESCAPE,
     )

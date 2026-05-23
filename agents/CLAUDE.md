@@ -55,13 +55,13 @@ tcbot/
 │   │   ├── parse_logmsg.py  Log message text builders
 │   │   ├── parse_editmsg.py safe_edit() — swallows stale-message errors
 │   │   └── workflows/
-│   │       ├── reason_flow.py      Central ConversationHandler factory (kick/mute/warn); reason-step keyboards and prompts only
-│   │       ├── proof_flow.py       proof_kb(), proof_step_prompt(), record_proof(), upload_proof()
-│   │       ├── ban_flow.py         Album-aware ban proof ConversationHandler
+│   │       ├── reason_flow.py      BuildReason class + build_modaction_conv() + WAITING_REASON/PROOF constants + parse_inline_reason()
+│   │       ├── proof_flow.py       BuildProof class (keyboard/step_prompt/noted_prompt/record) + upload_proof()
+│   │       ├── ban_flow.py         proof instance (skip_allowed=False) + album-aware ban proof ConversationHandler
 │   │       ├── appeal_flow.py      Standalone appeal ConversationHandler (deep-link)
-│   │       ├── kicking_flow.py     execute_kick(), kick_conversation(entry_fn)
-│   │       ├── muting_flow.py      _execute_mute(), execute_unmute(), mute_conversation()
-│   │       ├── warning_flow.py     execute_warn/unwarn/warnlist/resetwarns(), warn_conversation()
+│   │       ├── kicking_flow.py     reason/proof instances + execute_kick(), kick_conversation(entry_fn)
+│   │       ├── muting_flow.py      reason/proof instances + _execute_mute(), execute_unmute(), mute_conversation()
+│   │       ├── warning_flow.py     reason/proof instances + execute_warn/unwarn/warnlist/resetwarns(), warn_conversation()
 │   │       ├── unban_flow.py       execute_unban() — no ConversationHandler needed
 │   │       ├── promote_flow.py     _execute_promote(), shared by admins.py
 │   │       ├── connected_flow.py   Group connect/disconnect flows

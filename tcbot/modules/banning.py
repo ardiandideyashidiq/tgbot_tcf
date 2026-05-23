@@ -15,10 +15,10 @@ from telegram.ext import ContextTypes, ConversationHandler
 from tcbot import cfg
 from tcbot import database as db
 from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
-from tcbot.modules.helper import decorators, extraction, keyboards
+from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.role_guard import auto_demote
-from tcbot.modules.helper.workflows.ban_flow import WAITING_PROOF, ban_conversation
+from tcbot.modules.helper.workflows.ban_flow import WAITING_PROOF, ban_conversation, proof
 from tcbot.utils.prefixes import parse_cmd_args
 
 log = logging.getLogger(__name__)
@@ -79,13 +79,13 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         await msg.reply_text("You need Developer rank or above to issue bans. Not your call. 🚫")
         return ConversationHandler.END
 
-    reason = " ".join(raw_args[1:] if has_explicit_target else raw_args).strip()
+    ban_reason = " ".join(raw_args[1:] if has_explicit_target else raw_args).strip()
 
     if not target_id:
         await msg.reply_text("Cannot resolve target. Reply to a message or provide a user ID.")
         return ConversationHandler.END
 
-    if not reason:
+    if not ban_reason:
         await msg.reply_text("A reason is required - /tcban <target> <reason>.")
         return ConversationHandler.END
 
@@ -122,14 +122,15 @@ async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
 
     ctx.user_data["ban_target_id"]    = target_id
     ctx.user_data["ban_target_fname"] = target_fname or str(target_id)
-    ctx.user_data["ban_reason"]       = reason
+    ctx.user_data["ban_reason"]       = ban_reason
     ctx.user_data["ban_admin_id"]     = admin.id
     ctx.user_data["ban_admin_fname"]  = admin.first_name
 
+    target_mention = mention(target_id, target_fname or str(target_id))
     prompt = await msg.reply_text(
-        "Proof required. Send a photo or video (multiple files allowed).\n"
-        f"You have {cfg.proof_timeout} seconds.",
-        reply_markup=keyboards.cancel_proof_kb(),
+        proof.noted_prompt("ban", ban_reason, target_mention),
+        parse_mode="HTML",
+        reply_markup=proof.keyboard(),
     )
     ctx.user_data["ban_prompt_msg_id"]  = prompt.message_id
     ctx.user_data["ban_prompt_chat_id"] = msg.chat.id

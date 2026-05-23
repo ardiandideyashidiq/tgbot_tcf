@@ -51,49 +51,68 @@ Entry (command message)
 ```
 
 The factory accepts:
-- `action: str` — `"kick"`, `"mute"`, or `"warn"` — used for labeling prompts and callbacks
+- `reason: BuildReason` — instance configured for this action (carries action slug, `skip_allowed`, and button labels)
+- `proof: BuildProof` — instance configured for this action (carries action slug and button labels)
 - `entry_fn` — the async function that handles the command message and returns `WAITING_REASON | WAITING_PROOF | END`
-- `executor` — async adapter `_exec_*(update, ctx, target_id, fname, reason, proof_desc, admin_id, admin_fname)` that performs the actual action
+- `executor` — async adapter `_exec_*(update, ctx)` that reads its keys from `ctx.user_data` and executes the action
 - `entry_filter` — the `MessageFilter` or combined filter for the command
+
+### Class Instantiation per Action
+
+Each flow file creates module-level instances and exports them for use by the command entry point:
+
+```python
+# kicking_flow.py
+reason = BuildReason("kick")               # skip_allowed=True (default)
+proof  = BuildProof("kick")                # skip_allowed=True (default)
+
+# muting_flow.py
+reason = BuildReason("mute")
+proof  = BuildProof("mute")
+
+# warning_flow.py
+reason = BuildReason("warn", skip_allowed=False)   # reason is mandatory
+proof  = BuildProof("warn")
+
+# ban_flow.py
+proof  = BuildProof("ban", skip_allowed=False)     # proof required; no reason step
+```
 
 ### Keyboard and Prompt Helpers
 
+All keyboards and prompts are generated through the class instances.  Import the
+instances from the flow file, then call methods on them:
+
 ```python
-# reason-step helpers — all live in reason_flow
+# reason-step constants and parsing — from reason_flow
 from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_REASON, WAITING_PROOF,
-    reason_kb,
-    reason_prompt, reason_noted_prompt,
     parse_inline_reason,
 )
 
-# proof-step helpers — all live in proof_flow
-from tcbot.modules.helper.workflows.proof_flow import (
-    proof_kb,
-    proof_step_prompt,
-    record_proof,
-)
+# reason and proof instances — from the action's own flow file
+from tcbot.modules.helper.workflows.kicking_flow import reason, proof
 
-# reason step prompt
-reason_prompt(target_mention, action, extra_info="")
+# reason-step keyboard: [Skip] [Cancel] — or just [Cancel] if skip_allowed=False
+reason.keyboard()
 
-# "reason noted, add proof?" prompt (when reason was inline)
-reason_noted_prompt(action, inline_reason, target_mention, extra_info="")
+# reason-step prompt: "About to kick X. What's the reason? Type it below, or tap Skip."
+reason.prompt(target_mention, action_label, extra_info="")
 
-# keyboard for reason step: [Skip reason] [Cancel]
-reason_kb(action)
+# proof-step keyboard: [Skip] [Cancel] — or just [Cancel] if skip_allowed=False
+proof.keyboard()
 
-# keyboard for proof step: [Skip proof] [Cancel]
-proof_kb(action)
+# proof-step prompt after an in-conversation reason was typed
+proof.step_prompt(target_mention, action_label, reason_text, extra_info="")
+
+# proof-step prompt when reason was provided inline in the command
+proof.noted_prompt(action_label, inline_reason, target_mention, extra_info="")
 
 # extract inline reason from command args
 inline_reason = parse_inline_reason(remaining_args, has_explicit_target=False)
 
-# build the proof-step prompt text after reason was collected in-conversation
-proof_step_prompt(target_mention, action, reason, extra_info="")
-
-# return a short proof description from a photo/video message, or None
-record_proof(message)
+# record proof from a photo/video message (static method — no instance needed)
+proof_desc = BuildProof.record(message)   # returns "Photo (msg N)" / "Video (msg N)" / None
 ```
 
 ---

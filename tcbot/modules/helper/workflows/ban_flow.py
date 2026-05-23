@@ -7,11 +7,12 @@ Ban executor + proof collection conversation
 
 Sections
 ────────
-_execute_ban()        — federation-wide ban, DB write, log dispatch, group enforcement
-on_proof_received()   — WAITING_PROOF handler — single or album proof
-on_cancel_proof()     — cancel callback
-on_proof_timeout()    — timeout / fallback handler
-ban_conversation()    — ConversationHandler factory
+proof             — BuildProof instance for the ban action (skip_allowed=False)
+_execute_ban()    — federation-wide ban, DB write, log dispatch, group enforcement
+on_proof_received() — WAITING_PROOF handler — single or album proof
+on_cancel_proof() — cancel callback
+on_proof_timeout() — timeout / fallback handler
+ban_conversation() — ConversationHandler factory
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ from tcbot import cfg, database as db
 from tcbot.modules.helper import keyboards, parse_logmsg
 from tcbot.modules.helper.formatter import mention
 from tcbot.modules.helper.parse_link import appeal_deep_link, message_link
-from tcbot.modules.helper.workflows.proof_flow import upload_proof
+from tcbot.modules.helper.workflows.proof_flow import BuildProof, upload_proof
 from tcbot.utils.dispatch import fan_out
 from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
 from tcbot.utils.timedate_format import utc_now
@@ -41,6 +42,10 @@ from tcbot.utils.timedate_format import utc_now
 log = logging.getLogger(__name__)
 
 WAITING_PROOF = 0
+
+## Per-action BuildProof instance — imported by banning.py
+## skip_allowed=False: ban proof is required; there is no Skip option
+proof = BuildProof("ban", skip_allowed=False)
 
 ## Module-level album accumulators (keyed by media_group_id)
 _albums:     dict[str, list[Message]]  = {}
@@ -253,7 +258,7 @@ def ban_conversation(entry_fn) -> ConversationHandler:
         entry_points=[MessageHandler(_BAN_FILTER, entry_fn)],
         states={
             WAITING_PROOF: [
-                CallbackQueryHandler(on_cancel_proof, pattern=r"^cancel_proof$"),
+                CallbackQueryHandler(on_cancel_proof, pattern=rf"^{proof.action}_cancel$"),
                 MessageHandler(filters.PHOTO | filters.VIDEO, on_proof_received),
             ],
         },

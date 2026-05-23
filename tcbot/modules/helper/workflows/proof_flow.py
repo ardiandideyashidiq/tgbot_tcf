@@ -3,22 +3,16 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Proof collection helpers - keyboards, prompts, media recording, and channel upload.
+Proof-step infrastructure — keyboards, prompts, media recording, and channel upload.
 
-All proof-related concerns live here so that reason_flow and individual
-module entry points have a single, unambiguous import source for anything
-that touches the proof step.
+All proof-step concerns for every moderation action live here.  Import
+``BuildProof`` to produce keyboards and prompt text.  ``upload_proof`` handles
+the physical media upload to the proof channel used by the ban flow.
 
 Exports
 ───────
-Keyboard builder
-    proof_kb(action)          → InlineKeyboardMarkup  (Skip + Cancel)
-
-Prompt text helpers
-    proof_step_prompt(target_mention, action_label, reason, extra_info) → str
-
-Proof recording
-    record_proof(msg) → str | None
+Builder
+    BuildProof — configurable proof-step keyboard, prompts, and media recording
 
 Channel upload
     upload_proof(bot, msgs, caption, proof_chat, proof_thread) → int | None
@@ -40,42 +34,90 @@ from telegram import (
 log = logging.getLogger(__name__)
 
 
-# ─────────────────────────── Keyboard builder ───────────────────── #
+# ─────────────────────────────── BuildProof ─────────────────────── #
 
-def proof_kb(action: str) -> InlineKeyboardMarkup:
-    """Proof-step keyboard: Skip + Cancel."""
-    return InlineKeyboardMarkup([[
-        InlineKeyboardButton("Skip",   callback_data=f"{action}_skip_proof"),
-        InlineKeyboardButton("Cancel", callback_data=f"{action}_cancel"),
-    ]])
+class BuildProof:
+    """Configurable proof-step keyboard, prompts, and media recording.
 
+    Instantiate once per action with the action-specific configuration;
+    call methods to produce keyboards and prompt strings.  No action names,
+    button labels, or routing logic are hardcoded inside the class.
 
-# ──────────────────────────── Prompt text ───────────────────────── #
+    Args:
+        action:       Lowercase action slug used to build callback_data prefixes
+                      (e.g. ``"kick"``, ``"mute"``, ``"ban"``).
+        skip_allowed: When ``True`` a Skip button is included in the keyboard and
+                      prompt hints reference it.  Set to ``False`` for flows where
+                      proof collection is not skippable.
+        skip_label:   Label for the Skip button (default ``"Skip"``).
+        cancel_label: Label for the Cancel button (default ``"Cancel"``).
+    """
 
-def proof_step_prompt(
-    target_mention: str,
-    action_label: str,
-    reason: str,
-    extra_info: str = "",
-) -> str:
-    """Proof-step prompt after reason was collected in-conversation."""
-    suffix = f" {extra_info}" if extra_info else ""
-    return (
-        f"Reason noted — {action_label.lower()}ing {target_mention}{suffix}.\n"
-        f"Reason: <b>{reason}</b>\n\n"
-        "Got any proof? Send a photo or video, or tap <b>Skip</b> to proceed."
-    )
+    def __init__(
+        self,
+        action: str,
+        *,
+        skip_allowed: bool = True,
+        skip_label: str = "Skip",
+        cancel_label: str = "Cancel",
+    ) -> None:
+        self.action = action
+        self.skip_allowed = skip_allowed
+        self.skip_label = skip_label
+        self.cancel_label = cancel_label
 
+    def keyboard(self) -> InlineKeyboardMarkup:
+        """Proof-step keyboard. Includes Skip only when ``skip_allowed`` is True."""
+        buttons: list[InlineKeyboardButton] = []
+        if self.skip_allowed:
+            buttons.append(
+                InlineKeyboardButton(self.skip_label, callback_data=f"{self.action}_skip_proof")
+            )
+        buttons.append(
+            InlineKeyboardButton(self.cancel_label, callback_data=f"{self.action}_cancel")
+        )
+        return InlineKeyboardMarkup([buttons])
 
-# ─────────────────────────── Proof recording ────────────────────── #
+    def step_prompt(
+        self,
+        target_mention: str,
+        action_label: str,
+        reason: str,
+        extra_info: str = "",
+    ) -> str:
+        """Proof-step prompt after reason was collected in-conversation."""
+        suffix    = f" {extra_info}" if extra_info else ""
+        skip_hint = f", or tap <b>{self.skip_label}</b> to proceed" if self.skip_allowed else ""
+        return (
+            f"Reason noted — {action_label.lower()}ing {target_mention}{suffix}.\n"
+            f"Reason: <b>{reason}</b>\n\n"
+            f"Got any proof? Send a photo or video{skip_hint}."
+        )
 
-def record_proof(msg: Message) -> str | None:
-    """Return a short proof description from a photo/video message, or None."""
-    if msg.photo:
-        return f"Photo (msg {msg.message_id})"
-    if msg.video:
-        return f"Video (msg {msg.message_id})"
-    return None
+    def noted_prompt(
+        self,
+        action_label: str,
+        inline_reason: str,
+        target_mention: str,
+        extra_info: str = "",
+    ) -> str:
+        """Proof-step prompt when an inline reason was already provided."""
+        suffix    = f" {extra_info}" if extra_info else ""
+        skip_hint = f", or tap <b>{self.skip_label}</b> to proceed" if self.skip_allowed else ""
+        return (
+            f"{action_label.capitalize()}ing {target_mention}{suffix}.\n"
+            f"Reason: <b>{inline_reason}</b>\n\n"
+            f"Got any proof? Send a photo or video{skip_hint}."
+        )
+
+    @staticmethod
+    def record(msg: Message) -> str | None:
+        """Return a short proof description from a photo/video message, or None."""
+        if msg.photo:
+            return f"Photo (msg {msg.message_id})"
+        if msg.video:
+            return f"Video (msg {msg.message_id})"
+        return None
 
 
 # ─────────────────────────── Channel upload ─────────────────────── #

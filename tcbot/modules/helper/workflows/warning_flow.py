@@ -7,12 +7,14 @@ Warning executor + conversation factory
 
 Exports
 ───────
-WARN_LIMIT            — auto-ban threshold (3)
-execute_warn()        — per-group warn (auto-ban at WARN_LIMIT)
-execute_unwarn()      — remove latest warning in group
-execute_warnlist()    — show warning count + reasons
-execute_resetwarns()  — clear all warnings for a user in a group
-warn_conversation()   — ConversationHandler factory (delegates to reason_flow)
+reason              — BuildReason instance for the warn action (skip_allowed=False)
+proof               — BuildProof instance for the warn action
+WARN_LIMIT          — auto-ban threshold (3)
+execute_warn()      — per-group warn (auto-ban at WARN_LIMIT)
+execute_unwarn()    — remove latest warning in group
+execute_warnlist()  — show warning count + reasons
+execute_resetwarns() — clear all warnings for a user in a group
+warn_conversation() — ConversationHandler factory (delegates to reason_flow)
 """
 
 from __future__ import annotations
@@ -26,12 +28,18 @@ from telegram.ext import ContextTypes
 from tcbot import cfg, database as db
 from tcbot.modules.helper import parse_logmsg
 from tcbot.modules.helper.formatter import code, mention
-from tcbot.modules.helper.workflows.reason_flow import build_modaction_conv
+from tcbot.modules.helper.workflows.proof_flow import BuildProof
+from tcbot.modules.helper.workflows.reason_flow import BuildReason, build_modaction_conv
 from tcbot.utils.prefixes import build_prefixed_filters
 
 log = logging.getLogger(__name__)
 
 WARN_LIMIT = 3
+
+## Per-action BuildReason and BuildProof instances — imported by warnings.py
+## skip_allowed=False because warn requires a reason — Skip is not offered
+reason = BuildReason("warn", skip_allowed=False)
+proof  = BuildProof("warn")
 
 
 ## ── Executors ───────────────────────────────────────────────────────────────
@@ -41,7 +49,7 @@ async def execute_warn(
     ctx: ContextTypes.DEFAULT_TYPE,
     target_id: int,
     target_name: str,
-    reason: str,
+    reason_text: str,
     proof_desc: str | None = None,
 ) -> None:
     msg         = update.effective_message
@@ -52,10 +60,10 @@ async def execute_warn(
     admin_fname = update.effective_user.first_name
     lc, lt      = cfg.logs
 
-    count    = await db.warns_db.add_warn(target_id, reason, admin_id, chat_id)
+    count    = await db.warns_db.add_warn(target_id, reason_text, admin_id, chat_id)
     log_text = parse_logmsg.warn_log(
         target_id, target_name, admin_id, admin_fname,
-        reason, count, WARN_LIMIT, chat_id, chat_title,
+        reason_text, count, WARN_LIMIT, chat_id, chat_title,
     )
 
     if count >= WARN_LIMIT:
@@ -88,7 +96,7 @@ async def execute_warn(
             ctx.bot.send_message(lc, log_text, parse_mode="HTML", message_thread_id=lt),
             msg.reply_text(
                 f"{mention(target_id, target_name)} has been warned "
-                f"({count}/{WARN_LIMIT}) - {reason}{proof_line}",
+                f"({count}/{WARN_LIMIT}) - {reason_text}{proof_line}",
                 parse_mode="HTML",
             ),
             return_exceptions=True,
@@ -192,10 +200,10 @@ async def _exec_warn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """Pop warn data from user_data and call execute_warn."""
     target_id   = ctx.user_data.pop("warn_target_id", 0)
     target_name = ctx.user_data.pop("warn_target_name", "")
-    reason      = ctx.user_data.pop("warn_reason", "")
+    reason_text = ctx.user_data.pop("warn_reason", "")
     proof_desc  = ctx.user_data.pop("warn_proof_desc", None)
     ctx.user_data.pop("warn_extra_info", None)
-    await execute_warn(update, ctx, target_id, target_name, reason, proof_desc=proof_desc)
+    await execute_warn(update, ctx, target_id, target_name, reason_text, proof_desc=proof_desc)
 
 
 ## ── ConversationHandler factory ─────────────────────────────────────────────
@@ -217,7 +225,6 @@ _WARN_ESCAPE = (
 def warn_conversation(entry_fn) -> object:
     """Return the warn ConversationHandler via the central reason_flow factory."""
     return build_modaction_conv(
-        "warn", entry_fn, _exec_warn, _WARN_FILTER,
-        reason_required=True,
+        reason, proof, entry_fn, _exec_warn, _WARN_FILTER,
         escape_filter=_WARN_ESCAPE,
     )

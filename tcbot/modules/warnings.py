@@ -16,20 +16,18 @@ from tcbot import cfg, database as db
 from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
-from tcbot.modules.helper.workflows.proof_flow import proof_kb
 from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_PROOF,
     WAITING_REASON,
     parse_inline_reason,
-    reason_noted_prompt,
-    reason_only_kb,
-    reason_prompt,
 )
 from tcbot.modules.helper.workflows.warning_flow import (
     WARN_LIMIT,
     execute_resetwarns,
     execute_unwarn,
     execute_warnlist,
+    proof,
+    reason,
     warn_conversation,
 )
 from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
@@ -155,16 +153,16 @@ async def cmd_warn_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if inline_reason:
         ctx.user_data["warn_reason"] = inline_reason
         await msg.reply_text(
-            reason_noted_prompt("warn", inline_reason, target_mention),
+            proof.noted_prompt("warn", inline_reason, target_mention),
             parse_mode="HTML",
-            reply_markup=proof_kb("warn"),
+            reply_markup=proof.keyboard(),
         )
         return WAITING_PROOF
 
     await msg.reply_text(
-        reason_prompt(target_mention, "warn"),
+        reason.prompt(target_mention, "warn"),
         parse_mode="HTML",
-        reply_markup=reason_only_kb("warn"),
+        reply_markup=reason.keyboard(),
     )
     return WAITING_REASON
 

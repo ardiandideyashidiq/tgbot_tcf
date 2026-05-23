@@ -21,50 +21,58 @@ from tcbot import cfg
 
 
 # ────────────────────── Console Log Formatter ───────────────────── #
-# * Custom log formatter with ANSI color-coded output
-# * Short module name only (last segment), no full dotted path
-# * All timestamps in UTC for consistency across timezones
+# * Color-coded bracket format: [HH:MM] [DD/MM/YY] [LEVEL] [module:line] → message
+# * Level and message color match per severity — no background badges
+# * Module name: last segment only (e.g. ban_flow, not tcbot.modules.helper.workflows.ban_flow)
+# * All timestamps in UTC
 
 class BotLogFormatter(logging.Formatter):
     """
-    Custom log formatter for console output with ANSI color badges
-    * Output format: HH:MM DD/MM/YY [LEVEL] module:line → message
-    * Level badges: color-coded via ANSI escape codes
-    * Module name: last segment only (e.g. ban_flow, not tcbot.modules.helper.workflows.ban_flow)
+    Custom log formatter for console output with ANSI bracket format
+    * Output: [HH:MM] [DD/MM/YY] [LEVEL] [module:line] → message
+    * Level text is color-coded: INFO=green, WARN=yellow, ERROR=red, CRIT=purple, DEBUG=gray
+    * WARN and ERROR messages inherit their level color for instant visibility
     * Timestamps in UTC
     """
 
-    _RESET  = "\033[0m"
-    _BADGES = {
-        logging.DEBUG:    "\033[1;37;100m DEBUG \033[0m",
-        logging.INFO:     "\033[1;30;42m INFO  \033[0m",
-        logging.WARNING:  "\033[1;30;43m WARN  \033[0m",
-        logging.ERROR:    "\033[1;37;41m ERROR \033[0m",
-        logging.CRITICAL: "\033[1;37;45m CRIT  \033[0m",
+    _R  = "\033[0m"
+    _BR = "\033[38;5;236m"   # bracket color — dark gray
+    _TM = "\033[38;5;242m"   # time
+    _DT = "\033[38;5;238m"   # date
+    _MD = "\033[38;5;75m"    # module:line
+    _AW = "\033[38;5;242m"   # arrow →
+    _MS = "\033[38;5;253m"   # default message
+
+    _LEVELS = {
+        logging.DEBUG:    ("\033[38;5;246m", "DEBUG"),
+        logging.INFO:     ("\033[38;5;114m", "INFO"),
+        logging.WARNING:  ("\033[38;5;178m", "WARN"),
+        logging.ERROR:    ("\033[38;5;203m", "ERROR"),
+        logging.CRITICAL: ("\033[38;5;177m", "CRIT"),
     }
-    _TIME   = "\033[38;5;242m"
-    _DATE   = "\033[38;5;238m"
-    _MODULE = "\033[38;5;75m"
-    _LINE   = "\033[38;5;242m"
-    _ARROW  = "\033[38;5;242m"
+    _COLORED_MSG = {logging.WARNING, logging.ERROR, logging.CRITICAL}
 
     def __init__(self, project_name: str) -> None:
         super().__init__()
         self.project_name = project_name
 
+    def _bracket(self, color: str, text: str) -> str:
+        return f"{self._BR}[{self._R}{color}{text}{self._R}{self._BR}]{self._R}"
+
     def format(self, record: logging.LogRecord) -> str:
-        now    = datetime.now(timezone.utc)
-        badge  = self._BADGES.get(record.levelno, " ??? ")
-        module = record.name.split(".")[-1]
-        return (
-            f"{self._TIME}{now.strftime('%H:%M')}{self._RESET} "
-            f"{self._DATE}{now.strftime('%d/%m/%y')}{self._RESET} "
-            f"{badge} "
-            f"{self._MODULE}{module}{self._RESET}"
-            f"{self._LINE}:{record.lineno}{self._RESET}"
-            f"{self._ARROW} → {self._RESET}"
-            f"{record.getMessage()}"
-        )
+        now             = datetime.now(timezone.utc)
+        level_color, level_label = self._LEVELS.get(record.levelno, ("\033[0m", "???"))
+        module          = record.name.split(".")[-1]
+        msg_color       = level_color if record.levelno in self._COLORED_MSG else self._MS
+
+        time_part   = self._bracket(self._TM, now.strftime("%H:%M"))
+        date_part   = self._bracket(self._DT, now.strftime("%d/%m/%y"))
+        level_part  = self._bracket(level_color, level_label)
+        module_part = self._bracket(self._MD, f"{module}:{record.lineno}")
+        arrow_part  = f"{self._AW} → {self._R}"
+        msg_part    = f"{msg_color}{record.getMessage()}{self._R}"
+
+        return f"{time_part} {date_part} {level_part} {module_part}{arrow_part}{msg_part}"
 
 
 # ─────────────────── Telegram Error Log Handler ─────────────────── #

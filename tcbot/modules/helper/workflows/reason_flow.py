@@ -3,13 +3,16 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Central reason + proof collection infrastructure.
+Central reason collection infrastructure.
 
 Every moderation action that requires a reason/proof conversation (kick, mute,
-warn) uses this module exclusively.  The shared state constants, keyboard
-builders, prompt helpers, and the generic ConversationHandler factory all live
-here.  Individual flow files only define their executor and call
-``build_modaction_conv()``.
+warn) uses this module exclusively.  The shared state constants, reason-step
+keyboard builders, reason-step prompt helpers, and the generic
+ConversationHandler factory all live here.  Individual flow files only define
+their executor and call ``build_modaction_conv()``.
+
+Proof-step concerns (keyboard, prompt, recording) live in proof_flow.py and
+are imported from there by both this module and the individual entry points.
 
 Exports
 ───────
@@ -20,15 +23,10 @@ Constants
 Keyboard builders  (callback_data: ``{action}_skip_reason`` etc.)
     reason_kb(action)        → InlineKeyboardMarkup  (Skip + Cancel)
     reason_only_kb(action)   → InlineKeyboardMarkup  (Cancel only — warn)
-    proof_kb(action)         → InlineKeyboardMarkup  (Skip + Cancel)
 
 Prompt text helpers
     reason_prompt(target_mention, action_label, extra_info) → str
     reason_noted_prompt(action_label, inline_reason, target_mention) → str
-    proof_step_prompt(target_mention, action_label, reason, extra_info) → str
-
-Proof recording
-    record_proof(msg) → str | None
 
 Parsing
     parse_inline_reason(args, has_explicit_target) → str
@@ -42,7 +40,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
@@ -52,16 +50,21 @@ from telegram.ext import (
 )
 
 from tcbot import cfg
+from tcbot.modules.helper.workflows.proof_flow import (
+    proof_kb,
+    proof_step_prompt,
+    record_proof,
+)
 from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER
 
 log = logging.getLogger(__name__)
 
-## State constants used by all moderation ConversationHandlers
+# * State constants used by all moderation ConversationHandlers
 WAITING_REASON = 0
 WAITING_PROOF  = 1
 
 
-## ── Reason parsing ─────────────────────────────────────────────────────────
+# ───────────────────────── Reason parsing ───────────────────────── #
 
 def parse_inline_reason(
     args: list[str],
@@ -72,7 +75,7 @@ def parse_inline_reason(
     return " ".join(tokens).strip()
 
 
-## ── Keyboard builders ──────────────────────────────────────────────────────
+# ──────────────────────── Keyboard builders ─────────────────────── #
 
 def reason_kb(action: str) -> InlineKeyboardMarkup:
     """Reason-step keyboard: Skip + Cancel."""
@@ -89,15 +92,7 @@ def reason_only_kb(action: str) -> InlineKeyboardMarkup:
     ]])
 
 
-def proof_kb(action: str) -> InlineKeyboardMarkup:
-    """Proof-step keyboard: Skip + Cancel."""
-    return InlineKeyboardMarkup([[
-        InlineKeyboardButton("Skip",   callback_data=f"{action}_skip_proof"),
-        InlineKeyboardButton("Cancel", callback_data=f"{action}_cancel"),
-    ]])
-
-
-## ── Prompt text helpers ─────────────────────────────────────────────────────
+# ──────────────────── Reason prompt text helpers ─────────────────── #
 
 def reason_prompt(
     target_mention: str,
@@ -127,33 +122,7 @@ def reason_noted_prompt(
     )
 
 
-def proof_step_prompt(
-    target_mention: str,
-    action_label: str,
-    reason: str,
-    extra_info: str = "",
-) -> str:
-    """Proof-step prompt after reason was collected in-conversation."""
-    suffix = f" {extra_info}" if extra_info else ""
-    return (
-        f"Reason noted — {action_label.lower()}ing {target_mention}{suffix}.\n"
-        f"Reason: <b>{reason}</b>\n\n"
-        "Got any proof? Send a photo or video, or tap <b>Skip</b> to proceed."
-    )
-
-
-## ── Proof recording ─────────────────────────────────────────────────────────
-
-def record_proof(msg: Message) -> str | None:
-    """Return a short proof description from a photo/video message, or None."""
-    if msg.photo:
-        return f"Photo (msg {msg.message_id})"
-    if msg.video:
-        return f"Video (msg {msg.message_id})"
-    return None
-
-
-## ── Generic ConversationHandler factory ─────────────────────────────────────
+# ────────────────── Generic ConversationHandler factory ─────────── #
 
 def build_modaction_conv(
     action: str,
@@ -192,11 +161,11 @@ def build_modaction_conv(
                          fallback (e.g. unmute commands should reach their own
                          MessageHandler even if a mute conversation is open).
     """
-    _reason_key     = f"{action}_reason"
-    _proof_key      = f"{action}_proof_desc"
-    _extra_info_key = f"{action}_extra_info"
+    _reason_key      = f"{action}_reason"
+    _proof_key       = f"{action}_proof_desc"
+    _extra_info_key  = f"{action}_extra_info"
     _prompt_chat_key = f"{action}_prompt_chat"
-    _prompt_id_key  = f"{action}_prompt_id"
+    _prompt_id_key   = f"{action}_prompt_id"
 
     def _get_target(ctx: ContextTypes.DEFAULT_TYPE) -> str:
         return (
@@ -205,13 +174,13 @@ def build_modaction_conv(
             or "target"
         )
 
-    ## ── WAITING_REASON handlers ─────────────────────────────────────────────
+    # ── WAITING_REASON handlers ──────────────────────────────────── #
 
     async def _on_reason_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-        reason     = update.effective_message.text.strip()
+        reason      = update.effective_message.text.strip()
         ctx.user_data[_reason_key] = reason
-        extra_info = ctx.user_data.get(_extra_info_key, "")
-        prompt_txt = proof_step_prompt(_get_target(ctx), action, reason, extra_info)
+        extra_info  = ctx.user_data.get(_extra_info_key, "")
+        prompt_txt  = proof_step_prompt(_get_target(ctx), action, reason, extra_info)
         prompt_chat = ctx.user_data.get(_prompt_chat_key)
         prompt_id   = ctx.user_data.get(_prompt_id_key)
         if prompt_id and prompt_chat:
@@ -245,7 +214,7 @@ def build_modaction_conv(
             log.error("%s prompt edit failed (skip-reason step): %s", action, exc)
         return WAITING_PROOF
 
-    ## ── WAITING_PROOF handlers ──────────────────────────────────────────────
+    # ── WAITING_PROOF handlers ───────────────────────────────────── #
 
     async def _on_proof(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         proof = record_proof(update.effective_message)
@@ -259,7 +228,7 @@ def build_modaction_conv(
         await executor(update, ctx)
         return ConversationHandler.END
 
-    ## ── Cancel / fallback ───────────────────────────────────────────────────
+    # ── Cancel / fallback ────────────────────────────────────────── #
 
     async def _on_cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         q = update.callback_query
@@ -273,7 +242,7 @@ def build_modaction_conv(
         await update.effective_message.reply_text(f"{action.capitalize()} operation cancelled.")
         return ConversationHandler.END
 
-    ## ── Build states ────────────────────────────────────────────────────────
+    # ── Build states ─────────────────────────────────────────────── #
 
     reason_state = [
         MessageHandler(filters.TEXT & ~ALL_PREFIXES_CMD_FILTER, _on_reason_text),

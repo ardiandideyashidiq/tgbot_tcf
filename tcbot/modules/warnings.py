@@ -16,16 +16,14 @@ from tcbot import cfg, database as db
 from tcbot.database.roles_db import ROLE_LABEL, get_effective_role, role_rank
 from tcbot.modules.helper import decorators, extraction
 from tcbot.modules.helper.formatter import mention
-from tcbot.modules.helper.workflows.reason_flow import (
-    parse_inline_reason,
-    proof_kb,
-    reason_noted_prompt,
-    reason_only_kb,
-    reason_prompt,
-)
+from tcbot.modules.helper.workflows.proof_flow import proof_kb
 from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_PROOF,
     WAITING_REASON,
+    parse_inline_reason,
+    reason_noted_prompt,
+    reason_only_kb,
+    reason_prompt,
 )
 from tcbot.modules.helper.workflows.warning_flow import (
     WARN_LIMIT,

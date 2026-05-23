@@ -23,11 +23,11 @@ from tcbot.modules.helper.workflows.muting_flow import (
     mute_conversation,
     parse_duration,
 )
+from tcbot.modules.helper.workflows.proof_flow import proof_kb
 from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_PROOF,
     WAITING_REASON,
     parse_inline_reason,
-    proof_kb,
     reason_kb,
     reason_noted_prompt,
     reason_prompt,

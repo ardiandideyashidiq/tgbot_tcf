@@ -59,11 +59,19 @@ The factory accepts:
 ### Keyboard and Prompt Helpers
 
 ```python
+# reason-step helpers — all live in reason_flow
 from tcbot.modules.helper.workflows.reason_flow import (
     WAITING_REASON, WAITING_PROOF,
-    reason_kb, proof_kb,
+    reason_kb,
     reason_prompt, reason_noted_prompt,
-    parse_inline_reason, record_proof,
+    parse_inline_reason,
+)
+
+# proof-step helpers — all live in proof_flow
+from tcbot.modules.helper.workflows.proof_flow import (
+    proof_kb,
+    proof_step_prompt,
+    record_proof,
 )
 
 # reason step prompt
@@ -81,8 +89,11 @@ proof_kb(action)
 # extract inline reason from command args
 inline_reason = parse_inline_reason(remaining_args, has_explicit_target=False)
 
-# store proof media in ctx.user_data
-record_proof(ctx, action, message)
+# build the proof-step prompt text after reason was collected in-conversation
+proof_step_prompt(target_mention, action, reason, extra_info="")
+
+# return a short proof description from a photo/video message, or None
+record_proof(message)
 ```
 
 ---

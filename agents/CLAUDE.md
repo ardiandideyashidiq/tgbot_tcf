@@ -55,7 +55,8 @@ tcbot/
 │   │   ├── parse_logmsg.py  Log message text builders
 │   │   ├── parse_editmsg.py safe_edit() — swallows stale-message errors
 │   │   └── workflows/
-│   │       ├── reason_flow.py      Central ConversationHandler factory (kick/mute/warn)
+│   │       ├── reason_flow.py      Central ConversationHandler factory (kick/mute/warn); reason-step keyboards and prompts only
+│   │       ├── proof_flow.py       proof_kb(), proof_step_prompt(), record_proof(), upload_proof()
 │   │       ├── ban_flow.py         Album-aware ban proof ConversationHandler
 │   │       ├── appeal_flow.py      Standalone appeal ConversationHandler (deep-link)
 │   │       ├── kicking_flow.py     execute_kick(), kick_conversation(entry_fn)
@@ -65,8 +66,7 @@ tcbot/
 │   │       ├── promote_flow.py     _execute_promote(), shared by admins.py
 │   │       ├── connected_flow.py   Group connect/disconnect flows
 │   │       ├── stats_flow.py       Statistics executors
-│   │       ├── stats_chats_flow.py Chat statistics executors
-│   │       └── proof_flow.py       upload_proof() helper
+│   │       └── stats_chats_flow.py Chat statistics executors
 │   └── *.py             Command modules (banning, muting, kicking, warnings, appeals, …)
 └── utils/
     ├── dispatch.py      fan_out() — semaphore-bounded multi-group dispatcher (max 10)

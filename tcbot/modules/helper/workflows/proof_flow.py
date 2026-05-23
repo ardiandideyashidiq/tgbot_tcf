@@ -3,17 +3,82 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Proof upload helper - sends ban proof media to the configured proof channel
+Proof collection helpers - keyboards, prompts, media recording, and channel upload.
+
+All proof-related concerns live here so that reason_flow and individual
+module entry points have a single, unambiguous import source for anything
+that touches the proof step.
+
+Exports
+───────
+Keyboard builder
+    proof_kb(action)          → InlineKeyboardMarkup  (Skip + Cancel)
+
+Prompt text helpers
+    proof_step_prompt(target_mention, action_label, reason, extra_info) → str
+
+Proof recording
+    record_proof(msg) → str | None
+
+Channel upload
+    upload_proof(bot, msgs, caption, proof_chat, proof_thread) → int | None
 """
 
 from __future__ import annotations
 
 import logging
 
-from telegram import Bot, InputMediaPhoto, InputMediaVideo, Message
+from telegram import (
+    Bot,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InputMediaPhoto,
+    InputMediaVideo,
+    Message,
+)
 
 log = logging.getLogger(__name__)
 
+
+# ─────────────────────────── Keyboard builder ───────────────────── #
+
+def proof_kb(action: str) -> InlineKeyboardMarkup:
+    """Proof-step keyboard: Skip + Cancel."""
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton("Skip",   callback_data=f"{action}_skip_proof"),
+        InlineKeyboardButton("Cancel", callback_data=f"{action}_cancel"),
+    ]])
+
+
+# ──────────────────────────── Prompt text ───────────────────────── #
+
+def proof_step_prompt(
+    target_mention: str,
+    action_label: str,
+    reason: str,
+    extra_info: str = "",
+) -> str:
+    """Proof-step prompt after reason was collected in-conversation."""
+    suffix = f" {extra_info}" if extra_info else ""
+    return (
+        f"Reason noted — {action_label.lower()}ing {target_mention}{suffix}.\n"
+        f"Reason: <b>{reason}</b>\n\n"
+        "Got any proof? Send a photo or video, or tap <b>Skip</b> to proceed."
+    )
+
+
+# ─────────────────────────── Proof recording ────────────────────── #
+
+def record_proof(msg: Message) -> str | None:
+    """Return a short proof description from a photo/video message, or None."""
+    if msg.photo:
+        return f"Photo (msg {msg.message_id})"
+    if msg.video:
+        return f"Video (msg {msg.message_id})"
+    return None
+
+
+# ─────────────────────────── Channel upload ─────────────────────── #
 
 async def upload_proof(
     bot: Bot,

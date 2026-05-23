@@ -244,11 +244,12 @@ Central ConversationHandler factory for kick, mute, and warn.
 **Exports:**
 - `WAITING_REASON = 0` and `WAITING_PROOF = 1` — state constants
 - `build_modaction_conv(action, entry_fn, executor, entry_filter, ...)` → `ConversationHandler`
-- `reason_kb(action)`, `proof_kb(action)` — inline keyboards for reason/proof steps
+- `reason_kb(action)`, `reason_only_kb(action)` — inline keyboards for the reason step
 - `reason_prompt(target_mention, action, extra_info)` — reason step prompt text
 - `reason_noted_prompt(action, reason, target_mention, extra_info)` — "reason noted, want proof?" text
-- `parse_inline_reason(args, ...)` → `str | None` — extracts inline reason from command args
-- `record_proof(ctx, action, msg)` — stores proof in `ctx.user_data`
+- `parse_inline_reason(args, ...)` → `str` — extracts inline reason from command args
+
+Proof-step concerns (`proof_kb`, `proof_step_prompt`, `record_proof`) live in `proof_flow.py` and are imported from there.
 
 ### `ban_flow.py`
 
@@ -331,7 +332,13 @@ Statistics executors. Pure async functions that query aggregation data and forma
 
 ### `proof_flow.py`
 
-**`upload_proof(bot, proof_bytes, caption)`** — uploads proof media to the configured proof channel, returns the message URL.
+All proof-step concerns live here. Import proof helpers from this module — not from `reason_flow`.
+
+**Exports:**
+- `proof_kb(action)` → `InlineKeyboardMarkup` — Skip + Cancel keyboard for the proof step
+- `proof_step_prompt(target_mention, action_label, reason, extra_info)` → `str` — proof-step prompt after reason was collected in-conversation
+- `record_proof(msg)` → `str | None` — returns a short description (`"Photo (msg N)"` / `"Video (msg N)"`) from a photo/video message, or `None`
+- `upload_proof(bot, msgs, caption, proof_chat, proof_thread)` → `int | None` — uploads proof media (single or album) to the proof channel; returns the uploaded message ID or `None` on failure
 
 ---
 

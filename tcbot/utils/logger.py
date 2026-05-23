@@ -6,9 +6,9 @@
 Logging setup for the TCF bot.
 
 Provides:
-    - BotLogFormatter     - human-readable console format
+    - BotLogFormatter      - human-readable console format with ANSI colors
     - TelegramErrorHandler - ships every ERROR/CRITICAL log record to LOG_ERRORS
-automatically via the running asyncio event loop (no extra code needed anywhere)
+                             automatically via the running asyncio event loop
 """
 
 from __future__ import annotations
@@ -21,49 +21,59 @@ from tcbot import cfg
 
 
 # ────────────────────── Console Log Formatter ───────────────────── #
-# * Custom log formatter that creates human-readable console output
-# * Adds timestamps, project name, and level indicators to all log messages
+# * Custom log formatter with ANSI color-coded output
+# * Short module name only (last segment), no full dotted path
+# * All timestamps in UTC for consistency across timezones
 
 class BotLogFormatter(logging.Formatter):
     """
-    Custom log formatter for console output with clean formatting
-    * Output format: [HH:MM] [DD-MM-YYYY] | <project> | <L> - <module>:<line> - <message>
-    * Level indicators: I=INFO, W=WARNING, E=ERROR, C=CRITICAL, D=DEBUG
-    * Formats all timestamps in UTC to maintain consistency across timezones
+    Custom log formatter for console output with ANSI color badges
+    * Output format: HH:MM DD/MM/YY [LEVEL] module:line → message
+    * Level badges: color-coded via ANSI escape codes
+    * Module name: last segment only (e.g. ban_flow, not tcbot.modules.helper.workflows.ban_flow)
+    * Timestamps in UTC
     """
-    LEVEL_MAP = {
-        logging.DEBUG:    "D",
-        logging.INFO:     "I",
-        logging.WARNING:  "W",
-        logging.ERROR:    "E",
-        logging.CRITICAL: "C",
-    }
 
-    def __init__(self, project_name: str):
+    _RESET  = "\033[0m"
+    _BADGES = {
+        logging.DEBUG:    "\033[1;37;100m DEBUG \033[0m",
+        logging.INFO:     "\033[1;30;42m INFO  \033[0m",
+        logging.WARNING:  "\033[1;30;43m WARN  \033[0m",
+        logging.ERROR:    "\033[1;37;41m ERROR \033[0m",
+        logging.CRITICAL: "\033[1;37;45m CRIT  \033[0m",
+    }
+    _TIME   = "\033[38;5;242m"
+    _DATE   = "\033[38;5;238m"
+    _MODULE = "\033[38;5;75m"
+    _LINE   = "\033[38;5;242m"
+    _ARROW  = "\033[38;5;242m"
+
+    def __init__(self, project_name: str) -> None:
         super().__init__()
         self.project_name = project_name
 
     def format(self, record: logging.LogRecord) -> str:
-        now      = datetime.now(timezone.utc)
-        time_str = now.strftime("%H:%M")
-        date_str = now.strftime("%d-%m-%Y")
-        level    = self.LEVEL_MAP.get(record.levelno, "?")
-        message  = record.getMessage()
+        now    = datetime.now(timezone.utc)
+        badge  = self._BADGES.get(record.levelno, " ??? ")
+        module = record.name.split(".")[-1]
         return (
-            f"[{time_str}] [{date_str}] | {self.project_name} | "
-            f"{level} - {record.name}:{record.lineno} - {message}"
+            f"{self._TIME}{now.strftime('%H:%M')}{self._RESET} "
+            f"{self._DATE}{now.strftime('%d/%m/%y')}{self._RESET} "
+            f"{badge} "
+            f"{self._MODULE}{module}{self._RESET}"
+            f"{self._LINE}:{record.lineno}{self._RESET}"
+            f"{self._ARROW} → {self._RESET}"
+            f"{record.getMessage()}"
         )
 
 
 # ─────────────────── Telegram Error Log Handler ─────────────────── #
 # * Sends ERROR/CRITICAL logs to the configured LOG_ERRORS channel
-# * Automatically catches all unhandled log records across the codebase
-# * Includes suppression list to avoid infinite loops and network noise
+# * Zero blocking — schedules coroutine on the running asyncio event loop
+# * Suppression list prevents infinite loops and network noise
 
-# * Logger names whose ERROR records we intentionally suppress from Telegram
-# * They are usually network noise, not actionable bugs that need fixing
-_SUPPRESS_PREFIXES = (
-    "tcbot.utils.error_reporter",   # avoid infinite loop
+_SUPPRESS_PREFIXES: tuple[str, ...] = (
+    "tcbot.utils.error_reporter",
     "httpcore",
     "httpx._client",
 )
@@ -73,7 +83,7 @@ class TelegramErrorHandler(logging.Handler):
     """
     Async logging handler that ships errors to Telegram
     * Intercepts every ERROR/CRITICAL log record across the entire codebase
-    * Schedules coroutine on running event loop - zero blocking, zero extra code
+    * Schedules coroutine on running event loop — zero blocking, zero extra code
     * Skips known noise sources to prevent spam in the logs channel
     * Avoids infinite loops by suppressing its own logger's errors
     """
@@ -82,45 +92,34 @@ class TelegramErrorHandler(logging.Handler):
         super().__init__(logging.ERROR)
 
     def emit(self, record: logging.LogRecord) -> None:
-        # * Guard: skip records from our own reporter (no infinite loop)
         if any(record.name.startswith(p) for p in _SUPPRESS_PREFIXES):
             return
-
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            return  # * no running event loop - startup or teardown, skip
-
-        # * Import lazily to avoid circular imports at module load time
+            return
         from tcbot.utils import error_reporter
         loop.create_task(error_reporter.report_record(record))
 
 
 # ─────────────────────── Logging Setup Entry ────────────────────── #
-# * Main setup function that configures the entire logging system
-# * Called once at bot startup to initialize all log handlers
+# * Called once at bot startup — initializes all handlers and log levels
+
 def setup(level: int = logging.INFO) -> None:
     """
     Initialize and configure the bot's logging system
-    * Creates and configures console handler with custom BotLogFormatter
-    * Creates and configures Telegram error handler for critical logs
-    * Sets log levels for third-party libraries to reduce console noise
-    * Must be called once at bot startup before any logging occurs
+    * Attaches BotLogFormatter to console handler
+    * Attaches TelegramErrorHandler for ERROR/CRITICAL shipping
+    * Suppresses third-party library noise on console
+    * Must be called once before any logging occurs
     """
-    formatter    = BotLogFormatter(cfg.community_name)
-    con_handler  = logging.StreamHandler()
-    con_handler.setFormatter(formatter)
-
-    tg_handler   = TelegramErrorHandler()
+    con_handler = logging.StreamHandler()
+    con_handler.setFormatter(BotLogFormatter(cfg.community_name))
 
     root = logging.getLogger()
     root.setLevel(level)
     root.addHandler(con_handler)
-    root.addHandler(tg_handler)
+    root.addHandler(TelegramErrorHandler())
 
-    # * Reduce noise from third-party libraries on the console;
-    # * TelegramErrorHandler still fires for their ERRORs if important.
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("telegram").setLevel(logging.WARNING)
-    logging.getLogger("motor").setLevel(logging.WARNING)
-    logging.getLogger("pymongo").setLevel(logging.WARNING)
+    for lib in ("httpx", "telegram", "motor", "pymongo"):
+        logging.getLogger(lib).setLevel(logging.WARNING)

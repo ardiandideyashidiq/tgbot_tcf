@@ -6,7 +6,7 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 
 ## Architecture
 
-- **Language:** Python 3.11
+- **Language:** Python 3.13
 - **Bot framework:** python-telegram-bot 22.5 (polling mode)
 - **Database:** MongoDB (via motor, async)
 - **Web server:** Flask (keep-alive / health-check on port 5000)

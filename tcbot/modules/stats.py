@@ -2,8 +2,6 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 
-"""Federation statistics command and drill-down callback handlers (staff roster, chats, bans)."""
-
 from __future__ import annotations
 
 import asyncio
@@ -31,7 +29,7 @@ from tcbot.modules.helper.workflows.stats_flow import (
 from tcbot.utils.prefixes import ALL_PREFIXES_CMD_FILTER, build_prefixed_filters
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Stats"
 __help_text__ = (
@@ -60,7 +58,7 @@ __help_text__ = (
 )
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+# ──────────────────────── Helper Functions ──────────────────────── #
 
 def _stats_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
@@ -98,7 +96,7 @@ async def _stats_text() -> str:
     )
 
 
-# ── /tcstats command ───────────────────────────────────────────────────────
+# ──────────────────────── Command Handlers ──────────────────────── #
 
 @decorators.ratelimiter(limit=8, period=30)
 @decorators.log_execution
@@ -107,7 +105,7 @@ async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await update.effective_message.reply_text(text, parse_mode="HTML", reply_markup=_stats_kb())
 
 
-# ── stats_main callback ─────────────────────────────────────────────────────
+# ──────────────────────── Callback Handlers ─────────────────────── #
 
 @decorators.ratelimiter(limit=15, period=30)
 @decorators.log_execution
@@ -120,8 +118,6 @@ async def on_stats_main(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         if "not modified" not in str(e).lower():
             raise
 
-
-# ── stats_admins callback ───────────────────────────────────────────────────
 
 @decorators.ratelimiter(limit=15, period=30)
 @decorators.log_execution
@@ -187,7 +183,7 @@ async def on_stats_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     )
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
 _STATS_CMDS = build_prefixed_filters("tcstats")
 

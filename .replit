@@ -1,6 +1,6 @@
 ## Copyright (c) 2026 Replit
 
-modules = ["python-3.11"]
+modules = ["python-3.13"]
 [agent]
 expertMode = true
 stack = "FLASK_VANILLA_JS"

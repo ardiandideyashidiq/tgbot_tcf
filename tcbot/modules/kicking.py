@@ -28,7 +28,7 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 log = logging.getLogger(__name__)
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Kick"
 __help_text__ = (
@@ -63,11 +63,11 @@ __help_text__ = (
 )
 
 
-# ── Entry point ────────────────────────────────────────────────────────────
+# ───────────────────── Command Kick </tckick> ───────────────────── #
 
 @decorators.ratelimiter(limit=5, period=60)
 @decorators.log_execution
-async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+async def cmd_kick(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     msg   = update.effective_message
     admin = update.effective_user
 
@@ -142,8 +142,8 @@ async def cmd_kick_entry(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     return WAITING_REASON
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
 _KICK_CMDS = build_prefixed_filters("tckick") | build_prefixed_filters("tck")
 
-__handlers__ = [kick_conversation(cmd_kick_entry, _KICK_CMDS)]
+__handlers__ = [kick_conversation(cmd_kick, _KICK_CMDS)]

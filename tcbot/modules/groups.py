@@ -2,8 +2,6 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 
-"""tcfgroups command – lists all connected groups with a toggle between simple and detail views."""
-
 from __future__ import annotations
 
 import asyncio
@@ -18,12 +16,12 @@ from tcbot.modules.helper.parse_editmsg import safe_edit
 from tcbot.utils.prefixes import build_prefixed_filters
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Groups"
 __help_text__ = (
     "<b>Commands & Aliases</b>\n"
-    "<code>/tcfgroups</code> (alias: <code>/tcg</code>)\n\n"
+    "<code>/tcgroups</code> (alias: <code>/tcg</code>)\n\n"
 
     "<b>Who can use it</b>\n"
     "Anyone - no special permissions needed.\n\n"
@@ -38,11 +36,11 @@ __help_text__ = (
     "Tap <b>Simple</b> to collapse back to names only.\n\n"
 
     "<b>Example</b>\n"
-    "<code>/tcfgroups</code> or <code>/tcg</code>"
+    "<code>/tcgroups</code> or <code>/tcg</code>"
 )
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+# ──────────────────────── Helper Functions ──────────────────────── #
 
 def _render(groups: list[dict], detailed: bool) -> str:
     lines = [f"<b>Connected Groups</b>\n\nCount: {len(groups)}\n"]
@@ -64,7 +62,7 @@ def _kb(detailed: bool) -> InlineKeyboardMarkup:
     ]])
 
 
-# ── /tcfgroups command ──────────────────────────────────────────────────────
+# ────────── Command for see Connected Groups </tcgroups> ────────── #
 
 @decorators.ratelimiter(limit=8, period=30)
 @decorators.log_execution
@@ -79,7 +77,7 @@ async def cmd_tcfgroups(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-# ── Toggle detail / simple callbacks ───────────────────────────────────────
+# ────────────── Callback Handlers (Details & Simple) ────────────── #
 
 async def _toggle(update: Update, ctx: ContextTypes.DEFAULT_TYPE, detailed: bool) -> None:
     q      = update.callback_query
@@ -105,11 +103,10 @@ async def on_groups_simple(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
     await _toggle(update, ctx, False)
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
 _GROUPS_CMDS = (
-    build_prefixed_filters("tcfgroups")
-    | build_prefixed_filters("tcg")
+    build_prefixed_filters("tcgroups") | build_prefixed_filters("tcg")
 )
 
 __handlers__ = [

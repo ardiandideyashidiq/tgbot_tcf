@@ -21,7 +21,7 @@ from tcbot.utils.prefixes import build_prefixed_filters
 log = logging.getLogger(__name__)
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Cleanup"
 __help_text__ = (
@@ -52,7 +52,7 @@ __help_text__ = (
 )
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+# ──────────────────────── Helper Functions ──────────────────────── #
 
 async def _leave_one(
     bot,
@@ -87,7 +87,7 @@ async def _should_remove(bot, grp: dict) -> bool:
         return True
 
 
-# ── /leaveall command ──────────────────────────────────────────────────────
+# ────────────────── Command Leave All </leaveall> ───────────────── #
 
 @decorators.ratelimiter(limit=1, period=300)
 @decorators.owner_only
@@ -123,7 +123,7 @@ async def cmd_leaveall(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         log.error("Leaveall status edit failed: %s", exc)
 
 
-# ── /cleanup command ───────────────────────────────────────────────────────
+# ─────────────────── Command CleanUp </cleanup> ─────────────────── #
 
 @decorators.ratelimiter(limit=3, period=60)
 @decorators.staff_only
@@ -150,18 +150,11 @@ async def cmd_cleanup(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
-_LEAVEALL_CMDS = (
-    build_prefixed_filters("leaveall")
-    | build_prefixed_filters("exitall")
-    | build_prefixed_filters("tcleave")
-)
-_CLEANUP_CMDS = (
-    build_prefixed_filters("cleanup")
-    | build_prefixed_filters("tcclean")
-    | build_prefixed_filters("tcc")
-)
+_LEAVEALL_CMDS = build_prefixed_filters("leaveall") | build_prefixed_filters("exitall") | build_prefixed_filters("tcleave")
+_CLEANUP_CMDS  = build_prefixed_filters("cleanup")  | build_prefixed_filters("tcclean") | build_prefixed_filters("tcc")
+
 
 __handlers__ = [
     MessageHandler(_LEAVEALL_CMDS, cmd_leaveall),

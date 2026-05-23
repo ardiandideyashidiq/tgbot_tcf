@@ -2,8 +2,6 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 
-"""Group connection command and bot-added event handler for joining the federation."""
-
 from __future__ import annotations
 
 import asyncio
@@ -25,7 +23,7 @@ from tcbot.utils.prefixes import build_prefixed_filters
 log = logging.getLogger(__name__)
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Connect"
 __help_text__ = (
@@ -56,7 +54,7 @@ __help_text__ = (
 )
 
 
-# ── /tcconnect command ─────────────────────────────────────────────────────
+# ───────────── Command to Connect a Group </tcconnect> ──────────── #
 
 @decorators.ratelimiter(limit=3, period=60)
 @decorators.log_execution
@@ -107,18 +105,16 @@ async def cmd_tcconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
 _CONNECT_CMDS = (
-    build_prefixed_filters("tcconnect")
-    | build_prefixed_filters("tccon")
+    build_prefixed_filters("tcconnect") | build_prefixed_filters("tccon")
 )
 
 __handlers__ = [
     ChatMemberHandler(connection.on_bot_added, ChatMemberHandler.MY_CHAT_MEMBER),
     MessageHandler(_CONNECT_CMDS, cmd_tcconnect),
-    CallbackQueryHandler(
-        connection.on_join_decision,
-        pattern=rf"^({connection.join_callback}|{connection.cancel_callback})$",
+    CallbackQueryHandler(connection.on_join_decision, 
+                         pattern=rf"^({connection.join_callback}|{connection.cancel_callback})$",
     ),
 ]

@@ -3,17 +3,7 @@
 # © Copyright 2026 Aveum Apps
 
 """
-Throttled multi-group dispatcher
-
-fan_out(coros) - run many coroutines concurrently, bounded by a semaphore so
-the bot never fires more than MAX_CONCURRENT Telegram API calls simultaneously.
-
-Telegram's documented hard limits (per bot):
-    • 30 messages / second across all chats combined
-    • 1 message  / second per individual chat
-Capping at 10 concurrent calls keeps us well inside those ceilings even on
-large federations, while being orders of magnitude faster than a sequential loop.
-All exceptions are captured in-place - a single failed group never blocks the rest.
+Throttled multi-group dispatcher – runs coroutines concurrently with a semaphore cap.
 """
 
 from __future__ import annotations
@@ -24,7 +14,6 @@ from collections.abc import Coroutine
 from typing import Any
 
 log = logging.getLogger(__name__)
-
 
 # * Telegram allows 30 msg/s globally; 10 concurrent is safe and fast.
 _MAX_CONCURRENT: int = 10
@@ -38,13 +27,14 @@ async def fan_out(
     max_concurrent: int = _MAX_CONCURRENT,
 ) -> list[Any | BaseException]:
     """
-    Run a list of coroutines concurrently with concurrency limiting
-    * Uses semaphore to ensure no more than max_concurrent tasks run at once
-    * Returns list matching input order: either result or captured exception
-    * Never raises exceptions - all errors are captured and returned
-    * Critical for bulk operations that would otherwise hit Telegram rate limits
-    
+    Run a list of coroutines concurrently with concurrency limiting.
+
+    * Semaphore ensures no more than max_concurrent tasks run at once
+    * Returns list matching input order — result or captured exception
+    * Never raises — all errors are captured and returned in-place
+
     Usage::
+
         results = await fan_out(
             [bot.ban_chat_member(grp["chat_id"], uid) for grp in groups]
         )
@@ -56,7 +46,6 @@ async def fan_out(
     sem = asyncio.Semaphore(max_concurrent)
 
     async def _slot(coro: Coroutine[Any, Any, Any]) -> Any | BaseException:
-        """Internal wrapper to execute a single coroutine with semaphore"""
         async with sem:
             try:
                 return await coro

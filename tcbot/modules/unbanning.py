@@ -2,8 +2,6 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 
-"""Federation unban command – validates target and delegates to unban_flow."""
-
 from __future__ import annotations
 
 import logging
@@ -21,7 +19,7 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 log = logging.getLogger(__name__)
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Unban"
 __help_text__ = (
@@ -51,7 +49,7 @@ __help_text__ = (
 )
 
 
-# ── /tcunban command ────────────────────────────────────────────────────────
+# ──────────────── Command Unban </tcunban> ───────────────────────── #
 
 @decorators.ratelimiter(limit=5, period=60)
 @decorators.mod_only
@@ -96,11 +94,8 @@ async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await execute_unban(update, ctx, target_id, target_fname)
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
-_UNBAN_CMDS = (
-    build_prefixed_filters("tcunban")
-    | build_prefixed_filters("tcunb")
-)
+_UNBAN_CMDS = build_prefixed_filters("tcunban") | build_prefixed_filters("tcunb")
 
 __handlers__ = [MessageHandler(_UNBAN_CMDS, cmd_unban)]

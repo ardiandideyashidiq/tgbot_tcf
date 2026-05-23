@@ -22,6 +22,9 @@ log = logging.getLogger(__name__)
 
 __module_name__ = None
 
+
+# ────────────────────────── Start Message ───────────────────────── #
+
 _PRIVATE_START_TEXT = (
     "<b>Hey! I'm {botname}. 👋</b>\n\n"
     f"I am an assistant of {cfg.community_name} to manage the groups connected to me centrally\n"
@@ -35,7 +38,7 @@ _GROUP_START_TEXT = (
 )
 
 
-# ── /start command ─────────────────────────────────────────────────────────
+# ──────────────────────── Command Handlers ──────────────────────── #
 
 @decorators.ratelimiter(limit=8, period=30)
 @decorators.log_execution
@@ -45,10 +48,10 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     text     = (msg.text or "").strip()
     parts    = text.split(None, 1)
     arg      = parts[1].strip() if len(parts) > 1 else ""
-    botname = ctx.bot.first_name
+    botname  = ctx.bot.first_name
 
     # * Group / supergroup context - send a minimal message with PM link
-    if chat.type in ("group", "supergroup"):
+    if chat.type in ("group", "supergroup", "forum"):
         bot_username = ctx.bot.username or ""
         await msg.reply_text(
             _GROUP_START_TEXT.format(botname=botname),
@@ -73,7 +76,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-# ── Menu callbacks ─────────────────────────────────────────────────────────
+# ──────────────────────── Callback Handlers ─────────────────────── #
 
 @decorators.ratelimiter(limit=15, period=30)
 @decorators.log_execution
@@ -132,7 +135,7 @@ async def on_menu_groups_simple(update: Update, ctx: ContextTypes.DEFAULT_TYPE) 
     await _show_groups(update.callback_query, False)
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
 _START_CMDS = build_prefixed_filters("start")
 

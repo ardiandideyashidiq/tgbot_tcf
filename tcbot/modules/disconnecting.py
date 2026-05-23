@@ -2,8 +2,6 @@
 # © Copyright 2024 - 2026 Dizzy
 # © Copyright 2026 Aveum Apps
 
-"""Group disconnection and force-remove (rmtc) commands for leaving the federation."""
-
 from __future__ import annotations
 
 import asyncio
@@ -21,7 +19,7 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 log = logging.getLogger(__name__)
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Disconnect"
 __help_text__ = (
@@ -50,7 +48,7 @@ __help_text__ = (
 )
 
 
-# ── /tcdisconnect command ──────────────────────────────────────────────────
+# ────────── Command to Disconnect a Group </tcdisconnect> ───────── #
 
 @decorators.ratelimiter(limit=3, period=60)
 @decorators.log_execution
@@ -101,7 +99,7 @@ async def cmd_tcdisconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> No
     )
 
 
-# ── /rmtc command ──────────────────────────────────────────────────────────
+# ────────── Command to Force-Remove a Group </rmtc> ───────── #
 
 @decorators.ratelimiter(limit=5, period=60)
 @decorators.staff_only
@@ -139,14 +137,13 @@ async def cmd_rmtc(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await update.effective_message.reply_text("Group not found or already removed.")
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
-_DISCONNECT_CMDS = (
-    build_prefixed_filters("tcdisconnect")
-    | build_prefixed_filters("tcdiscon")
-)
+_DISCONNECT_CMDS = build_prefixed_filters("tcdisconnect") | build_prefixed_filters("tcdiscon")
+_RMTC_CMDS       = build_prefixed_filters("rmtc")
+
 
 __handlers__ = [
-    MessageHandler(_DISCONNECT_CMDS, cmd_tcdisconnect),
-    MessageHandler(build_prefixed_filters("rmtc"), cmd_rmtc),
+    MessageHandler(_DISCONNECT_CMDS,    cmd_tcdisconnect),
+    MessageHandler(_RMTC_CMDS,          cmd_rmtc),
 ]

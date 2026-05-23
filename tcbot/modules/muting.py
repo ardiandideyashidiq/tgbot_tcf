@@ -35,7 +35,7 @@ from tcbot.utils.prefixes import build_prefixed_filters, parse_cmd_args
 log = logging.getLogger(__name__)
 
 
-# ── Module & Help ─────────────────────────────────────────────────────────
+# ────────────────────── Module & Help Message ───────────────────── #
 
 __module_name__ = "Mute"
 __help_text__ = (
@@ -59,10 +59,15 @@ __help_text__ = (
     "<code>/tcunmute</code>: restores the user's full send permissions across all connected "
     "groups. A summary shows how many groups the unmute was applied in.\n\n"
 
-    "<b>Duration tokens</b> (optional - place before the reason):\n"
-    "<code>3s</code> seconds · <code>5m</code> minutes · <code>2h</code> hours\n"
-    "<code>7d</code> days · <code>1w</code> weeks · <code>3mo</code> months · <code>2ye</code> years\n"
-    "Omit a duration token to apply a permanent mute.\n\n"
+    "<b>Duration formatting</b> (optional - place before the reason):\n"
+    "→ Seconds: <code>s</code>. Example: <code>30s</code> for 30 seconds.\n"
+    "→ Minutes: <code>m</code>. Example: <code>15m</code> for 15 minutes.\n"
+    "→ Hours: <code>h</code>. Example: <code>2h</code> for 2 hours.\n"
+    "→ Days: <code>d</code>. Example: <code>7d</code> for 7 days.\n"
+    "→ Weeks: <code>w</code>. Example: <code>2w</code> for 2 weeks.\n"
+    "→ Months: <code>mo</code>. Example: <code>3mo</code> for 3 months.\n"
+    "→ Years: <code>ye</code>. Example: <code>2ye</code> for 2 years.\n"
+    "Omit a duration token to apply a permanent mute (until unmute).\n\n"
 
     "<b>How to specify the target</b>\n"
     "Reply to a message, or provide a user ID / @username after the command.\n\n"
@@ -75,11 +80,11 @@ __help_text__ = (
 )
 
 
-# ── /tcmute entry point ────────────────────────────────────────────────────
+# ──────────────────── Command Mute </tcmute> ────────────────────── #
 
 @decorators.ratelimiter(limit=5, period=60)
 @decorators.log_execution
-async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+async def cmd_mute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     msg   = update.effective_message
     admin = update.effective_user
 
@@ -168,7 +173,7 @@ async def cmd_mute_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     return WAITING_REASON
 
 
-# ── /tcunmute command ──────────────────────────────────────────────────────
+# ────────────────── Command Unmute </tcunmute> ───────────────────── #
 
 @decorators.ratelimiter(limit=5, period=60)
 @decorators.basic_mod_only
@@ -212,16 +217,12 @@ async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await execute_unmute(update, ctx, target_id, target_name or str(target_id))
 
 
-# ── Handlers ───────────────────────────────────────────────────────────────
+# ──────────────────────────── Handlers ──────────────────────────── #
 
-_MUTE_CMDS = build_prefixed_filters("tcmute") | build_prefixed_filters("tcm")
-_UNMUTE_CMDS = (
-    build_prefixed_filters("tcunmute")
-    | build_prefixed_filters("tcunm")
-    | build_prefixed_filters("tcum")
-)
+_MUTE_CMDS   = build_prefixed_filters("tcmute")  | build_prefixed_filters("tcm")
+_UNMUTE_CMDS = build_prefixed_filters("tcunmute")| build_prefixed_filters("tcunm") | build_prefixed_filters("tcum")
 
 __handlers__ = [
-    mute_conversation(cmd_mute_start, _MUTE_CMDS, escape_filter=_UNMUTE_CMDS),
+    mute_conversation(cmd_mute, _MUTE_CMDS, escape_filter=_UNMUTE_CMDS),
     MessageHandler(_UNMUTE_CMDS, cmd_unmute),
 ]

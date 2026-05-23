@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from telegram.ext import CallbackQueryHandler
 
 from tcbot.modules.helper.parse_link import utcnow
-from tcbot.modules.helper.workflows.appeal_flow import build_handler, on_appeal_decision
+from tcbot.modules.helper.workflows.appeal_flow import appeal
 
 _LOCK_WINDOW = timedelta(hours=12)
 
@@ -92,6 +92,6 @@ __help_text__ = (
 )
 
 __handlers__ = [
-    build_handler(),
-    CallbackQueryHandler(on_appeal_decision, pattern=r"^appeal_(approve|reject)_\S+$"),
+    appeal.build_handler(),
+    CallbackQueryHandler(appeal.on_decision, pattern=r"^appeal_(approve|reject)_\S+$"),
 ]

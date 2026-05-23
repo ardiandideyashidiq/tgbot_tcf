@@ -36,6 +36,8 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 | `tcbot/modules/helper/workflows/reason_flow.py` | `BuildReason` class + `build_modaction_conv(reason, proof, ...)` factory + `WAITING_REASON`/`WAITING_PROOF` constants + `parse_inline_reason()`. `BuildReason(action, *, skip_allowed, skip_label, cancel_label)` — `.keyboard()` and `.prompt()` |
 | `tcbot/modules/helper/workflows/proof_flow.py` | `BuildProof` class + `upload_proof()`. `BuildProof(action, *, skip_allowed, skip_label, cancel_label)` — `.keyboard()`, `.step_prompt()`, `.noted_prompt()`, `.record()` (static) |
 | `tcbot/modules/helper/workflows/ban_flow.py` | Ban executor, album proof state handlers, `ban_conversation(entry_fn)` |
+| `tcbot/modules/helper/workflows/appeal_flow.py` | `BuildAppeal` class + module-level `appeal` instance. `BuildAppeal(community_name, log_channel, *, cancel_label, cancel_callback)` — `.instruction_text()`, `.cancel_keyboard()`, `.review_keyboard(ban_id)`, `.on_decision()`, `.build_handler()` |
+| `tcbot/modules/helper/workflows/connected_flow.py` | `BuildConnection` class + module-level `connection` instance. `BuildConnection(community_name, *, required_perms, join_label, cancel_label, join_callback, cancel_callback)` — `.join_prompt()`, `.connected_message()`, `.check_perms()`, `.complete_join()`, `.on_bot_added()`, `.on_join_decision()` |
 | `tcbot/utils/dispatch.py` | `fan_out()` — semaphore-bounded multi-group dispatcher (max 10 concurrent) |
 | `tcbot/utils/prefixes.py` | Prefix filter builder + alt-prefix dispatcher (`_REGISTRY`) |
 | `tcbot/utils/logger.py` | `BotLogFormatter` and `setup()` |

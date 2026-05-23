@@ -306,12 +306,16 @@ Unban executor. No ConversationHandler — unban is a single command.
 
 Standalone appeal ConversationHandler. Entry via `/start appeal_<ban_id>` deep link.
 
-- States: `WAITING_APPEAL` and `WAITING_CONFIRM`
-- Validates that the user has an active ban matching the deep-link `ban_id`
-- Validates that no review is already in progress (reviewer lock window)
-- Forwards the appeal text to the appeal channel and posts a review card to `APPEAL_DISCUSSION_TOPIC`
-- `on_appeal_decision(update, ctx)` — callback for Approve/Reject buttons on the review card
-- **Factory:** `build_handler()` → `ConversationHandler`
+- **Module-level instance:** `appeal = BuildAppeal(cfg.community_name, _LOG_CHANNEL_HANDLE)` — imported by `appeals.py`
+- **`BuildAppeal(community_name, log_channel, *, cancel_label, cancel_callback)`** — configurable appeal flow builder:
+  - `.instruction_text()` → `str` — multi-line HTML prompt shown when the user opens an appeal
+  - `.cancel_keyboard()` → `InlineKeyboardMarkup` — single Cancel button for the instruction prompt
+  - `.review_keyboard(ban_id)` → `InlineKeyboardMarkup` — Approve / Reject buttons for the staff review card
+  - `.build_handler()` → `ConversationHandler` — assembles the full appeal conversation
+  - `.on_decision(update, ctx)` — approve/reject callback registered outside the `ConversationHandler`
+- State: `WAITING_APPEAL`
+- Validates DM context, active ban ownership, and absence of a pending review
+- Forwards the appeal text to `APPEALS` channel; posts review card to `APPEAL_DISCUSSION_TOPIC`
 
 ### `promote_flow.py`
 
@@ -323,12 +327,20 @@ Promote executor shared by `admins.py`.
 
 ### `connected_flow.py`
 
-Group connect/disconnect conversation and approval flows.
+Group connection flow — in-group join prompt, permission check, and pending monitoring.
 
-- Manages the `pending_joins` queue
-- Posts approval request to the configured channel when a group owner uses `/connect`
-- `on_connect_approve` / `on_connect_reject` — callback handlers for staff decision
-- `execute_sweep(bot, chat_id)` — sweeps all active bans into a newly connected group
+- **Module-level instance:** `connection = BuildConnection(cfg.community_name)` — imported by `connecting.py`
+- **`BuildConnection(community_name, *, required_perms, join_label, cancel_label, join_callback, cancel_callback)`** — configurable connection flow builder:
+  - `.join_prompt()` → `str` — "Want to connect this group to X?" prompt
+  - `.connected_message()` → `str` — success message edited into the prompt on completion
+  - `.declined_message()` → `str` — shown when the owner cancels
+  - `.already_connected_message()` → `str` — shown when the group is already in the federation
+  - `.perms_required_message()` → `str` — shown when the bot lacks required admin permissions
+  - `.join_keyboard()` → `InlineKeyboardMarkup` — Connect / Cancel inline keyboard
+  - `.check_perms(member)` → `bool` — True if the bot holds all `required_perms`
+  - `.complete_join(chat_id, title, owner_id, owner_fname, bot)` — connects the group, applies federation bans, posts log
+  - `.on_bot_added(update, ctx)` — `my_chat_member` handler: detects add/remove, handles pending auto-join
+  - `.on_join_decision(update, ctx)` — callback handler for Connect / Cancel buttons
 
 ### `stats_flow.py` / `stats_chats_flow.py`
 

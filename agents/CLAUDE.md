@@ -58,13 +58,13 @@ tcbot/
 │   │       ├── reason_flow.py      BuildReason class + build_modaction_conv() + WAITING_REASON/PROOF constants + parse_inline_reason()
 │   │       ├── proof_flow.py       BuildProof class (keyboard/step_prompt/noted_prompt/record) + upload_proof()
 │   │       ├── ban_flow.py         proof instance (skip_allowed=False) + album-aware ban proof ConversationHandler
-│   │       ├── appeal_flow.py      Standalone appeal ConversationHandler (deep-link)
+│   │       ├── appeal_flow.py      appeal instance + BuildAppeal (instruction_text/cancel_keyboard/review_keyboard/on_decision/build_handler)
 │   │       ├── kicking_flow.py     reason/proof instances + execute_kick(), kick_conversation(entry_fn)
 │   │       ├── muting_flow.py      reason/proof instances + _execute_mute(), execute_unmute(), mute_conversation()
 │   │       ├── warning_flow.py     reason/proof instances + execute_warn/unwarn/warnlist/resetwarns(), warn_conversation()
 │   │       ├── unban_flow.py       execute_unban() — no ConversationHandler needed
 │   │       ├── promote_flow.py     _execute_promote(), shared by admins.py
-│   │       ├── connected_flow.py   Group connect/disconnect flows
+│   │       ├── connected_flow.py   connection instance + BuildConnection (join_prompt/connected_message/check_perms/complete_join/on_bot_added/on_join_decision)
 │   │       ├── stats_flow.py       Statistics executors
 │   │       └── stats_chats_flow.py Chat statistics executors
 │   └── *.py             Command modules (banning, muting, kicking, warnings, appeals, …)

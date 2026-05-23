@@ -19,12 +19,7 @@ from telegram.ext import (
 
 from tcbot import cfg, database as db
 from tcbot.modules.helper import decorators
-from tcbot.modules.helper.workflows.connected_flow import (
-    _check_bot_perms,
-    _complete_join,
-    on_bot_added,
-    on_join_decision,
-)
+from tcbot.modules.helper.workflows.connected_flow import connection
 from tcbot.utils.prefixes import build_prefixed_filters
 
 log = logging.getLogger(__name__)
@@ -86,7 +81,7 @@ async def cmd_tcconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         db.groups_db.get_pending(chat.id),
     )
     if is_connected:
-        await update.effective_message.reply_text(f"This group is already connected to {cfg.community_name}.")
+        await update.effective_message.reply_text(connection.already_connected_message())
         return
 
     if pending:
@@ -101,19 +96,14 @@ async def cmd_tcconnect(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await update.effective_message.reply_text("Could not verify bot permissions.")
         return
 
-    if not _check_bot_perms(bot_member):
-        await update.effective_message.reply_text(
-            "Please make the bot an admin with the required permissions "
-            "(delete messages, ban users, invite users) and try again."
-        )
+    if not connection.check_perms(bot_member):
+        await update.effective_message.reply_text(connection.perms_required_message())
         return
 
-    ## _complete_join returns None - reply can be sent in parallel
+    ## complete_join returns None - reply can be sent in parallel
     await asyncio.gather(
-        _complete_join(chat.id, chat.title or "", user.id, user.first_name, ctx.bot),
-        update.effective_message.reply_text(
-            f"This group is now connected to {cfg.community_name}."
-        ),
+        connection.complete_join(chat.id, chat.title or "", user.id, user.first_name, ctx.bot),
+        update.effective_message.reply_text(connection.connected_message()),
     )
 
 
@@ -125,7 +115,10 @@ _CONNECT_FILTER = (
 )
 
 __handlers__ = [
-    ChatMemberHandler(on_bot_added, ChatMemberHandler.MY_CHAT_MEMBER),
+    ChatMemberHandler(connection.on_bot_added, ChatMemberHandler.MY_CHAT_MEMBER),
     MessageHandler(_CONNECT_FILTER, cmd_tcconnect),
-    CallbackQueryHandler(on_join_decision, pattern=r"^(tc_join|tc_cancel)$"),
+    CallbackQueryHandler(
+        connection.on_join_decision,
+        pattern=rf"^({connection.join_callback}|{connection.cancel_callback})$",
+    ),
 ]

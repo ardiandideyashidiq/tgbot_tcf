@@ -1,147 +1,249 @@
-# Project Architecture - TCF Bot
+# Architecture — TCF Bot
 
-This document explains the repository architecture and runtime shape.
-Before altering architecture-related code, review the repository guidance in `agents/` to ensure the change matches style, workflow, and environment rules.
-- `agents/RULES.md` - coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` - comment and docstring style
-- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` - project-specific guidance and gotchas
-- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
+This document explains the runtime shape and internal architecture of TCF Bot.  
+For per-module API details, see [docs/modules.md](modules.md).  
+For ConversationHandler flows, see [docs/workflows.md](workflows.md).
 
-This document describes the code architecture for the TCF bot repository.
-It is based on the code under `tcbot/` and the test suite in `tests/`.
+---
 
-## Core package
+## Startup Sequence
 
-The application lives under `tcbot/`.
-The primary packages are:
-
-- `tcbot/__init__.py` - configuration parsing and the central `cfg` adapter
-- `tcbot/__main__.py` - bot startup, handler registration, error handling, and keepalive
-- `tcbot/alive.py` - Flask keepalive server on port `5000`
-- `tcbot/database/` - async MongoDB helpers and collection access
-- `tcbot/modules/` - Telegram command modules, helper utilities, and workflow builders
-- `tcbot/utils/` - logging, prefix parsing, error reporting, and date formatting
-
-This repository is a Telegram bot, not a web service. The bot uses long polling via `python-telegram-bot`.
-
-## Startup flow
-
-1. `python3 -m tcbot` starts `tcbot.__main__.main()`.
-2. `setup_logging()` configures structured logs.
-3. `start_keepalive()` starts the Flask health-check thread.
-4. `ApplicationBuilder()` builds the Telegram application and registers handlers from `tcbot.modules.get_handlers()`.
-5. `app.run_polling()` begins message polling.
-
-The startup path also attaches a multi-layer error strategy:
-
-- Layer 1: global rate limiter via `global_rate_limit_handler`
-- Layer 2: PTB error handler `_error_handler` that reports unhandled exceptions
-- Layer 3: asyncio exception handler for task-level failures
-
-## Configuration
-
-Configuration is loaded from `config.env` through `tcbot/__init__.py`.
-The configuration object is immutable via `Configs` and exposed through `cfg`.
-
-Key config values:
-
-- `BOT_TOKEN`
-- `OWNER_ID`
-- `MONGODB_URI`
-- `DB_NAME`
-- `COMMUNITY_NAME`
-- `LOGS`, `LOGS_ERRORS`, `PROOFS`, `APPEALS`, `MAIN_GROUP`
-- `PROOF_TIMEOUT_SECONDS`, `APPEAL_TIMEOUT_SECONDS`
-- `MODULES_LOAD`, `MODULES_NO_LOAD`
-
-See [Development workflow and onboarding](development.md) for configuration guidance.
-
-## Database layer
-
-The async database packages are under `tcbot/database/`.
-The public database namespace is `tcbot.database` via `tcbot/database/__init__.py`.
-
-Important files:
-
-- `tcbot/database/mongos.py` - Motor client, `connect()`, `ensure_indexes()`, and `col()` accessors
-- `tcbot/database/admins_db.py` - owner and admin CRUD
-- `tcbot/database/bans_db.py` - federation bans, active ban queries, and enforcement helpers
-- `tcbot/database/groups_db.py` - group connection state and pending join queue
-- `tcbot/database/roles_db.py` - role resolution, rank checks, and role-based authorization
-- `tcbot/database/users_db.py` - member caching and name resolution
-- `tcbot/database/kicks_db.py`, `mutes_db.py`, `warns_db.py`, `queues_db.py`
-
-The project enforces async database helpers only. Handlers use the database layer rather than raw collection calls.
-
-## Module and handler model
-
-Module discovery is implemented in `tcbot/modules/__init__.py`.
-The system loads active modules from the directory, applies `MODULES_LOAD` and `MODULES_NO_LOAD`, and respects priority ordering.
-
-Each module file may expose:
-
-- `__module_name__`
-- `__help_text__`
-- `__handlers__`
-
-Handlers are registered in a deterministic order:
-- `connecting`, `admins`, `appeals`, `banning`, `muting`, `kicking`, `warnings`
-- then normal modules
-- then `about`, `privacy`, `start`, `greeting`
-
-See [Modules and service boundaries](modules.md) for details.
-
-## Helper subpackage and workflows
-
-Shared utilities live under `tcbot/modules/helper/`.
-This package contains:
-
-- `formatter.py` - HTML text builders and safe formatting helpers
-- `extraction.py` - target resolution and identity helpers
-- `keyboards.py` - inline keyboard builders
-- `decorators.py` - access control decorators (`owner_only`, `staff_only`, `mod_only`, `basic_mod_only`), the opt-in `log_execution` tracing decorator, and `ratelimiter(limit, period)` per-user sliding-window throttle
-- `role_guard.py` - shared role enforcement logic and auto-demotion
-- `parse_link.py` / `parse_logmsg.py` / `parse_editmsg.py` - message formatting and safe edit helpers
-- `ban_info.py` - shared ban detail rendering
-- `workflows/` - conversation handler flows and executors
-
-See [Conversation flows and workflows](workflows.md) for the workflow structure.
-
-## Utility helpers
-
-The `tcbot/utils/` package provides support functions used across the bot.
-Key modules:
-
-- `logger.py` - structured logging setup and formatting
-- `prefixes.py` - command and prefix parsing helpers
-- `dispatch.py` - `fan_out()` semaphore-bounded multi-group dispatcher (max 10 concurrent)
-- `timedate_format.py` - timezone-aware formatting and UTC helpers
-- `error_reporter.py` - error delivery for uncaught exceptions
-
-## Testing and verification
-
-The repository includes an offline test suite under `tests/`.
-Run:
-
-```bash
-python3 -m pytest tests/ -q
+```
+python3 -m tcbot
+  │
+  ├── tcbot/__init__.py
+  │     Reads env vars (Replit Secrets + Replit shared env + config.env fallback).
+  │     Builds immutable Configs dataclass.
+  │     Exposes thin _CfgAdapter as the global cfg singleton.
+  │
+  └── tcbot/__main__.py : main()
+        ├── setup_logging()
+        │     Installs BotLogFormatter on the root logger.
+        │     Caps noisy third-party loggers (httpx, telegram, motor, pymongo) at WARNING.
+        │
+        ├── start_keepalive()
+        │     Starts Flask in a daemon thread on 0.0.0.0:8080.
+        │     GET / returns "OK" for health checks.
+        │
+        ├── ApplicationBuilder()
+        │     .token(cfg.bot_token)
+        │     .post_init(_post_init)               async hook, runs after PTB init
+        │     .concurrent_updates(True)            independent updates in parallel
+        │     .connection_pool_size(8)             API call pool
+        │     .get_updates_connection_pool_size(4)
+        │     .read_timeout(15)
+        │     .write_timeout(15)
+        │     .connect_timeout(10)
+        │     .pool_timeout(5)
+        │
+        ├── Handler registration (strictly ordered):
+        │     group -1 : TypeHandler(Update, global_rate_limit_handler)  — runs first
+        │     group  0 : all module __handlers__ via get_handlers()
+        │     group 10 : MessageHandler(connected group text, _update_member_cache)
+        │     error    : _error_handler
+        │
+        └── app.run_polling(drop_pending_updates=True, allowed_updates=ALL_TYPES)
 ```
 
-For bot startup verification, use `python3 -m tcbot`.
+### _post_init (async, runs after PTB builds the Application)
 
-## Related documentation
+```
+_post_init(app)
+  ├── connect()
+  │     Motor client → MongoDB Atlas, serverSelectionTimeoutMS=10s, ping verify.
+  │     Logs "MongoDB connected → <db_name>" on success.
+  │     Calls sys.exit(1) with a clear message on failure.
+  │
+  ├── ensure_indexes()
+  │     Creates 11 MongoDB indexes in parallel via asyncio.gather().
+  │     Idempotent — safe to call on every startup.
+  │
+  ├── ensure_initial_owner(cfg.initial_owner_id)
+  │     Inserts the configured owner into tc_owners if the collection is empty.
+  │
+  └── error_reporter.attach(bot, log_errors_chat, log_errors_thread)
+      loop.set_exception_handler(asyncio exception handler)
+```
 
-- [Documentation hub](index.md)
-- [Project architecture](architecture.md)
+---
+
+## Request Processing Pipeline
+
+```
+Telegram Update (via long poll)
+  │
+  ├── PTB concurrent_updates=True
+  │     Each update gets its own asyncio task unless it has the same conversation key.
+  │
+  ├── group -1: global_rate_limit_handler
+  │     CallbackQuery → 20 presses / 10 s per user
+  │       denied: show_alert toast, raise ApplicationHandlerStop
+  │     Command text  →  8 commands / 30 s per user
+  │       denied: reply text, raise ApplicationHandlerStop
+  │     All other update types → always passes through
+  │
+  ├── group 0: registered module handlers
+  │     Checked in priority order defined by modules/__init__.py.
+  │     Each handler may carry:
+  │       @ratelimiter(limit, period)    per-handler fine-grained throttle
+  │       @owner_only / staff_only / mod_only / basic_mod_only
+  │       @log_execution                 opt-in DEBUG tracing
+  │
+  └── group 10: _update_member_cache
+        Only fires on text messages in connected groups that are not commands.
+        Calls users_db.upsert_user() to keep the member profile cache fresh.
+```
+
+---
+
+## Module Discovery
+
+`tcbot/modules/__init__.py` runs at import time:
+
+1. `_discover_modules()` — globs `tcbot/modules/*.py`, excludes `__init__.py`
+2. `_filter_modules()` — applies `MODULES_LOAD` whitelist and `MODULES_NO_LOAD` blacklist from env
+3. `get_handlers()` — imports each module, collects `__handlers__` lists in discovery order; respects `_PRIORITY_FIRST` and `_PRIORITY_LAST` override lists
+
+Modules are identified by `__module_name__`. Modules with `__module_name__ = None` are loaded but hidden from `/help`.
+
+---
+
+## Database Schema
+
+### Collections
+
+| Collection | Key Fields |
+|---|---|
+| `bans` | `ban_id`, `banned_user_id`, `is_active`, `reason`, `admin_user_id`, `proof_message_id`, `log_message_id`, `timestamp`, `review_message_id` |
+| `tc_owners` | `user_id` (single document) |
+| `tc_admins` | `user_id`, `promoted_by`, `promoted_date` |
+| `tc_roles` | `user_id`, `role` (`developer`/`tester`), `assigned_by`, `assigned_at` |
+| `federated_groups` | `chat_id`, `title`, `added_by`, `added_date`, `is_active` |
+| `pending_joins` | `chat_id`, `title`, `owner_id`, `message_id`, `added_date` |
+| `member_cache` | `user_id`, `first_name`, `username`, `updated_at` |
+| `warns` | `user_id`, `chat_id`, `count`, `reasons[]`, `updated_at` |
+| `kicks` | `user_id`, `chat_id`, `admin_id`, `reason`, `timestamp` |
+| `mutes` | `user_id`, `chat_id`, `admin_id`, `reason`, `duration_secs`, `timestamp` |
+| `promotion_requests` | `request_id`, `user_id`, `requested_by`, `status`, `timestamp` |
+
+### Indexes (created by `mongos.ensure_indexes()`)
+
+```
+bans:              [banned_user_id + is_active], [ban_id]
+tc_owners:         [user_id]
+tc_admins:         [user_id]
+tc_roles:          [user_id]
+federated_groups:  [chat_id], [is_active]
+pending_joins:     [chat_id]
+member_cache:      [user_id]
+warns:             [user_id + chat_id]
+kicks:             [user_id + chat_id]
+mutes:             [user_id + chat_id]
+promotion_requests:[user_id], [request_id]
+```
+
+All indexes are created with `background=True` — startup is not blocked if MongoDB is slow.
+
+---
+
+## Caching Layer
+
+`tcbot/database/cache.py` provides in-memory TTL caches backed by a simple dict:
+
+| Cache | Key | TTL | Invalidated by |
+|---|---|---|---|
+| `effective_role_cache` | `user_id` | 60 s | Any role/admin/owner write (`set_role`, `add_admin`, `set_owner`, etc.) |
+| `owner_id_cache` | constant | no TTL | `set_owner()` |
+| `connected_cache` | `chat_id` | no TTL | `add_group()`, `deactivate_group()` |
+| `active_groups_cache` | constant | no TTL | `add_group()`, `deactivate_group()` |
+
+Caches use `CACHE_MISS` as a sentinel (distinct from `None`). Every cache read checks for `CACHE_MISS`, then falls through to the database on miss.
+
+---
+
+## Fan-out Dispatcher
+
+`tcbot/utils/dispatch.py:fan_out(coros, max_concurrent=10)`
+
+Used for all operations that must touch multiple groups simultaneously (ban enforcement, unban sweep, mute, kick, group sweep). 
+
+Properties:
+- Runs all coroutines concurrently, bounded by `asyncio.Semaphore(10)`
+- Returns results in input order: each element is the coroutine's return value or the captured `BaseException`
+- Never raises — all exceptions are captured per-coroutine
+- Callers count `isinstance(r, BaseException)` to tally errors
+
+---
+
+## Config Singleton
+
+`tcbot/__init__.py` defines two classes:
+
+**`Configs`** — frozen dataclass. All fields typed. Loaded from env vars in `Configs.load()`.
+
+**`_CfgAdapter`** — thin accessor wrapping a `Configs` instance. Exposes the same fields as properties. Parses `LOGS`, `PROOFS`, `APPEALS` into `(chat_id, thread_id | None)` tuples.
+
+**`cfg`** — module-level singleton of type `_CfgAdapter`. Imported as `from tcbot import cfg` everywhere.
+
+**Never** access `configs` (the raw dataclass) from module code. Always use `cfg`.
+
+---
+
+## Error Handling — Three Layers
+
+| Layer | Mechanism | Catches |
+|---|---|---|
+| 1 | `app.add_error_handler(_error_handler)` | All unhandled PTB handler exceptions |
+| 2 | `loop.set_exception_handler(...)` | `asyncio.create_task()` and background task failures |
+| 3 | `TelegramErrorHandler` on root logger | All `log.error()` / `log.critical()` calls |
+
+All three layers call `error_reporter.report_exc()` which:
+1. Classifies the error (ignored / warning / critical)
+2. Formats a structured HTML report with traceback
+3. Ships it to the `LOGS_ERRORS` Telegram channel (if configured)
+4. Falls back to `print()` only if the Telegram send itself fails — never `log.error()` (which would cause infinite recursion)
+
+---
+
+## Flask Keepalive
+
+`tcbot/alive.py` starts a Flask app in a daemon thread:
+
+```python
+# GET / → "OK"
+app.run(host="0.0.0.0", port=cfg.port, debug=False, use_reloader=False)
+```
+
+Port is 8080 on Replit (set via `PORT` env var). Port is 5000 locally when `PORT` is not set.
+
+The keepalive is required on Replit to prevent the container from sleeping.
+
+---
+
+## PTB Application Configuration
+
+```python
+Application.builder()
+    .token(cfg.bot_token)
+    .post_init(_post_init)
+    .concurrent_updates(True)
+    .connection_pool_size(8)
+    .get_updates_connection_pool_size(4)
+    .read_timeout(15)
+    .write_timeout(15)
+    .connect_timeout(10)
+    .pool_timeout(5)
+    .build()
+```
+
+`concurrent_updates=True` means each update is processed in its own asyncio task. PTB handles conversation locking automatically so ConversationHandlers for the same user/chat are still serialized.
+
+---
+
+## Related Documentation
+
 - [Modules and service boundaries](modules.md)
 - [Conversation flows and workflows](workflows.md)
 - [Development workflow and onboarding](development.md)
-- [AI / agent guidelines](agent-guidelines.md)
-- [Agent instructions for Claude](../agents/CLAUDE.md)
-- [Replit environment notes](../agents/REPLIT.md)
-- [Code style guidelines](../agents/STYLE-CODE.md)
-- [Comment style guidelines](../agents/STYLE-COMMENTS.md)
-- [Workflow expectations](../agents/WORKFLOW.md)
-- [Project rules and constraints](../agents/RULES.md)
+- [AI agent instructions](../agents/CLAUDE.md)
+- [Execution plan and bug tracker](../PLAN.md)

@@ -1,61 +1,114 @@
-# Replit Agent Instructions and Environment Configuration - TCF Bot
+# Replit Environment — TCF Bot
+
+**Read `agents/CLAUDE.md` first.** This file documents how the project is configured on Replit.
+
+Compatible with: Replit AI, Claude, Gemini, Qwen, GitHub Copilot, and any AI coding agent.
+
+---
 
 ## Workflow
 
 - **Name:** `Start application`
 - **Command:** `python3 -m tcbot`
-- Restart after any code or dependency change.
+- This is the only workflow needed. It starts the bot, connects to MongoDB, and starts the Flask keepalive on port 8080.
+
+To restart the bot after code changes: stop and restart the `Start application` workflow via the Replit Run button or the Workflows panel.
+
+---
+
+## Secrets
+
+Two secrets are stored in **Replit Secrets** (not in `config.env`):
+
+| Secret | Description |
+|---|---|
+| `BOT_TOKEN` | Telegram bot token from @BotFather |
+| `MONGODB_URI` | MongoDB connection string (Atlas or other) |
+
+All other configuration is stored as Replit shared environment variables, set via the Replit Secrets UI (Replit Secrets can hold both secrets and general env vars).
+
+**Never** put `BOT_TOKEN` or `MONGODB_URI` in `config.env` on Replit. These are production secrets and must stay in Replit Secrets.
+
+---
+
+## config.env on Replit
+
+`config.env` is loaded as a local-dev fallback via `load_dotenv(override=False)`. On Replit, it is used only for non-sensitive config (e.g. `DB_NAME`, `COMMUNITY_NAME`, `LOGS`, `PROOFS`, `APPEALS`, `MAIN_GROUP`, etc.).
+
+The file is gitignored and must never be committed. The template is `config.env.example`.
+
+---
+
+## All Other Environment Variables
+
+The following variables are set as Replit environment variables (via the Secrets panel):
+
+| Variable | Example | Description |
+|---|---|---|
+| `OWNER_ID` | `123456789` | Telegram user ID of the federation founder |
+| `DB_NAME` | `tcbot` | MongoDB database name |
+| `COMMUNITY_NAME` | `TCF` | Community display name used in bot messages |
+| `MAIN_GROUP` | `-1001234567890` | Main group/forum chat ID |
+| `MAIN_CHANNEL` | `-1009876543210` | Main channel chat ID |
+| `LOGS` | `-1001111111111/2` | Log channel `chat_id` or `chat_id/thread_id` |
+| `LOGS_ERRORS` | `-1001111111111/3` | Error log channel (optional) |
+| `PROOFS` | `-1002222222222` | Ban proof channel |
+| `APPEALS` | `-1003333333333` | Appeal record channel |
+| `APPEAL_DISCUSSION_TOPIC` | `42` | Thread ID inside MAIN_GROUP for appeal review |
+| `PORT` | `8080` | Flask keepalive port (Replit requires 8080) |
+| `LOG_LEVEL` | `INFO` | Log verbosity |
+
+---
 
 ## Port
 
-Flask keepalive runs on port `5000` (configurable via `PORT` in `config.env`).
-The bot itself uses long polling - no webhook, no extra port needed.
+The Flask keepalive server runs on port **8080** on Replit. This is the port that Replit's health-check proxy expects.
 
-## Environment Variables
+Do not change this to 5000 on Replit — Replit does not expose port 5000 externally.
 
-**All configuration - including secrets - is stored exclusively in `config.env`.**
-Do NOT use Replit Secrets for this project. Do NOT commit `config.env` (it is gitignored).
-See `config.env.example` for the full list of required keys.
+The port is controlled by the `PORT` environment variable. When running locally without a `PORT` env var, it defaults to 5000.
 
-Key variables:
-| Variable | Storage | Description |
-|---|---|---|
-| `BOT_TOKEN` | `config.env` | Telegram bot token |
-| `MONGODB_URI` | `config.env` | MongoDB connection string |
-| `OWNER_ID` | `config.env` | Telegram user ID of the federation owner |
-| `DB_NAME` | `config.env` | MongoDB database name (default: `tcbot`) |
-| `LOGS` | `config.env` | Log channel chat ID (optionally `chat_id/thread_id`) |
-| `PROOFS` | `config.env` | Proof channel chat ID |
-| `APPEALS` | `config.env` | Appeal channel chat ID |
-| `PROOF_TIMEOUT_SECONDS` | `config.env` | ConversationHandler timeout for ban proof step |
-| `APPEAL_TIMEOUT_SECONDS` | `config.env` | ConversationHandler timeout for appeal flow |
+---
 
-## Dependencies
+## Running the Test Suite
 
-Managed via `pyproject.toml` + `uv.lock`. Install with:
+```bash
+python3 -m pytest tests/ -v
 ```
+
+All 121 tests run offline — no bot token or MongoDB connection required. Run this after any code change before restarting the bot.
+
+---
+
+## Package Management
+
+Dependencies are managed via `uv` and `pyproject.toml`.
+
+- **Do not add packages to `requirements.txt`** — this file is legacy and may be gitignored.
+- To add a dependency: `uv add <package>` (this updates `pyproject.toml` and `uv.lock`)
+- To install for Replit: `uv sync` (already done on workflow start via the `Start application` command setup)
+
+---
+
+## Local Development
+
+For local development outside Replit, copy `config.env.example` to `config.env` and fill in all values including `BOT_TOKEN` and `MONGODB_URI`. The `load_dotenv(override=False)` call in `tcbot/__init__.py` will pick these up.
+
+```bash
+cp config.env.example config.env
+# Edit config.env
 uv sync
+python3 -m tcbot
 ```
 
-Core deps: `python-telegram-bot[all]==22.5`, `motor`, `flask`, `python-dotenv`, `apscheduler`
+---
 
-## MongoDB
+## Docker
 
-Motor (async) client. Connection is established in `tcbot/database/mongos.py` via `connect()`,
-called during bot startup in `__main__.py`. The client is a module-level singleton.
+A `docker-compose.yml` is provided for local development with a bundled MongoDB:
 
-## Logs
+```bash
+docker-compose up --build
+```
 
-Structured log format: `[HH:MM] [DD-MM-YYYY] | <community_name> | <L> - <module>:<line> - <msg>`
-
-Log level: `INFO` by default. Set `logging.DEBUG` in `utils/logger.py` for verbose output.
-Third-party loggers (httpx, telegram, motor, pymongo) are capped at WARNING.
-
-## Related documentation
-
-- [Documentation hub](../docs/index.md)
-- [Project architecture](../docs/architecture.md)
-- [Modules and service boundaries](../docs/modules.md)
-- [Conversation flows and workflows](../docs/workflows.md)
-- [Development workflow and onboarding](../docs/development.md)
-- [AI / agent guidelines](../docs/agent-guidelines.md)
+The compose file starts `bot` and `mongo:7` services. The bot waits for MongoDB's health-check before connecting.

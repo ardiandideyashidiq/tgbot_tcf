@@ -1,62 +1,70 @@
-# TCF Bot Documentation Hub
+# TCF Bot — Documentation Hub
 
-This page is the entry point for repository-specific docs.
-Before editing code or docs, consult the agent guidance under `agents/`, especially the workflow and style rules.
-- `agents/RULES.md` - coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` - comment and docstring style
-- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` - project-specific guidance and gotchas
-- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
+This is the entry point for all project documentation. Start here and follow the links to the section most relevant to your task.
 
-This documentation set is specific to the TCF bot repository. It is built from the source code in:
-- `tcbot/`
-- `tests/`
-- `agents/`
+Before editing code or documentation, review the agent guidance in `agents/` first.
 
-It does not describe GitHub Actions workflows under `.github/`. For code behavior and architecture, prefer the files in this directory.
+---
 
-## Navigation
+## Agent Instructions (AI agents — read these first)
 
-- [Project architecture](architecture.md)
-- [Modules and service boundaries](modules.md)
-- [Conversation flows and workflows](workflows.md)
-- [Development workflow and onboarding](development.md)
-- [AI / agent guidelines](agent-guidelines.md)
+| File | Purpose |
+|---|---|
+| [agents/CLAUDE.md](../agents/CLAUDE.md) | Primary agent reference: architecture, role system, conventions, what not to do |
+| [agents/RULES.md](../agents/RULES.md) | Hard project rules and constraints |
+| [agents/STYLE-CODE.md](../agents/STYLE-CODE.md) | Code style, typing, naming, alignment, decorator stack |
+| [agents/STYLE-COMMENTS.md](../agents/STYLE-COMMENTS.md) | Comment and docstring conventions |
+| [agents/WORKFLOW.md](../agents/WORKFLOW.md) | Branching, commit messages, deployment checklist |
+| [agents/REPLIT.md](../agents/REPLIT.md) | Replit environment, secrets, workflow, ports |
 
-## Agent documentation references
+---
 
-- [Agent instructions for Claude](../agents/CLAUDE.md)
-- [Replit environment notes](../agents/REPLIT.md)
-- [Code style guidelines](../agents/STYLE-CODE.md)
-- [Comment style guidelines](../agents/STYLE-COMMENTS.md)
-- [Workflow expectations](../agents/WORKFLOW.md)
-- [Project rules and constraints](../agents/RULES.md)
+## Developer Documentation (human engineers)
 
-## Scope
+| File | Purpose |
+|---|---|
+| [docs/architecture.md](architecture.md) | Startup flow, DB schema, caching, fan-out, error handling |
+| [docs/modules.md](modules.md) | Per-module responsibilities and service boundaries |
+| [docs/workflows.md](workflows.md) | ConversationHandler flows in full detail |
+| [docs/development.md](development.md) | Setup, onboarding, adding modules and collections |
 
-This documentation focuses on the bot code and the repository conventions that matter for development and review.
-It includes:
+---
 
-- bot startup and runtime flow
-- module discovery and handler registration
-- async MongoDB database helpers
-- Telegram command and workflow conventions
-- configuration through `config.env`
-- test coverage and local verification
-- agent guidance specific to this repository
+## Project State
 
-## Related resources
+| File | Purpose |
+|---|---|
+| [PLAN.md](../PLAN.md) | Current bugs, improvement strategy, session tracker |
+| [README.md](../README.md) | Project overview, quick start, configuration reference |
+| [config.env.example](../config.env.example) | Template for all required environment variables |
 
-- [README](../README.md) for quick start and project overview
-- [Project architecture](architecture.md)
-- [Modules and service boundaries](modules.md)
-- [Conversation flows and workflows](workflows.md)
-- [Development workflow and onboarding](development.md)
-- [AI / agent guidelines](agent-guidelines.md)
-- [Agent instructions for Claude](../agents/CLAUDE.md)
-- [Replit environment notes](../agents/REPLIT.md)
-- [Code style guidelines](../agents/STYLE-CODE.md)
-- [Comment style guidelines](../agents/STYLE-COMMENTS.md)
-- [Workflow expectations](../agents/WORKFLOW.md)
-- [Project rules and constraints](../agents/RULES.md)
+---
+
+## Quick Reference
+
+### Start the bot
+```bash
+python3 -m tcbot
+```
+
+### Run tests
+```bash
+python3 -m pytest tests/ -v
+```
+
+### Key patterns
+- Role resolution: `roles_db.get_effective_role(user_id)` — cached 60 s
+- Multi-group action: `fan_out([coros])` — bounded at 10 concurrent
+- Decorator stack: `ratelimiter → auth_guard → log_execution` (outermost → innermost)
+- ConversationHandlers: all live in `*_flow.py` — no `*_conv.py` files
+
+### Key collections
+| Collection | Purpose |
+|---|---|
+| `bans` | Active and historical federation bans |
+| `tc_owners` | Founder (single document) |
+| `tc_admins` | Admin list |
+| `tc_roles` | Developer and Tester roles |
+| `federated_groups` | Connected groups |
+| `pending_joins` | Groups awaiting approval |
+| `member_cache` | User profile snapshots |

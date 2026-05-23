@@ -1,250 +1,432 @@
-# Claude Agent - TCF Bot Instructions
+# AI Agent Instructions — TCF Bot
 
-Before making any changes, **read all documentation files in the `agents/` directory** - specifically:
-- `agents/RULES.md` - coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` - comment and docstring style
-- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` - project-specific guidance and gotchas
-- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
+**Read this file completely before making any change to the codebase.**  
+This is the primary agent reference. All other `agents/` files extend it with deeper detail on specific topics.
 
-## Project Overview
+Compatible with: Replit AI, Claude, Gemini, Qwen, GitHub Copilot, and any AI coding agent.
 
-TCF (Transsion Core Federation) is a Telegram federation bot built with:
-- Python 3.11
-- python-telegram-bot 22.5 (async, PTB v22)
-- Motor (async MongoDB via motor.motor_asyncio)
-- Flask keepalive on port 5000
+---
 
-Entry point: `python3 -m tcbot`
-Config: `config.env` (loaded via python-dotenv)
+## Project Identity
 
-## Architecture
+TCF Bot is a **production Telegram federation management bot** for the Transsion Core Federation community. It handles federation-wide bans, user appeals, staff role management, multi-group moderation, and full audit logging.
+
+- **Language:** Python 3.11
+- **Framework:** python-telegram-bot 22.5 (PTB v22, async, long polling — no webhook)
+- **Database:** MongoDB via Motor (async)
+- **Keepalive:** Flask thread on port 8080
+- **Entry point:** `python3 -m tcbot`
+- **Config:** Replit Secrets (`BOT_TOKEN`, `MONGODB_URI`) + Replit shared env vars (all other config)
+- **Tests:** `python3 -m pytest tests/ -v` — 121 tests, all offline
+
+---
+
+## Architecture Map
 
 ```
 tcbot/
-├── __init__.py          - Configs dataclass + _CfgAdapter (cfg singleton)
-├── __main__.py          - Bot startup, handler registration, polling
-├── alive.py             - Flask keepalive thread (port 5000)
+├── __init__.py          Configs dataclass + _CfgAdapter → global cfg singleton
+├── __main__.py          Startup, handler registration, polling
+├── alive.py             Flask keepalive thread (port 8080)
 ├── database/
-│   ├── mongos.py        - Motor client, connect(), col() accessor
-│   ├── admins_db.py     - Owner/admin CRUD
-│   ├── bans_db.py       - Federation ban CRUD (active_bans, create_ban, etc.)
-│   ├── groups_db.py     - Affiliated group CRUD + pending join queue
-│   ├── roles_db.py      - Developer/Tester roles (tc_roles); get_effective_role,
-│   │                      role_rank, can_act_on, ROLE_RANK, ROLE_LABEL
-│   ├── users_db.py      - Member cache (upsert_user, get_first_name)
-│   ├── warns_db.py      - Per-group warning tracking
-│   ├── kicks_db.py      - Kick log
-│   ├── mutes_db.py      - Mute log
-│   └── queues_db.py     - Promotion request queue
+│   ├── cache.py         In-memory TTL caches (role, groups, owner)
+│   ├── mongos.py        Motor client, connect(), ensure_indexes(), col()
+│   ├── admins_db.py     Owner + admin CRUD, is_owner/is_admin/is_staff
+│   ├── bans_db.py       Federation ban CRUD (create, update, deactivate, query)
+│   ├── groups_db.py     Connected groups + pending join queue
+│   ├── roles_db.py      Developer/tester roles, get_effective_role, can_act_on
+│   ├── users_db.py      Member profile cache (upsert_user, get_first_name)
+│   ├── warns_db.py      Per-group warning records
+│   ├── kicks_db.py      Kick log
+│   ├── mutes_db.py      Mute log
+│   ├── queues_db.py     Admin promotion request queue
+│   └── __init__.py      Re-exports all db modules
 ├── modules/
-│   ├── __init__.py      - Module discovery, filtering, handler ordering
-│   ├── appeals.py       - Pure functions for appeal business logic
+│   ├── __init__.py      Module discovery + handler collection
 │   ├── helper/
-│   │   ├── formatter.py    - HTML helpers: esc(), code(), mention(), bold()
-│   │   ├── extraction.py   - extract_target(), ResolvedTarget, resolve_identity()
-│   │   ├── keyboards.py    - All InlineKeyboardMarkup builders
-│   │   │                     promote_role_kb(target_id, roles), demote_confirm_kb(target_id)
-│   │   ├── decorators.py   - owner_only, staff_only, mod_only, basic_mod_only,
-│   │   │                     log_execution (opt-in execution tracer),
-│   │   │                     ratelimiter(limit, period) (per-user sliding-window throttle)
-│   │   ├── role_guard.py   - resolve_and_check(), auto_demote() - shared moderation helpers
-│   │   ├── parse_logmsg.py - Log message text builders
-│   │   │                     role_assigned, role_removed, role_auto_demoted
-│   │   ├── parse_editmsg.py - safe_edit() - swallows stale-message errors
-│   │   ├── ban_info.py     - build_ban_detail() shared between checking/stats
-│   │   ├── parse_link.py   - message_link(), appeal_deep_link(), utcnow(),
-│   │   │                     user_link(), safe_first_name(), chat_id_to_link_id()
-│   │   └── workflows/      - ConversationHandler flows and executors (NO *_conv.py files)
-│   │       ├── reason_flow.py      - WAITING_REASON/PROOF state constants +
-│   │       │                         build_modaction_conv() — central ConversationHandler
-│   │       │                         factory for kick/mute/warn; also exports keyboard
-│   │       │                         builders, prompt helpers, parse_inline_reason(),
-│   │       │                         record_proof()
-│   │       ├── proof_flow.py       - upload_proof() - media upload to proof channel
-│   │       ├── ban_flow.py         - _execute_ban(), album proof handlers,
-│   │       │                         ban_conversation(entry_fn)
-│   │       ├── kicking_flow.py     - execute_kick(), _exec_kick() adapter,
-│   │       │                         kick_conversation(entry_fn)
-│   │       ├── muting_flow.py      - parse_duration(), fmt_duration(), _execute_mute(),
-│   │       │                         execute_unmute(), _exec_mute() adapter,
-│   │       │                         mute_conversation(entry_fn)
-│   │       ├── warning_flow.py     - execute_warn/unwarn/warnlist/resetwarns(),
-│   │       │                         _exec_warn() adapter, warn_conversation(entry_fn)
-│   │       ├── unban_flow.py       - execute_unban() - DB deactivation, group unban, log
-│   │       ├── appeal_flow.py      - standalone appeal ConversationHandler (deep-link entry)
-│   │       ├── connected_flow.py   - group connection flows
-│   │       ├── promote_flow.py     - _execute_promote(), _ROLE_ALIASES,
-│   │       │                         _available_roles_for() — shared by admins.py
-│   │       ├── stats_flow.py       - stats executors
-│   │       └── stats_chats_flow.py - chat stats executors
-│   └── *.py             - Individual command modules
+│   │   ├── decorators.py    owner_only, staff_only, mod_only, basic_mod_only,
+│   │   │                    ratelimiter(limit, period), log_execution
+│   │   ├── extraction.py    extract_target(), ResolvedTarget, resolve_identity()
+│   │   ├── formatter.py     esc(), code(), mention(), bold()
+│   │   ├── keyboards.py     All InlineKeyboardMarkup factory functions
+│   │   ├── role_guard.py    resolve_and_check(), auto_demote()
+│   │   ├── ban_info.py      build_ban_detail() — shared ban renderer
+│   │   ├── parse_link.py    message_link(), appeal_deep_link(), utcnow()
+│   │   ├── parse_logmsg.py  Log message text builders
+│   │   ├── parse_editmsg.py safe_edit() — swallows stale-message errors
+│   │   └── workflows/
+│   │       ├── reason_flow.py      Central ConversationHandler factory (kick/mute/warn)
+│   │       ├── ban_flow.py         Album-aware ban proof ConversationHandler
+│   │       ├── appeal_flow.py      Standalone appeal ConversationHandler (deep-link)
+│   │       ├── kicking_flow.py     execute_kick(), kick_conversation(entry_fn)
+│   │       ├── muting_flow.py      _execute_mute(), execute_unmute(), mute_conversation()
+│   │       ├── warning_flow.py     execute_warn/unwarn/warnlist/resetwarns(), warn_conversation()
+│   │       ├── unban_flow.py       execute_unban() — no ConversationHandler needed
+│   │       ├── promote_flow.py     _execute_promote(), shared by admins.py
+│   │       ├── connected_flow.py   Group connect/disconnect flows
+│   │       ├── stats_flow.py       Statistics executors
+│   │       ├── stats_chats_flow.py Chat statistics executors
+│   │       └── proof_flow.py       upload_proof() helper
+│   └── *.py             Command modules (banning, muting, kicking, warnings, appeals, …)
 └── utils/
-    ├── dispatch.py      - fan_out(): semaphore-bounded multi-group dispatcher (max 10 concurrent)
-    ├── logger.py        - BotLogFormatter, setup()
-    ├── prefixes.py      - build_prefixed_filters(), parse_cmd_args(), ALL_PREFIXES_CMD_FILTER
-    └── timedate_format.py - fmt_dt() (tz-safe), utc_now(), utc_now_str()
+    ├── dispatch.py      fan_out() — semaphore-bounded multi-group dispatcher (max 10)
+    ├── error_reporter.py 3-layer error classification and Telegram reporting
+    ├── logger.py        BotLogFormatter, setup()
+    ├── prefixes.py      build_prefixed_filters(), parse_cmd_args(), filter constants
+    └── timedate_format.py utc_now(), fmt_dt()
 ```
 
-## Key Conventions
+---
 
-- `cfg` is the global config accessor - always import from `tcbot`: `from tcbot import cfg`
-- `db` is the database namespace - import as `from tcbot import database as db`
-- All database calls are async (motor). Never use blocking pymongo calls.
-- Module files expose `__handlers__`, `__module_name__`, `__help_text__`
-- `__module_name__ = None` hides a module from /help
-- Handler priority order defined in `modules/__init__.py` (`_PRIORITY_FIRST`, `_PRIORITY_LAST`)
-- ConversationHandler timeout always uses `cfg.proof_timeout` or `cfg.appeal_timeout`
-
-## Conversation Flow Pattern
-
-**There are no `*_conv.py` files.** All ConversationHandlers live in `*_flow.py` files.
-
-For kick, mute, and warn: `reason_flow.build_modaction_conv()` is the sole factory.
-Each flow file only defines the executor adapter (`_exec_*`) and calls it.
-
-For ban: `ban_flow.py` builds its own ConversationHandler (album-aware, proof-only).
-For appeals: `appeal_flow.py` is a standalone handler with its own state graph.
-
-Module files follow the `admins.py` pattern — define the entry point, call the factory,
-expose `__handlers__` directly. No intermediate files.
+## Global Import Pattern
 
 ```python
-# * Example: kicking.py
-__handlers__ = [kick_conversation(cmd_kick_entry)]
+from tcbot import cfg            # config adapter — always use cfg, never configs
+from tcbot import database as db # database namespace — db.bans_db, db.groups_db, etc.
 ```
 
-## Datetime Helpers
+Never import `configs` (the raw dataclass) in module code. Always use `cfg`.
 
-Two canonical sources - use the right one per context:
-
-| Function | Location | Returns | Use when |
-|---|---|---|---|
-| `utc_now()` | `tcbot.utils.timedate_format` | tz-aware `datetime` | Storing timestamps in DB, building log strings |
-| `fmt_dt(dt)` | `tcbot.utils.timedate_format` | `str` | Formatting any datetime for display (handles tz-naive) |
-| `utcnow()` | `tcbot.modules.helper.parse_link` | naive `datetime` | Comparing against naive MongoDB timestamps |
+---
 
 ## Role System
 
-Four-level hierarchy stored across two collections:
+### Hierarchy
 
-| Role | Rank | Collection |
-|---|---|---|
-| founder | 4 | `tc_owners` |
-| admin | 3 | `tc_admins` |
-| developer | 2 | `tc_roles` |
-| tester | 1 | `tc_roles` |
+| Role | Rank | Collection | Permissions |
+|---|---|---|---|
+| founder | 4 | `tc_owners` | All actions + ownership transfer |
+| admin | 3 | `tc_admins` | Ban/unban/kick/mute/warn + promote developer/tester |
+| developer | 2 | `tc_roles` | Ban/unban/kick/mute/warn |
+| tester | 1 | `tc_roles` | Kick/mute/warn |
 
-Key helpers in `tcbot.database.roles_db`:
-- `get_effective_role(user_id)` → `"founder" | "admin" | "developer" | "tester" | None`
-- `role_rank(role)` → int (0 for None)
-- `can_act_on(executor_id, target_id)` → bool (executor rank > target rank)
+### Canonical Helpers — Always Use These
 
-Key helpers in `tcbot.modules.helper.role_guard`:
-- `resolve_and_check(msg, executor_id, target_id, *, min_role)` → `(executor_role, target_role)` or `(None, None)` after replying with error
-- `auto_demote(bot, target_id, target_fname, target_role, executor_id, executor_fname, action)` → removes role, logs, notifies DM
-
-Decorator notes:
-- `@decorators.ratelimiter(limit, period)` - per-user sliding-window throttle; must be the **outermost** decorator on every command and callback handler
-- `@decorators.mod_only` - Founder/Admin/Developer (ban/unban)
-- `@decorators.basic_mod_only` - Founder/Admin/Developer/Tester (kick/mute/warn)
-- `@decorators.log_execution` - opt-in tracer; logs entry, exit, and exceptions with elapsed ms
-  Place innermost (closest to `async def`) after any auth decorators.
-
-Full stack order (outermost → innermost):
 ```python
-@decorators.ratelimiter(limit=5, period=60)   # * outermost
-@decorators.owner_only                        # * auth guard
-@decorators.log_execution                     # * innermost
-async def cmd_example(...): ...
+from tcbot.database.roles_db import get_effective_role, role_rank, can_act_on, ROLE_RANK, ROLE_LABEL
+
+# Resolve effective role (cached 60s, invalidated on writes):
+role = await get_effective_role(user_id)
+# → "founder" | "admin" | "developer" | "tester" | None
+
+# Numeric rank (0 for None):
+role_rank("developer")  # → 2
+role_rank(None)         # → 0
+
+# Permission check (executor must strictly outrank target):
+ok = await can_act_on(executor_id, target_id)
 ```
 
-Auto-demote: fires on ban AND kick when target holds any role.
+**NEVER** chain `is_owner()` + `is_admin()` + `get_role()` manually. Always call `get_effective_role()`.
 
-## Keyboard Builders (`tcbot.modules.helper.keyboards`)
+### Auto-Demote
 
-Canonical function names - use these, do not invent new ones:
+Call `auto_demote()` **before** executing any ban or kick when the target holds a role:
+
+```python
+from tcbot.modules.helper.role_guard import auto_demote
+
+target_role = await get_effective_role(target_id)
+if target_role:
+    await auto_demote(
+        ctx.bot,
+        target_id, target_fname, target_role,
+        executor_id, executor_fname, "ban",  # or "kick"
+    )
+# Then proceed with the ban/kick
+```
+
+`auto_demote()` removes the role from DB, sends the user a DM notification, and posts a log entry.
+
+### Role Guard Helper
+
+For commands that need to validate executor and target roles simultaneously:
+
+```python
+from tcbot.modules.helper.role_guard import resolve_and_check
+
+executor_role, target_role = await resolve_and_check(
+    msg, executor_id, target_id, min_role="developer"
+)
+if executor_role is None:
+    return  # resolve_and_check already replied with the appropriate error
+```
+
+---
+
+## Decorator Stack
+
+Every command handler and callback handler **must** carry all three decorators in this exact order (outermost to innermost):
+
+```python
+@decorators.ratelimiter(limit=5, period=60)   # OUTERMOST — rate checked first
+@decorators.mod_only                          # AUTH GUARD — checked second
+@decorators.log_execution                     # INNERMOST — logs after auth passes
+async def cmd_ban_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
+    ...
+```
+
+When there is no auth guard:
+
+```python
+@decorators.ratelimiter(limit=8, period=30)
+@decorators.log_execution
+async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    ...
+```
+
+Message-event handlers (e.g. `on_new_member` in `greeting.py`) are **exempt** from rate limiters.
+
+### Standard Rate Limits
+
+| Category | limit | period |
+|---|---|---|
+| Destructive (ban, kick, unban, broadcast) | 3–5 | 60 |
+| Moderation (mute, warn, cleanup) | 3–5 | 60 |
+| Read commands (stats, groups, checkme, help) | 8 | 30 |
+| Inline callbacks (button presses) | 15 | 30 |
+| Emergency-only (leaveall) | 1 | 300 |
+
+---
+
+## Conversation Flow Pattern
+
+**There are NO `*_conv.py` files in this project.** Every `ConversationHandler` is built inside a `*_flow.py` file via a factory function. Module files only define the entry point and call the factory:
+
+```python
+# kicking.py — canonical pattern
+from tcbot.modules.helper.workflows.kicking_flow import kick_conversation
+
+__handlers__ = [kick_conversation(cmd_kick_entry)]
+```
+
+### Kick / Mute / Warn — use `reason_flow.build_modaction_conv()`
+
+`kick_conversation()`, `mute_conversation()`, `warn_conversation()` are thin wrappers. Each defines an executor adapter (`_exec_kick`, `_exec_mute`, `_exec_warn`) and calls `reason_flow.build_modaction_conv()`.
+
+States: `WAITING_REASON = 0`, `WAITING_PROOF = 1`
+
+### Ban — `ban_flow.ban_conversation(entry_fn)`
+
+Album-aware proof flow (no reason step, buffered album handling). State: `WAITING_PROOF`. Entry must return `WAITING_PROOF` or `ConversationHandler.END`.
+
+### Appeal — `appeal_flow.build_handler()`
+
+Standalone ConversationHandler. Entry: `/start appeal_<ban_id>`. Completely independent of `reason_flow`.
+
+### Timeouts — Always Use Config Values
+
+```python
+# proof flows
+cfg.proof_timeout        # not a hardcoded integer
+
+# appeal flow
+cfg.appeal_timeout
+```
+
+---
+
+## Keyboard Builders
+
+All keyboard builders live in `tcbot/modules/helper/keyboards.py`. Do not create keyboard functions anywhere else.
 
 | Function | Purpose |
 |---|---|
 | `main_menu_kb()` | Main /start PM menu |
-| `back_to_start_kb()` | Single « Back → start menu |
-| `appeal_review_kb(ban_id)` | Approve/Reject for appeal review |
-| `promo_decision_kb(request_id)` | Approve/Reject for promotion request |
-| `promote_role_kb(target_id, available_roles)` | Role selection buttons for /tcpromote |
+| `back_to_start_kb()` | « Back → start menu |
+| `back_to_help_kb()` | « Back → help_menu (menu path) |
+| `back_to_help_cmd_kb()` | « Back → helpc_main (command path) |
+| `appeal_review_kb(ban_id)` | Approve/Reject for appeal review cards |
+| `promo_decision_kb(request_id)` | Approve/Reject for promotion requests |
+| `promote_role_kb(target_id, available_roles)` | Role selection for /tcpromote |
 | `demote_confirm_kb(target_id)` | Confirm/Cancel for /tcdemote |
 | `ban_log_new(target_id, proof_link, appeal_url)` | New ban log keyboard |
 | `ban_log_update(target_id, proof_link, prev_proof_link, appeal_url)` | Updated ban log keyboard |
 | `help_modules(rows, *, with_back_to_start)` | Generic help menu builder |
-| `cancel_proof_kb()` | Cancel button for ban proof prompt |
+| `cancel_proof_kb()` | Cancel button during ban proof step |
+| `join_group_kb()` | Connect/Cancel for group join prompt |
+| `checkme_ban_kb(bot_username, ban_id, proof_link)` | Summary view for /checkme |
+| `checkme_detail_back_kb(ban_id, proof_link)` | Detail view for /checkme |
 
-## Bot Persona - Role-Aware Responses
+---
 
-All command handlers must recognize the full role hierarchy (bot itself, Founder, Admin,
-Developer, Tester) and respond with a consistent **friendly + formal** tone.
+## HTML Formatting
 
-Reference implementation: `tcbot/modules/checking.py` (`cmd_baninfo`, `cmd_checkme`).
-
-**Required pattern for every command that targets a user:**
+All user-facing messages must use `parse_mode="HTML"`. Canonical helpers from `tcbot/modules/helper/formatter.py`:
 
 ```python
-# * 1. Bot self-check
+from tcbot.modules.helper.formatter import esc, code, mention, bold
+
+esc(user_input)        # Escape &, <, > — ALWAYS use on user-provided strings
+code("123456789")      # <code>123456789</code>
+mention(uid, fname)    # <a href="tg://user?id=uid">fname</a>
+bold("text")           # <b>text</b>
+```
+
+Multi-line message strings use parenthesized concatenation, not backslash continuation:
+
+```python
+text = (
+    "<b>Ban Information</b>\n\n"
+    f"User: {mention(uid, fname)}\n"
+    f"Ban ID: {code(ban_id)}"
+)
+```
+
+---
+
+## Target Resolution
+
+```python
+from tcbot.modules.helper.extraction import extract_target
+
+target_id, target_fname = await extract_target(update, args, ctx.bot)
+# Returns (None, None) if no valid target can be resolved
+```
+
+Resolution order (explicit args always win):
+1. `args[0]` as numeric ID or `@username`
+2. Reply-to-message sender (only when no explicit arg)
+3. `text_mention` entity
+4. `@mention` entity resolved via `bot.get_chat()`
+
+---
+
+## Datetime Helpers
+
+Use the correct function for each context:
+
+| Function | Location | Returns | Use when |
+|---|---|---|---|
+| `utc_now()` | `tcbot.utils.timedate_format` | tz-aware `datetime` | Storing timestamps in DB |
+| `fmt_dt(dt)` | `tcbot.utils.timedate_format` | `str` | Displaying any datetime to users |
+| `utcnow()` | `tcbot.modules.helper.parse_link` | naive `datetime` | Comparing against naive MongoDB timestamps |
+
+Never use `datetime.utcnow()` (deprecated). Never use `datetime.now()` without `timezone.utc`.
+
+---
+
+## Multi-Group Operations
+
+Use `fan_out()` for any operation touching multiple groups:
+
+```python
+from tcbot.utils.dispatch import fan_out
+
+groups  = await db.groups_db.active_groups()
+results = await fan_out([
+    ctx.bot.ban_chat_member(g["chat_id"], target_id)
+    for g in groups
+])
+errors = sum(1 for r in results if isinstance(r, BaseException))
+```
+
+`fan_out()` caps concurrency at 10, never raises, returns results in input order.
+
+---
+
+## Bot Persona — Role-Aware Responses
+
+Required pattern for every command that targets a user:
+
+```python
+# 1. Bot self-check
 if target_id == ctx.bot.id:
-    await msg.reply_text(
-        f"That's {mention(ctx.bot.id, ctx.bot.first_name or 'me')} - [context]. 😄",
-        parse_mode="HTML",
-    )
+    await msg.reply_text("That's me — [context]. 😄", parse_mode="HTML")
     return
 
-# * 2. Full role check via get_effective_role (NEVER chain is_owner/is_admin/get_role)
+# 2. Role check via get_effective_role (NEVER chain is_owner/is_admin/get_role)
 target_role = await get_effective_role(target_id)
 if target_role == "founder":
     fname = await db.users_db.get_first_name(target_id, "the Founder")
     await msg.reply_text(
-        f"That's {mention(target_id, fname)}, the Founder - [context].",
+        f"That's {mention(target_id, fname)}, our Founder — [context]. 👑",
         parse_mode="HTML",
     )
     return
 if target_role in ("admin", "developer", "tester"):
-    role_label = ROLE_LABEL.get(target_role, target_role)
-    fname      = await db.users_db.get_first_name(target_id, str(target_id))
+    label = ROLE_LABEL.get(target_role, target_role.capitalize())
+    fname = await db.users_db.get_first_name(target_id, str(target_id))
     await msg.reply_text(
-        f"[Context about {role_label}]",
+        f"That's a {cfg.community_name} {label} — [context].",
         parse_mode="HTML",
     )
-    return  # * or proceed, depending on the action
+    return  # or proceed, depending on the action
 ```
 
-**Tone guidelines:**
-- Friendly but not over-the-top. Mix of casual and professional - think "capable team member", not "cold system".
-- Use 1–3 emojis per message where it feels natural. Don't force them - just enough warmth.
-- Keep messages short and direct. No filler phrases.
+Tone: friendly-formal. 1–3 emojis per message where natural. Short and direct. No filler phrases.
+
+---
+
+## Database Rules
+
+1. All write operations must live in `tcbot/database/`, never in module handlers.
+2. Never call `col()` directly from module code — use per-collection helper functions.
+3. All helpers must be async and fully typed.
+4. Index-sensitive queries must match the indexes in `mongos.ensure_indexes()`.
+5. Always `await q.answer()` before any further action in a `CallbackQueryHandler`.
+6. Wrap every `bot.send_message` / `bot.ban_chat_member` / etc. in try/except when iterating over groups — one failure must not abort the loop.
+
+---
+
+## Module File Checklist
+
+When creating or editing `tcbot/modules/*.py`:
+
+- [ ] `from __future__ import annotations` as first non-comment line
+- [ ] Copyright header (3 lines: Transsion Core, Dizzy, Aveum Apps)
+- [ ] One-line module docstring
+- [ ] `__module_name__` set (or `= None` to hide from /help)
+- [ ] `__help_text__` set if `__module_name__` is not `None`
+- [ ] All command/callback handlers carry the 3-layer decorator stack
+- [ ] `__handlers__` list at the bottom of the file
+- [ ] No inline imports inside function bodies
+- [ ] No raw `col()` calls — all DB access via `db.*_db.*`
+
+---
 
 ## What NOT To Do
 
-- Do not add `from typing import List, Optional, Tuple` - use built-in `list`, `int | None`, `tuple`
-- Do not use `datetime.utcnow()` - use `datetime.now(timezone.utc)`
-- Do not use more than 3 emojis per message - keep it tasteful, not spammy
-- Do not add dead `## comment` sections that explain obvious code
-- Do not create duplicate render/keyboard functions across modules - extract shared logic
-- Do not inline imports inside function bodies - keep all imports at the top of the file
-- Do not use `mention(x) + code(x)` pattern - pick one per context
-- Do not use `q._bot` (private PTB attribute) - use `ctx.bot` instead
-- Do not create `*_conv.py` files - ConversationHandlers belong in their `*_flow.py` file
-- Do not duplicate reason/proof state handlers - use `reason_flow.build_modaction_conv()`
+- Do not use `from typing import List, Optional, Tuple` — use `list`, `int | None`, `tuple`
+- Do not use `datetime.utcnow()` — use `datetime.now(timezone.utc)` or the canonical helpers
+- Do not use `q._bot` (private PTB attribute) — use `ctx.bot`
+- Do not create `*_conv.py` files — ConversationHandlers belong in `*_flow.py`
+- Do not duplicate reason/proof state handlers — use `reason_flow.build_modaction_conv()`
+- Do not create new keyboard functions in module files — extend `keyboards.py`
+- Do not inline imports inside function bodies
+- Do not silently swallow exceptions with bare `pass` — always `log.debug()` at minimum
+- Do not store `Update` or `Message` objects beyond the handler call lifetime
+- Do not mix `parse_mode="Markdown"` and `parse_mode="HTML"` — always use HTML
+- Do not add packages to `requirements.txt` — managed via `pyproject.toml`
+
+---
 
 ## Testing
 
-Run with: `python3 -m pytest tests/ -q`
-Restart the workflow after any change: `python3 -m tcbot`
-Watch for import errors before testing behavior in Telegram.
+```bash
+python3 -m pytest tests/ -v
+```
 
-## Related documentation
+All 121 tests run offline — no bot token or MongoDB connection required.
 
-- [Documentation hub](../docs/index.md)
-- [Project architecture](../docs/architecture.md)
-- [Modules and service boundaries](../docs/modules.md)
-- [Conversation flows and workflows](../docs/workflows.md)
-- [Development workflow and onboarding](../docs/development.md)
-- [AI / agent guidelines](../docs/agent-guidelines.md)
+After any code change:
+1. Run all tests — all 121 must pass
+2. Restart the `Start application` workflow
+3. Verify startup logs: no import errors, MongoDB connected, handlers registered
+
+---
+
+## Related Files
+
+| File | Purpose |
+|---|---|
+| `agents/RULES.md` | Complete project rules and constraints |
+| `agents/STYLE-CODE.md` | Code style, typing, naming, alignment, decorator order |
+| `agents/STYLE-COMMENTS.md` | Comment and docstring conventions |
+| `agents/WORKFLOW.md` | Branching, commit messages, deployment checklist |
+| `agents/REPLIT.md` | Replit environment, secrets, workflow, ports |
+| `docs/architecture.md` | Startup flow, DB schema, caching, error handling |
+| `docs/modules.md` | Per-module responsibilities and boundaries |
+| `docs/workflows.md` | ConversationHandler flows in full detail |
+| `docs/development.md` | Setup, onboarding, adding modules and collections |
+| `PLAN.md` | Bug priorities, improvement strategy, session tracker |

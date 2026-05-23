@@ -1,93 +1,178 @@
-# Development Workflow - TCF Bot
+# Development Workflow — TCF Bot
 
-Before making any changes, **read all documentation files in the `agents/` directory** - specifically:
-- `agents/RULES.md` - coding conventions, what is forbidden
-- `agents/STYLE-CODE.md` - code style, typing, and formatting rules
-- `agents/STYLE-COMMENTS.md` - comment and docstring style
-- `agents/WORKFLOW.md` - branching, commit conventions, and deployment checklist
-- `agents/CLAUDE.md` - project-specific guidance and gotchas
-- `agents/REPLIT.md` - Replit environment, config, and secrets guidance
+**Read `agents/CLAUDE.md` first.** This file defines branching strategy, commit conventions, and the deployment checklist.
 
-## Branching
+Compatible with: Replit AI, Claude, Gemini, Qwen, GitHub Copilot, and any AI coding agent.
 
-- `main` - production-ready code only
-- Feature branches: `feat/<short-description>`
-- Bug fixes: `fix/<short-description>`
-- Refactors: `refactor/<short-description>`
+---
 
-Merge to `main` only after the bot runs clean (no import errors, no tracebacks on startup).
+## Before Making Any Change
+
+1. Read the full content of the file you are about to edit.
+2. Check for duplicate logic across modules before adding a new function.
+3. If you are changing a database schema (adding or removing fields), update all read paths too.
+4. Run `python3 -m pytest tests/ -v` — all 121 tests must pass before you start.
+
+---
+
+## Branching Strategy
+
+| Branch | Purpose |
+|---|---|
+| `main` | Production-ready code only. Never push broken code here. |
+| `feat/<short-description>` | New features |
+| `fix/<short-description>` | Bug fixes |
+| `refactor/<short-description>` | Refactors and code quality improvements |
+| `docs/<short-description>` | Documentation-only changes |
+
+Merge to `main` only after the bot starts without any `ERROR` in startup logs.
+
+---
 
 ## Making Changes
 
-1. Read the relevant module fully before editing.
-2. Check for duplicate logic across modules before adding a new function.
-3. If changing a database schema (adding/removing fields), update all read paths too.
-4. After editing, restart the workflow and check startup logs for import errors.
+### Before editing a file
 
-## Module Checklist
+1. Read the entire file to understand what already exists.
+2. Confirm no equivalent function already exists elsewhere.
+3. Confirm the change does not break the 3-layer decorator stack.
 
-When creating a new `tcbot/modules/*.py` file:
-- [ ] `from __future__ import annotations` at top
-- [ ] Copyright header
-- [ ] `__module_name__` set (or `None` to hide from /help)
-- [ ] `__help_text__` set if `__module_name__` is not None
-- [ ] `__handlers__` list at the bottom
-- [ ] Module added to `_PRIORITY_FIRST` or `_PRIORITY_LAST` in `modules/__init__.py` if ordering matters
+### After editing a file
+
+1. Run the full test suite: `python3 -m pytest tests/ -v`
+2. Restart the `Start application` workflow.
+3. Check startup logs for import errors.
+4. If touching a handler, verify the relevant command works in Telegram.
+
+---
+
+## Adding a New Command Module
+
+1. Create `tcbot/modules/<name>.py`
+2. Add the copyright header, `from __future__ import annotations`, and the module docstring
+3. Set `__module_name__` and `__help_text__`
+4. Implement the command entry point with the 3-layer decorator stack
+5. Expose `__handlers__ = [...]` at the bottom
+6. If the module needs priority ordering, add it to `_PRIORITY_FIRST` or `_PRIORITY_LAST` in `modules/__init__.py`
+
+Module template:
+
+```python
+# © Copyright 2024 - 2026 Transsion Core
+# © Copyright 2024 - 2026 Dizzy
+# © Copyright 2026 Aveum Apps
+
+"""One-line description of what this module does."""
+
+from __future__ import annotations
+
+import logging
+
+from telegram import Update
+from telegram.ext import ContextTypes, MessageHandler
+
+from tcbot.modules.helper import decorators
+from tcbot.utils.prefixes import build_prefixed_filters
+
+log = logging.getLogger(__name__)
+
+
+__module_name__ = "MyModule"
+__help_text__   = "<b>Commands</b>\n<code>/mycommand</code>\n\n..."
+
+
+# ────────────────────────── Command ──────────────────────────────── #
+
+@decorators.ratelimiter(limit=5, period=60)
+@decorators.mod_only
+@decorators.log_execution
+async def cmd_example(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    ...
+
+
+# ─────────────────────────── Handlers ───────────────────────────── #
+
+__handlers__ = [MessageHandler(build_prefixed_filters("mycommand"), cmd_example)]
+```
+
+---
 
 ## Adding a Database Collection
 
-1. Create `tcbot/database/<name>_db.py` with a `_col()` private accessor and async helpers
-2. Import it in `tcbot/database/__init__.py`
-3. All functions must be async and return typed results
+1. Create `tcbot/database/<name>_db.py`
+2. Add a private `_col()` accessor: `return col("<collection_name>")`
+3. Implement all helpers as `async def` with full type annotations
+4. Add the collection's indexes to `mongos.ensure_indexes()` in `tcbot/database/mongos.py`
+5. Export the module from `tcbot/database/__init__.py`
 
-## ConversationHandler Flows
+---
 
-All `ConversationHandler` flows live in `tcbot/modules/helper/workflows/`.
+## Adding a ConversationHandler Flow
 
-**There are no `*_conv.py` files.** Every `ConversationHandler` is built inside a `*_flow.py`
-file and exposed via a factory function.
+**Never create `*_conv.py` files.** All flows live in `*_flow.py` files.
 
-Structure:
-- `*_flow.py` — executor functions, state handlers (when needed), and `ConversationHandler` factory
+For kick / mute / warn — add an executor adapter and call `reason_flow.build_modaction_conv()`:
 
-Central factory: `reason_flow.build_modaction_conv(action, entry_fn, executor, entry_filter, ...)`
-builds the complete reason + proof `ConversationHandler` for kick, mute, and warn.
-Individual flow files only define the executor adapter (`_exec_*`) and call this factory.
+```python
+# myaction_flow.py
+from tcbot.modules.helper.workflows.reason_flow import (
+    WAITING_REASON, WAITING_PROOF, build_modaction_conv,
+)
 
-Ban uses its own album-aware proof flow in `ban_flow.py` (different state graph, no reason step).
-`appeal_flow.py` is a standalone handler independent of `reason_flow`.
+async def _exec_myaction(
+    update: Update, ctx: ContextTypes.DEFAULT_TYPE,
+    target_id: int, target_fname: str, reason: str, proof_desc: str | None,
+    executor_id: int, executor_fname: str,
+) -> None:
+    ...  # your executor logic
 
-Timeout always comes from `cfg.proof_timeout` (proof flows) or `cfg.appeal_timeout` (appeal flow).
+def myaction_conversation(entry_fn) -> ConversationHandler:
+    return build_modaction_conv(
+        action="myaction",
+        entry_fn=entry_fn,
+        executor=_exec_myaction,
+        entry_filter=build_prefixed_filters("tcmyaction"),
+    )
+```
+
+For ban — add an entry function and call `ban_flow.ban_conversation(entry_fn)`.
+For a completely new flow — model it after `appeal_flow.py` (standalone state graph).
+
+---
 
 ## Commit Messages
 
 Use conventional commits:
+
 ```
 feat: add /tcsweep command with SweepAgent
 fix: remove dead bans variable in connected_flow
 refactor: deduplicate _render() between start.py and groups.py
 chore: modernize typing hints to Python 3.11 built-ins
+docs: rewrite agents/CLAUDE.md with full architecture detail
+test: add rate-limiter edge cases for concurrent callers
 ```
 
-## Environment
-
-Never commit `config.env`. Use `config.env.example` as the template.
-All secrets and configuration go through `config.env` exclusively. Never use Replit Secrets for this project.
+---
 
 ## Deployment Checklist
 
-Before pushing to production:
+Before any merge to `main`:
+
+- [ ] All 121 tests pass: `python3 -m pytest tests/ -v`
 - [ ] Bot starts without any `ERROR` in startup logs
-- [ ] `/start` shows the main menu
+- [ ] MongoDB connection confirmed in logs: `MongoDB connected → <db_name>`
+- [ ] Keep-alive Flask confirmed in logs: `Flask keepalive started on port 8080`
+- [ ] `/start` shows the main menu in bot PM
 - [ ] `/help` lists all expected modules
-- [ ] MongoDB connection confirmed in logs (`MongoDB connected → <db_name>`)
-- [ ] Keep-alive Flask server on port 5000 confirmed in logs
+- [ ] At least one moderation command tested end-to-end in a connected group
+- [ ] `config.env` does not contain any real secrets (secrets are in Replit Secrets)
 
-## Related documentation
+---
 
-- [Documentation hub](../docs/index.md)
-- [Project architecture](../docs/architecture.md)
-- [Modules and service boundaries](../docs/modules.md)
-- [Conversation flows and workflows](../docs/workflows.md)
-- [Development workflow and onboarding](../docs/development.md)
-- [AI / agent guidelines](../docs/agent-guidelines.md)
+## Related Documentation
+
+- [Architecture](../docs/architecture.md)
+- [Modules](../docs/modules.md)
+- [Conversation flows](../docs/workflows.md)
+- [Development onboarding](../docs/development.md)

@@ -73,7 +73,7 @@ tcbot/
     ├── error_reporter.py 3-layer error classification and Telegram reporting
     ├── logger.py        BotLogFormatter, setup()
     ├── prefixes.py      build_prefixed_filters(), parse_cmd_args(), filter constants
-    └── timedate_format.py utc_now(), utcnow(), to_utc(), fmt_dt(), utc_now_str()
+    └── timedate_format.py utc_now(), to_utc(), fmt_dt(), utc_now_str()
 ```
 
 ---
@@ -302,7 +302,6 @@ Use the correct function for each context:
 | Function | Location | Returns | Use when |
 |---|---|---|---|
 | `utc_now()` | `tcbot.utils.timedate_format` | tz-aware `datetime` | Storing timestamps in DB, elapsed-time checks |
-| `utcnow()` | `tcbot.utils.timedate_format` | naive UTC `datetime` | Test fixtures, legacy naive timestamps |
 | `to_utc(dt)` | `tcbot.utils.timedate_format` | tz-aware `datetime` | Normalizing before subtracting datetimes |
 | `fmt_dt(dt)` | `tcbot.utils.timedate_format` | `str` | Displaying any datetime to users |
 | `utc_now_str()` | `tcbot.utils.timedate_format` | `str` | One-line formatted current time |

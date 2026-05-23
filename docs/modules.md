@@ -417,7 +417,6 @@ Single source of truth for all datetime usage in the project.
 | Function | Returns | Use when |
 |---|---|---|
 | `utc_now()` | tz-aware `datetime` | Storing timestamps in MongoDB, elapsed-time comparisons |
-| `utcnow()` | naive UTC `datetime` | Building test fixtures or legacy naive timestamps |
 | `to_utc(dt)` | tz-aware `datetime` | Normalizing naive or aware values before subtraction |
 | `fmt_dt(dt)` | `str` | Displaying any datetime to users (`DD-MM-YYYY \| HH:MM`) |
 | `utc_now_str()` | `str` | One-line formatted current time (`fmt_dt(utc_now())`) |

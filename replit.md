@@ -41,7 +41,7 @@ A Telegram bot for the Transsion Core Federation (TCF) community. Manages federa
 | `tcbot/utils/dispatch.py` | `fan_out()` — semaphore-bounded multi-group dispatcher (max 10 concurrent) |
 | `tcbot/utils/prefixes.py` | Prefix filter builder + alt-prefix dispatcher (`_REGISTRY`) |
 | `tcbot/utils/logger.py` | `BotLogFormatter` and `setup()` |
-| `tcbot/utils/timedate_format.py` | `utc_now()`, `utcnow()`, `to_utc()`, `fmt_dt()`, `utc_now_str()` — single datetime source |
+| `tcbot/utils/timedate_format.py` | `utc_now()`, `to_utc()`, `fmt_dt()`, `utc_now_str()` — single datetime source |
 
 ## Configuration
 
